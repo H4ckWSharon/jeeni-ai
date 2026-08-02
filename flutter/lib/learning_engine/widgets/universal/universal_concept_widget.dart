@@ -30,7 +30,7 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
   // Interactive Simulation Controls
   double _inputRate = 5.0; // Slider 1 (1.0 to 10.0)
   double _scaleFactor = 1.0; // Slider 2 (0.5 to 2.0)
-  bool _showLabels = true;
+  final bool _showLabels = true;
   bool _isSimulating = false;
 
   late AnimationController _simController;
@@ -232,9 +232,9 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        const Text(
           'Interactive Controls & Live Scaling',
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
@@ -318,7 +318,7 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Real-time Simulation Engine', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Real-time Simulation Engine', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             Row(
               children: [
                 IconButton(
@@ -378,7 +378,7 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         correctAnswerIndex: 0,
         explanation: 'Increasing the input rate provides more energy/data into the model, boosting total system output.',
       ),
-      QuizQuestion(
+      const QuizQuestion(
         questionText: 'Which variable controls systemic amplification in this model?',
         options: ['Scale Factor', 'Time Constant', 'Static Friction', 'Zero Point'],
         correctAnswerIndex: 0,
