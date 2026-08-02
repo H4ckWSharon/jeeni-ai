@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeeni AI — Admin Knowledge Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090B;
+      --card-bg: #121215;
+      --border: #27272A;
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --accent: #10B981;
+      --text: #FAFAFA;
+      --text-muted: #A1A1AA;
+      --danger: #EF4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    header {
+      background: #18181B;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; }
+    .brand-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #6366F1, #8B5CF6); borderRadius: 10px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+
+    .logout-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .logout-btn:hover { background: #27272A; color: var(--text); }
+
+    main { max-width: 1100px; width: 100%; margin: 32px auto; padding: 0 20px; flex: 1; }
+
+    /* Login Modal */
+    #loginView {
+      max-width: 400px;
+      margin: 80px auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+    input, select {
+      width: 100%;
+      background: #18181B;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), #8B5CF6);
+      border: none;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+
+    /* Dashboard View */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media(max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      background: #18181B;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 18px;
+    }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: #1E1E24; }
+    .dropzone-icon { font-size: 32px; margin-bottom: 8px; }
+    .file-info { font-size: 13px; color: var(--accent); margin-top: 8px; font-weight: 600; }
+
+    .progress-bar { height: 6px; background: #27272A; border-radius: 4px; overflow: hidden; margin-top: 14px; display: none; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.3s; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .badge-primary { background: rgba(99,102,241,0.2); color: #818CF8; }
+    .badge-success { background: rgba(16,185,129,0.2); color: #34D399; }
+
+    .alert { padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .alert-error { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #FCA5A5; }
+    .alert-success { background: rgba(16,185,129,0.15); border: 1px solid var(--accent); color: #6EE7B7; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🎓</div>
+      <span>Jeeni AI <span style="font-weight:300; font-size:14px; color:var(--text-muted);">Admin Knowledge Portal</span></span>
+    </div>
+    <button class="logout-btn" id="logoutBtn" style="display:none;" onclick="logout()">Sign Out</button>
+  </header>
+
+  <main>
+    <!-- LOGIN VIEW -->
+    <div id="loginView">
+      <h2>Admin Authentication</h2>
+      <p class="subtitle">Access global textbook & NCERT indexer</p>
+      
+      <div id="loginError" class="alert alert-error">Invalid username or password</div>
+
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Admin Username</label>
+          <input type="text" id="username" placeholder="Enter admin username" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Enter admin password" required>
+        </div>
+        <button type="submit" class="btn">Authenticate</button>
+      </form>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboardView" style="display:none;">
+      <div class="grid">
+        
+        <!-- Upload Form -->
+        <div class="card">
+          <h2>📚 Upload Textbook / NCERT Chapter</h2>
+          <p class="subtitle">Index PDF books into global ChromoDB vector database</p>
+
+          <div id="uploadMsg" class="alert"></div>
+
+          <form id="uploadForm" onsubmit="handleUpload(event)">
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+              <div class="dropzone-icon">📄</div>
+              <div>Drag & Drop NCERT PDF or Click to Browse</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Supports PDF files up to 50MB</div>
+              <div id="fileName" class="file-info"></div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf" style="display:none;" onchange="updateFileInfo()">
+
+            <div class="form-group">
+              <label>Book / Chapter Title</label>
+              <input type="text" id="bookTitle" placeholder="e.g. NCERT Class 10 Physics - Chapter 1" required>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label>Subject</label>
+                <select id="subject">
+                  <option value="Physics">Physics ⚡</option>
+                  <option value="Chemistry">Chemistry ⚛️</option>
+                  <option value="Mathematics">Mathematics 📐</option>
+                  <option value="Biology">Biology ❤️</option>
+                  <option value="Computer Science">Computer Science 💻</option>
+                  <option value="General">General / Other 📚</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Grade / Class</label>
+                <input type="text" id="grade" placeholder="e.g. Class 10" value="Class 10">
+              </div>
+            </div>
+
+            <button type="submit" class="btn" id="uploadBtn">Start Vector Indexing</button>
+            <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+          </form>
+        </div>
+
+        <!-- Indexed Collections Summary -->
+        <div class="card">
+          <h2>📊 Knowledge Base Status</h2>
+          <p class="subtitle">Live ChromoDB Collections & Indexed Textbooks</p>
+
+          <table id="collectionsTable">
+            <thead>
+              <tr>
+                <th>Collection</th>
+                <th>Chunks</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="collectionsBody">
+              <tr><td colspan="3" style="color:var(--text-muted);">Loading collections...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let authToken = localStorage.getItem('jeeni_admin_token');
+
+    if (authToken) {
+      showDashboard();
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          localStorage.setItem('jeeni_admin_token', data.token);
+          authToken = data.token;
+          showDashboard();
+        } else {
+          document.getElementById('loginError').style.display = 'block';
+        }
+      } catch (err) {
+        document.getElementById('loginError').innerText = 'Server error: ' + err.message;
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('dashboardView').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'block';
+      loadCollections();
+    }
+
+    function logout() {
+      localStorage.removeItem('jeeni_admin_token');
+      location.reload();
+    }
+
+    function updateFileInfo() {
+      const input = document.getElementById('fileInput');
+      if (input.files.length > 0) {
+        document.getElementById('fileName').innerText = 'Selected: ' + input.files[0].name;
+        if (!document.getElementById('bookTitle').value) {
+          document.getElementById('bookTitle').value = input.files[0].name.replace('.pdf', '');
+        }
+      }
+    }
+
+    async function handleUpload(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files[0]) {
+        showAlert('Please select a PDF file first', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('title', document.getElementById('bookTitle').value);
+      formData.append('subject', document.getElementById('subject').value);
+      formData.append('grade', document.getElementById('grade').value);
+      formData.append('collection', 'textbooks');
+
+      const btn = document.getElementById('uploadBtn');
+      const bar = document.getElementById('progressBar');
+      const fill = document.getElementById('progressFill');
+
+      btn.disabled = true;
+      btn.innerText = 'Extracting & Indexing into ChromoDB...';
+      bar.style.display = 'block';
+      fill.style.width = '50%';
+
+      try {
+        const res = await fetch('/api/textbooks/upload', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken },
+          body: formData
+        });
+
+        const data = await res.json();
+        fill.style.width = '100%';
+
+        if (res.ok && data.success) {
+          showAlert(`✅ Success! Indexed ${data.chunks_created} chunks from "${data.file_name}" into ChromoDB!`, 'success');
+          document.getElementById('uploadForm').reset();
+          document.getElementById('fileName').innerText = '';
+          loadCollections();
+        } else {
+          showAlert('Upload failed: ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showAlert('Upload error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Start Vector Indexing';
+        setTimeout(() => { bar.style.display = 'none'; fill.style.width = '0%'; }, 2000);
+      }
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById('uploadMsg');
+      box.className = 'alert alert-' + type;
+      box.innerText = msg;
+      box.style.display = 'block';
+    }
+
+    async function loadCollections() {
+      try {
+        const res = await fetch('/api/admin/collections', {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const data = await res.json();
+        const tbody = document.getElementById('collectionsBody');
+        tbody.innerHTML = '';
+
+        if (data.collections && data.collections.length > 0) {
+          data.collections.forEach(c => {
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${c.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${c.description || ''}</span></td>
+                <td><span class="badge badge-primary">${c.document_count} Chunks</span></td>
+                <td><span class="badge badge-success">Indexed</span></td>
+              </tr>
+            `;
+          });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-muted);">No textbooks indexed yet</td></tr>';
+        }
+      } catch (err) {
+        console.error('Failed to load collections', err);
+      }
+    }
+  </script>
+</body>
+</html>

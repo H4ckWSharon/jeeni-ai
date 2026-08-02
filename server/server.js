@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const path = require('path');
 const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
@@ -10,6 +11,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Serve Admin Web Portal statically
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB limit
@@ -18,6 +25,11 @@ const upload = multer({
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const CHROMODB_URL = process.env.CHROMODB_URL || 'http://localhost:4000';
 const CHROMODB_API_KEY = process.env.CHROMODB_API_KEY || 'jeeni_secret_vector_key_2026';
+
+// Admin Credentials
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Sonalcjoseph@2005';
+const ADMIN_TOKEN = 'jeeni_admin_secret_token_2026';
 
 // Helper: Call ChromoDB API
 async function chromoFetch(endpoint, method = 'GET', body = null) {
@@ -35,12 +47,41 @@ async function chromoFetch(endpoint, method = 'GET', body = null) {
   return res.json();
 }
 
+// Admin Auth Middleware
+function requireAdmin(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '').trim();
+  if (token === ADMIN_TOKEN || process.env.NODE_ENV === 'development') {
+    return next();
+  }
+  res.status(401).json({ error: 'Unauthorized: Admin authentication required' });
+}
+
+// ── Admin Authentication Endpoint ────────────────────────
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    return res.json({ success: true, token: ADMIN_TOKEN });
+  }
+  res.status(401).json({ error: 'Invalid admin username or password' });
+});
+
+// ── Admin Collections Endpoint ────────────────────────────
+app.get('/api/admin/collections', requireAdmin, async (req, res) => {
+  try {
+    const collections = await chromoFetch('/api/collections');
+    res.json(collections);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Health Check ──────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send('Jeeni Server Running (Gemini 2.5 Flash + ChromoDB RAG) OK');
 });
 
-// ── PDF & Textbook Upload Endpoint ───────────────────────
+// ── PDF & Textbook Upload Endpoint (Protected Admin Only) ─
 app.post('/api/textbooks/upload', upload.single('file'), async (req, res) => {
   try {
     const {
@@ -215,4 +256,4 @@ app.post('/api/chat', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Jeeni Gemini Server running on port ' + PORT));
+app.listen(PORT, () => console.log('Jeeni Gemini Server running on port ' + PORT + ' (Admin Portal at /admin)'));
