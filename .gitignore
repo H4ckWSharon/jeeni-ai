@@ -1,0 +1,18 @@
+# Flutter build outputs
+flutter/build/
+flutter/.dart_tool/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+
+# Server
+server/node_modules/
+server/.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
