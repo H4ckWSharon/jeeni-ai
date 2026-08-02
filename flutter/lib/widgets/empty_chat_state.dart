@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ═══════════════════════════════════════════════════
-// MINIMAL CLEAN EMPTY CHAT STATE — Pure Greeting Only
+// MINIMAL CLEAN EMPTY CHAT STATE — Greeting Only (No Logo)
 // ═══════════════════════════════════════════════════
 
 class EmptyChatState extends StatefulWidget {
@@ -30,10 +30,10 @@ class _EmptyChatStateState extends State<EmptyChatState>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 500),
     )..forward();
     _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _slideUp = Tween<double>(begin: 20, end: 0).animate(
+    _slideUp = Tween<double>(begin: 16, end: 0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
   }
@@ -45,8 +45,12 @@ class _EmptyChatStateState extends State<EmptyChatState>
   }
 
   String _getGreeting() {
-    final user = FirebaseAuth.instance.currentUser;
-    final name = user?.displayName?.split(' ').first ?? '';
+    String name = '';
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      name = user?.displayName?.split(' ').first ?? '';
+    } catch (_) {}
+
     final hour = DateTime.now().hour;
     String greeting;
     if (hour < 12) {
@@ -75,42 +79,12 @@ class _EmptyChatStateState extends State<EmptyChatState>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ── Minimal Jeeni Logo Orb ──
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.25),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
                 // ── Greeting Subtitle ──
                 Text(
                   _getGreeting(),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
                   ),
