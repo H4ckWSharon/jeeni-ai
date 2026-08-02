@@ -1,0 +1,55 @@
+name: jeeni_ai
+description: Jeeni AI - Your Personal AI Teacher
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  firebase_core: ^4.9.0
+  firebase_auth: ^6.5.1
+  cloud_firestore: ^6.4.1
+  google_sign_in: 6.2.1
+  sign_in_with_apple: ^8.0.0
+  google_generative_ai: ^0.4.7
+  http: ^1.2.0
+  flutter_markdown: ^0.7.3
+  markdown: ^7.2.2
+  file_picker: ^11.0.2
+  image_picker: ^1.2.2
+  speech_to_text: ^7.4.0
+  permission_handler: ^12.0.1
+  flutter_math_fork: ^0.7.2
+  fl_chart: ^0.66.0
+  flutter_tts: ^4.1.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/logo.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/images/incognito.jpg
+    - assets/images/incognito_chat.jpg
+    - assets/images/dashed_genie.png
+    - assets/images/auth.png
+    - assets/images/login_bg.png
+    - assets/images/splash_logo.png

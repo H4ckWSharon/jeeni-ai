@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1059673395517",
+    "project_id": "jeeni-ai",
+    "storage_bucket": "jeeni-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059673395517:android:eb770bd673c649d1603554",
+        "android_client_info": {
+          "package_name": "com.jeeni.jeeni_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1059673395517-691vn0e7uv43vb3902neomiu0tu7g4uj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jeeni.jeeni_ai",
+            "certificate_hash": "882acbba38b7984a05440523ce2ae4fc25997d43"
+          }
+        },
+        {
+          "client_id": "1059673395517-9h7rdm5p7fii38gpnmb1489502qupfr7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQ0m4O7cORtjlTrRkEyM59sIcvve9-13A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1059673395517-9h7rdm5p7fii38gpnmb1489502qupfr7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
