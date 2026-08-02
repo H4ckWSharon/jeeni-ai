@@ -101,7 +101,7 @@ class _ChatBubbleState extends State<ChatBubble>
 
   Widget _buildMessageContent(bool isUser) {
     if (isUser) {
-      return Text(
+      return SelectableText(
         widget.message.text,
         style: const TextStyle(
           color: Colors.white,
@@ -111,9 +111,11 @@ class _ChatBubbleState extends State<ChatBubble>
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: _parseMessageText(widget.message.text, context),
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _parseMessageText(widget.message.text, context),
+      ),
     );
   }
 
@@ -249,9 +251,7 @@ class _ChatBubbleState extends State<ChatBubble>
   @override
   Widget build(BuildContext context) {
     final isUser = widget.message.isUser;
-    final isMobile = Theme.of(context).platform == TargetPlatform.android ||
-        Theme.of(context).platform == TargetPlatform.iOS;
-    final showActions = isMobile || _isHovered;
+    const showActions = true;
 
     return AnimatedBuilder(
       animation: _ctrl,
@@ -393,36 +393,29 @@ class _ChatBubbleState extends State<ChatBubble>
               if (!isUser && !_isEditing)
                 Padding(
                   padding: const EdgeInsets.only(left: 4, top: 4),
-                  child: IgnorePointer(
-                    ignoring: !showActions,
-                    child: AnimatedOpacity(
-                      opacity: showActions ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 150),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _actionIcon(Icons.copy_rounded, 'Copy Message', _copyMessage),
-                          const SizedBox(width: 8),
-                          if (widget.onRegenerate != null) ...[
-                            _actionIcon(Icons.refresh_rounded, 'Regenerate Response', widget.onRegenerate!),
-                            const SizedBox(width: 8),
-                          ],
-                          _actionIcon(
-                            _isLiked == true ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
-                            'Like',
-                            _likeMessage,
-                            color: _isLiked == true ? const Color(0xFF10A37F) : null,
-                          ),
-                          const SizedBox(width: 8),
-                          _actionIcon(
-                            _isLiked == false ? Icons.thumb_down_rounded : Icons.thumb_down_outlined,
-                            'Dislike',
-                            _dislikeMessage,
-                            color: _isLiked == false ? const Color(0xFFEF4444) : null,
-                          ),
-                        ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _actionIcon(Icons.copy_rounded, 'Copy Message', _copyMessage),
+                      const SizedBox(width: 8),
+                      if (widget.onRegenerate != null) ...[
+                        _actionIcon(Icons.refresh_rounded, 'Regenerate Response', widget.onRegenerate!),
+                        const SizedBox(width: 8),
+                      ],
+                      _actionIcon(
+                        _isLiked == true ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
+                        'Like',
+                        _likeMessage,
+                        color: _isLiked == true ? const Color(0xFF10A37F) : null,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      _actionIcon(
+                        _isLiked == false ? Icons.thumb_down_rounded : Icons.thumb_down_outlined,
+                        'Dislike',
+                        _dislikeMessage,
+                        color: _isLiked == false ? const Color(0xFFEF4444) : null,
+                      ),
+                    ],
                   ),
                 ),
             ],
