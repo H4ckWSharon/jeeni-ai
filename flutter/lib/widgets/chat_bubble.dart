@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -116,13 +117,27 @@ class _ChatBubbleState extends State<ChatBubble>
     );
   }
 
-  List<Widget> _parseMessageText(String text, BuildContext context) {
+  List<Widget> _parseMessageText(String rawText, BuildContext context) {
     final List<Widget> children = [];
+
+    // Extract [rag_sources:JSON] if present
+    String text = rawText;
+    List<dynamic> parsedSources = [];
+    final ragMatch = RegExp(r'\[rag_sources:(.+?)\]', dotAll: true).firstMatch(rawText);
+    if (ragMatch != null) {
+      try {
+        final jsonStr = ragMatch.group(1)!;
+        parsedSources = jsonDecode(jsonStr) as List<dynamic>;
+        text = text.replaceFirst(ragMatch.group(0)!, '').trim();
+      } catch (e) {
+        debugPrint('Error parsing RAG sources JSON: $e');
+      }
+    }
+
     final regExp = RegExp(r'\[interactive:([a-zA-Z0-9_-]+)\]');
-    
     int lastMatchEnd = 0;
     final matches = regExp.allMatches(text);
-    
+
     for (final match in matches) {
       // 1. Add preceding text segment if any
       if (match.start > lastMatchEnd) {
@@ -131,17 +146,14 @@ class _ChatBubbleState extends State<ChatBubble>
           children.add(_buildMarkdownBlock(textSegment, context));
         }
       }
-      
+
       // 2. Add interactive widget
       final widgetId = match.group(1);
       if (widgetId != null) {
         if (WidgetRegistry.hasWidget(widgetId)) {
           final interactiveWidget = WidgetRegistry.buildWidget(widgetId, context);
-          if (interactiveWidget != null) {
-            children.add(interactiveWidget);
-          }
+          children.add(interactiveWidget);
         } else {
-          // Fallback if registry mismatch
           children.add(
             Container(
               padding: const EdgeInsets.all(12),
@@ -165,10 +177,10 @@ class _ChatBubbleState extends State<ChatBubble>
           );
         }
       }
-      
+
       lastMatchEnd = match.end;
     }
-    
+
     // 3. Add remaining text segment if any
     if (lastMatchEnd < text.length) {
       final textSegment = text.substring(lastMatchEnd).trim();
@@ -176,7 +188,12 @@ class _ChatBubbleState extends State<ChatBubble>
         children.add(_buildMarkdownBlock(textSegment, context));
       }
     }
-    
+
+    // 4. Append RAG Sources indicator if sources were present
+    if (parsedSources.isNotEmpty) {
+      children.add(RAGSourcesWidget(sources: parsedSources));
+    }
+
     return children;
   }
 
@@ -501,6 +518,168 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class RAGSourcesWidget extends StatefulWidget {
+  final List<dynamic> sources;
+  const RAGSourcesWidget({super.key, required this.sources});
+
+  @override
+  State<RAGSourcesWidget> createState() => _RAGSourcesWidgetState();
+}
+
+class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.sources.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10, bottom: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1F26),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.menu_book_rounded, color: Color(0xFF818CF8), size: 16),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            '📚 Textbook Verified',
+                            style: TextStyle(
+                              color: Color(0xFF818CF8),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${widget.sources.length} Source${widget.sources.length > 1 ? 's' : ''}',
+                              style: const TextStyle(
+                                color: Color(0xFF34D399),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Cited from your uploaded learning materials',
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                  color: const Color(0xFF818CF8),
+                ),
+              ],
+            ),
+          ),
+          if (_isExpanded) ...[
+            const SizedBox(height: 10),
+            const Divider(color: Color(0xFF2E313D), height: 1),
+            const SizedBox(height: 10),
+            ...widget.sources.map((src) {
+              final title = src['title'] ?? 'Textbook';
+              final page = src['page'] ?? 1;
+              final score = src['score'] ?? 0;
+              final snippet = src['snippet'] ?? '';
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF17181F),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF2E313D)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '📖 $title (Page $page)',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '$score% Match',
+                          style: const TextStyle(
+                            color: Color(0xFF60A5FA),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (snippet.toString().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '"$snippet"',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
         ],
       ),
     );

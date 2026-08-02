@@ -224,7 +224,14 @@ Rules:
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final rawText = (data['content'] as String?) ?? 'Sorry, I could not generate a response.';
-        return _appendInteractiveWidget(rawText, prompt);
+        final sources = (data['sources'] as List?) ?? [];
+
+        String resultText = _appendInteractiveWidget(rawText, prompt);
+        if (sources.isNotEmpty) {
+          final sourcesJson = jsonEncode(sources);
+          resultText = '$resultText\n\n[rag_sources:$sourcesJson]';
+        }
+        return resultText;
       } else {
         debugPrint('Server error ${response.statusCode}: ${response.body}');
         final fallbackText = _getMockFallbackResponse(prompt);

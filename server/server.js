@@ -133,6 +133,7 @@ app.post('/api/chat', async (req, res) => {
       : '';
 
     let ragContext = '';
+    let retrievedSources = [];
 
     // Search ChromoDB if RAG enabled and query present
     if (enableRag && userQuery) {
@@ -144,10 +145,18 @@ app.post('/api/chat', async (req, res) => {
         });
 
         if (searchRes.results && searchRes.results.length > 0) {
+          retrievedSources = searchRes.results.map(r => ({
+            title: r.metadata.title || 'Textbook',
+            subject: r.metadata.subject || 'General',
+            score: parseFloat((r.score * 100).toFixed(1)),
+            page: r.metadata.page || (r.metadata.chunk_index + 1),
+            snippet: r.text.slice(0, 150) + '...',
+          }));
+
           const contextBlocks = searchRes.results.map(
-            (r, i) => `[Source ${i + 1} - ${r.metadata.title || 'Textbook'} (Score: ${r.score})]\n${r.text}`
+            (r, i) => `[Source ${i + 1}: ${r.metadata.title || 'Textbook'} | Subject: ${r.metadata.subject || 'General'} | Page: ${r.metadata.page || (r.metadata.chunk_index + 1)}]\n${r.text}`
           );
-          ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations whenever relevant.`;
+          ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations.`;
           console.log(`[RAG] Retrieved ${searchRes.results.length} chunks from ChromoDB`);
         }
       } catch (ragErr) {
@@ -195,7 +204,10 @@ app.post('/api/chat', async (req, res) => {
       config,
     });
 
-    res.json({ content: response.text });
+    res.json({
+      content: response.text,
+      sources: retrievedSources,
+    });
   } catch (err) {
     console.error('Gemini Error:', err.message);
     res.status(500).json({ error: err.message });

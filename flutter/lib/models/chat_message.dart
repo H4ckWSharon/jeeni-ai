@@ -4,6 +4,7 @@ class ChatMessage {
   final bool isUser;
   final DateTime timestamp;
   final List<String>? attachments;
+  final List<Map<String, dynamic>>? sources;
 
   const ChatMessage({
     required this.id,
@@ -11,6 +12,7 @@ class ChatMessage {
     required this.isUser,
     required this.timestamp,
     this.attachments,
+    this.sources,
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +22,7 @@ class ChatMessage {
       'isUser': isUser,
       'timestamp': timestamp.millisecondsSinceEpoch,
       'attachments': attachments ?? [],
+      'sources': sources ?? [],
     };
   }
 
@@ -30,6 +33,9 @@ class ChatMessage {
       isUser: map['isUser'] ?? true,
       timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp'] ?? DateTime.now().millisecondsSinceEpoch),
       attachments: List<String>.from(map['attachments'] ?? []),
+      sources: map['sources'] != null
+          ? List<Map<String, dynamic>>.from((map['sources'] as List).map((x) => Map<String, dynamic>.from(x)))
+          : null,
     );
   }
 }
