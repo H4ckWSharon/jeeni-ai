@@ -11,7 +11,8 @@ import '../learning_engine/services/widget_registry.dart';
 String _cleanText(String raw) {
   return raw
       .replaceAll(RegExp(r'\[interactive:[a-zA-Z0-9_-]+\]'), '')
-      .replaceAll(RegExp(r'\[rag_sources:.*?\]', dotAll: true), '')
+      .replaceAll(RegExp(r'<<<RAG_SOURCES_START>>>[\s\S]*?<<<RAG_SOURCES_END>>>'), '')
+      .replaceAll(RegExp(r'\[rag_sources:[\s\S]*?\]\]?'), '')
       .trim();
 }
 
@@ -152,17 +153,31 @@ class _ChatBubbleState extends State<ChatBubble>
   List<Widget> _parseMessageText(String rawText, BuildContext context) {
     final List<Widget> children = [];
 
-    // Extract [rag_sources:JSON] if present
+    // Extract RAG sources if present (supports new & legacy tag formats)
     String text = rawText;
     List<dynamic> parsedSources = [];
-    final ragMatch = RegExp(r'\[rag_sources:(.+?)\]', dotAll: true).firstMatch(rawText);
-    if (ragMatch != null) {
+
+    // 1. Try new delimiter: <<<RAG_SOURCES_START>>>...<<<RAG_SOURCES_END>>>
+    final newRagMatch = RegExp(r'<<<RAG_SOURCES_START>>>([\s\S]*?)<<<RAG_SOURCES_END>>>').firstMatch(text);
+    if (newRagMatch != null) {
       try {
-        final jsonStr = ragMatch.group(1)!;
+        final jsonStr = newRagMatch.group(1)!;
         parsedSources = jsonDecode(jsonStr) as List<dynamic>;
-        text = text.replaceFirst(ragMatch.group(0)!, '').trim();
+        text = text.replaceFirst(newRagMatch.group(0)!, '').trim();
       } catch (e) {
-        debugPrint('Error parsing RAG sources JSON: $e');
+        debugPrint('Error parsing new RAG sources JSON: $e');
+      }
+    } else {
+      // 2. Fallback to legacy delimiter: [rag_sources:[...]]
+      final oldRagMatch = RegExp(r'\[rag_sources:([\s\S]*?\])\]').firstMatch(text);
+      if (oldRagMatch != null) {
+        try {
+          final jsonStr = oldRagMatch.group(1)!;
+          parsedSources = jsonDecode(jsonStr) as List<dynamic>;
+          text = text.replaceFirst(oldRagMatch.group(0)!, '').trim();
+        } catch (e) {
+          debugPrint('Error parsing legacy RAG sources JSON: $e');
+        }
       }
     }
 

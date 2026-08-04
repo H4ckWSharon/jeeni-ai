@@ -301,7 +301,7 @@ Rules:
 
         if (sources.isNotEmpty) {
           final sourcesJson = jsonEncode(sources);
-          resultText = '$resultText\n\n[rag_sources:$sourcesJson]';
+          resultText = '$resultText\n\n<<<RAG_SOURCES_START>>>$sourcesJson<<<RAG_SOURCES_END>>>';
         }
         return resultText;
       } else {
