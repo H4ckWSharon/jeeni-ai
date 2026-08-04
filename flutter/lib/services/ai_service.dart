@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../models/chat_message.dart';
 
 class AIService {
@@ -147,7 +148,7 @@ Rules:
     required String prompt,
     required String mode,
     required List<ChatMessage> history,
-    List<File> attachments = const [],
+    List<XFile> attachments = const [],
   }) async {
     try {
       // Intercept local system-related responses first
@@ -180,21 +181,28 @@ Rules:
       }
 
       // Current user message (with optional image attachments)
+      // When only images are sent (no text), use an explicit analysis prompt
+      // so Gemini describes the actual image content rather than hallucinating.
+      final effectivePrompt = prompt.isNotEmpty
+          ? prompt
+          : 'Carefully examine and explain exactly what is shown in this image in detail. Describe every element, diagram, chart, or text you can see.';
+
       if (attachments.isEmpty) {
         messages.add({
           'role': 'user',
-          'content': prompt,
+          'content': effectivePrompt,
         });
       } else {
-        // Multi-part content for images
+        // Multi-part content for images — XFile.readAsBytes() works on web & mobile
         final List<Map<String, dynamic>> contentParts = [
-          {'type': 'text', 'text': prompt},
+          {'type': 'text', 'text': effectivePrompt},
         ];
 
-        for (var file in attachments) {
-          final bytes = await file.readAsBytes();
+        for (var xfile in attachments) {
+          final bytes = await xfile.readAsBytes();
           final base64String = base64Encode(bytes);
-          final ext = file.path.split('.').last.toLowerCase();
+          final name = xfile.name.toLowerCase();
+          final ext = name.contains('.') ? name.split('.').last : 'jpg';
           String mimeType = 'image/jpeg';
           if (ext == 'png') mimeType = 'image/png';
           if (ext == 'webp') mimeType = 'image/webp';
@@ -219,14 +227,18 @@ Rules:
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'model': model, 'messages': messages}),
           )
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 90));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final rawText = (data['content'] as String?) ?? 'Sorry, I could not generate a response.';
         final sources = (data['sources'] as List?) ?? [];
 
-        String resultText = _appendInteractiveWidget(rawText, prompt);
+        // Only inject interactive widget when there are NO image attachments —
+        // image analysis responses should never get a random physics widget appended.
+        String resultText = attachments.isEmpty
+            ? _appendInteractiveWidget(rawText, prompt)
+            : rawText;
         if (sources.isNotEmpty) {
           final sourcesJson = jsonEncode(sources);
           resultText = '$resultText\n\n[rag_sources:$sourcesJson]';
@@ -234,13 +246,13 @@ Rules:
         return resultText;
       } else {
         debugPrint('Server error ${response.statusCode}: ${response.body}');
-        final fallbackText = _getMockFallbackResponse(prompt);
-        return _appendInteractiveWidget(fallbackText, prompt);
+        // Don't inject widgets on server errors — return the error message cleanly.
+        return _getMockFallbackResponse(prompt);
       }
     } catch (e) {
       debugPrint('AI Service Error: $e');
-      final fallbackText = _getMockFallbackResponse(prompt);
-      return _appendInteractiveWidget(fallbackText, prompt);
+      // Don't inject widgets on exceptions — return the error message cleanly.
+      return _getMockFallbackResponse(prompt);
     }
   }
 
@@ -260,13 +272,22 @@ Rules:
       return aiResponse;
     }
 
+    // 2. ONLY match against the user's prompt — never against the AI response text.
+    // This prevents hallucinated widget injection.
     final promptLower = userPrompt.toLowerCase();
-    final responseLower = aiResponse.toLowerCase();
-    final combined = '$promptLower $responseLower';
 
-    // 2. Visual/interactive request keywords (used in combined match below)
+    // 3. BLACKLIST: prompts that are about images/diagrams/files — never inject a widget
+    final imageBlacklist = [
+      'this image', 'this photo', 'this picture', 'this diagram', 'this chart',
+      'this screenshot', 'this figure', 'explain this', 'analyze this', 'analyse this',
+      'what is this', 'what does this', 'describe this', 'look at this',
+      'attached image', 'uploaded image', 'the image', 'the photo',
+    ];
+    if (imageBlacklist.any((kw) => promptLower.contains(kw))) {
+      return aiResponse;
+    }
 
-    // 3. Comprehensive Subject Domain Keyword Registry
+    // 4. Comprehensive Subject Domain Keyword Registry
     final domainRules = <String, List<String>>{
       // ⚛️ Chemistry / Atomic Physics Domain
       'atom_builder': [
@@ -279,7 +300,7 @@ Rules:
       // ⚡ Physics / Dynamics / Mechanics Domain
       'newton_second_law': [
         'newton', 'second law', 'f = ma', 'f=ma', 'force mass acceleration',
-        'net force', 'acceleration', 'fma', 'law of motion', 'inertia',
+        'net force', 'fma', 'law of motion', 'inertia',
         'friction', 'gravity', 'velocity', 'momentum', 'kinematics',
         'physics simulation', 'force calculation',
       ],
@@ -321,22 +342,19 @@ Rules:
       ],
     };
 
-    // 4. Match predefined domain rules
+    // 5. Match predefined domain rules ONLY — no fallback slug generation
     for (final entry in domainRules.entries) {
       final widgetId = entry.key;
       final keywords = entry.value;
-      final matchesTopic = keywords.any((kw) => combined.contains(kw));
+      final matchesTopic = keywords.any((kw) => promptLower.contains(kw));
       if (matchesTopic) {
         return '$aiResponse\n\n[interactive:$widgetId]';
       }
     }
 
-    // 5. UNIVERSAL CONCEPT FALLBACK FOR ANY OTHER TOPIC
-    final derivedSlug = _deriveTopicSlug(promptLower);
-    if (derivedSlug.isNotEmpty && derivedSlug != 'general_concept') {
-      return '$aiResponse\n\n[interactive:$derivedSlug]';
-    }
-
+    // 6. No match found — return clean response without any widget
+    //    (Removed _deriveTopicSlug fallback: it created fake "Interactive Model: This Image"
+    //     widgets from generic prompts like "explain this image")
     return aiResponse;
   }
 
@@ -416,14 +434,16 @@ $$x^2 - 5x + 6 = 0$$
 The solution set is **{2, 3}**.""";
     }
 
-    return """I received your prompt: "$prompt".
+    // Generic connection error — honest and helpful
+    return """🔄 **Jeeni couldn't reach the server right now.**
 
-As a premium educational assistant, here is a breakdown of key learning points:
+This may be due to:
+- A temporary network issue
+- A slow or large file upload taking too long
+- The server restarting
 
-1. **Active Recall**: Try summarizing this topic in your own words.
-2. **Spaced Repetition**: Re-evaluate this prompt in 2 days to maximize retention.
-3. **Practice**: Apply this concept to a real-world project or assignment.
+**Please try again in a moment.** If the issue persists, try refreshing the page.
 
-Please let me know if you would like to explore any of these points in greater detail!""";
+> Your question was: *"$prompt"*""";
   }
 }
