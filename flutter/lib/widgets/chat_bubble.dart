@@ -7,6 +7,14 @@ import 'package:markdown/markdown.dart' as md;
 import '../models/chat_message.dart';
 import '../learning_engine/services/widget_registry.dart';
 
+/// Strips internal Jeeni tags from message text before clipboard/display use
+String _cleanText(String raw) {
+  return raw
+      .replaceAll(RegExp(r'\[interactive:[a-zA-Z0-9_-]+\]'), '')
+      .replaceAll(RegExp(r'\[rag_sources:.*?\]', dotAll: true), '')
+      .trim();
+}
+
 
 class ChatBubble extends StatefulWidget {
   final ChatMessage message;
@@ -55,10 +63,12 @@ class _ChatBubbleState extends State<ChatBubble>
   }
 
   void _copyMessage() {
-    Clipboard.setData(ClipboardData(text: widget.message.text));
+    // Strip internal widget/RAG tags so clipboard gets clean text
+    final cleanedText = _cleanText(widget.message.text);
+    Clipboard.setData(ClipboardData(text: cleanedText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Message copied to clipboard!'),
+        content: const Text('Copied to clipboard!'),
         backgroundColor: const Color(0xFF171717),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -68,17 +78,37 @@ class _ChatBubbleState extends State<ChatBubble>
   }
 
   void _likeMessage() {
-    setState(() {
-      _isLiked = _isLiked == true ? null : true;
-    });
+    final newVal = _isLiked == true ? null : true;
+    setState(() => _isLiked = newVal);
     HapticFeedback.selectionClick();
+    if (newVal == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('👍 Thanks for the feedback!'),
+          backgroundColor: const Color(0xFF171717),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   void _dislikeMessage() {
-    setState(() {
-      _isLiked = _isLiked == false ? null : false;
-    });
+    final newVal = _isLiked == false ? null : false;
+    setState(() => _isLiked = newVal);
     HapticFeedback.selectionClick();
+    if (newVal == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('👎 Noted — Jeeni will do better!'),
+          backgroundColor: const Color(0xFF171717),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   Widget _actionIcon(IconData icon, String tooltip, VoidCallback onTap, {Color? color}) {

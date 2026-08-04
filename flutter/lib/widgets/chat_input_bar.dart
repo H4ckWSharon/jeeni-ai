@@ -1,4 +1,3 @@
-import 'dart:io' show File;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -123,13 +122,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
                     final result = await fp.FilePicker.pickFiles(
                       allowMultiple: true,
                       type: fp.FileType.custom,
-                      allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg'],
+                      allowedExtensions: ['txt', 'md', 'csv', 'png', 'jpg', 'jpeg', 'webp'],
                     );
                     if (result != null) {
                       final xfiles = result.files
                           .where((f) => kIsWeb ? f.bytes != null : f.path != null)
                           .map((f) => kIsWeb
-                              ? XFile.fromData(f.bytes!, name: f.name, mimeType: 'image/${f.extension ?? 'jpeg'}')
+                              ? XFile.fromData(f.bytes!, name: f.name)
                               : XFile(f.path!))
                           .toList();
                       setState(() {
@@ -137,6 +136,23 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         _hasText = true;
                       });
                     }
+                  },
+                ),
+                _AttachOption(
+                  icon: Icons.picture_as_pdf_rounded,
+                  label: 'PDF Soon',
+                  color: Colors.red.withOpacity(0.5),
+                  onTap: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('📄 PDF analysis coming soon! For now, paste the text content directly into the chat.'),
+                        backgroundColor: const Color(0xFF171717),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -155,6 +171,39 @@ class _ChatInputBarState extends State<ChatInputBar> {
       return;
     }
 
+    // permission_handler does not support Flutter Web — use browser API instead
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('🎤 Voice input works best in Chrome. Tap the mic and speak.'),
+          backgroundColor: const Color(0xFF171717),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      // On web, still attempt speech recognition (Chrome supports it natively)
+      final available = await _speech.initialize(
+        onStatus: (s) { if (s == 'done' || s == 'notListening') setState(() => _isListening = false); },
+        onError: (e) => setState(() => _isListening = false),
+      );
+      if (!available) return;
+      setState(() => _isListening = true);
+      HapticFeedback.mediumImpact();
+      _speech.listen(
+        onResult: (val) {
+          widget.controller.text = val.recognizedWords;
+          widget.controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: widget.controller.text.length),
+          );
+          _onText();
+        },
+        listenOptions: stt.SpeechListenOptions(cancelOnError: true),
+      );
+      return;
+    }
+
+    // Native mobile path — request mic permission normally
     final status = await Permission.microphone.request();
     if (!status.isGranted) {
       if (mounted) {

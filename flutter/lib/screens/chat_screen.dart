@@ -10,7 +10,6 @@ import '../widgets/empty_chat_state.dart';
 import '../widgets/chat_sidebar.dart';
 import '../services/database_service.dart';
 import '../services/ai_service.dart';
-import 'dart:io' show File;
 import 'package:image_picker/image_picker.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -267,6 +266,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               _buildModelOption('Deep Research', Icons.biotech_outlined, 'In-depth analysis and comprehensive data', Colors.purple),
               _buildModelOption('Web Search', Icons.travel_explore_rounded, 'Real-time simulated web aggregated results', Colors.green),
               _buildModelOption('Homework', Icons.menu_book_rounded, 'Homework helper focusing on hints', Colors.orange),
+              _buildModelOption('Exam Prep', Icons.school_rounded, 'Socratic Q&A drill — I ask, you answer', const Color(0xFFF59E0B)),
             ],
           ),
         );

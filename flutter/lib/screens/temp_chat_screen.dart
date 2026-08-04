@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show File;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -146,6 +145,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
               _buildModelOption('Deep Research', Icons.biotech_outlined, 'In-depth analysis and comprehensive data', Colors.purple),
               _buildModelOption('Web Search', Icons.travel_explore_rounded, 'Real-time simulated web aggregated results', Colors.green),
               _buildModelOption('Homework', Icons.menu_book_rounded, 'Homework helper focusing on hints', Colors.orange),
+              _buildModelOption('Exam Prep', Icons.school_rounded, 'Socratic Q&A drill — I ask, you answer', const Color(0xFFF59E0B)),
             ],
           ),
         );

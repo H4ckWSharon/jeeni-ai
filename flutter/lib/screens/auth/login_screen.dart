@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() {
         _isGoogleLoading = false;
-        _errorMsg = 'Google Sign-In failed.';
+        _errorMsg = e is FirebaseAuthException ? (e.message ?? e.code) : e.toString();
       });
     }
   }

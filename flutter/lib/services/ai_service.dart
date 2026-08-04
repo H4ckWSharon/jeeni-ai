@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io' show File;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -123,20 +122,49 @@ Rules:
 
     switch (mode) {
       case 'Deep Research':
-        systemInstruction = '$preamble$interactiveInstruction You are a highly analytical deep researcher. Provide comprehensive, fact-based answers with structure and simulated citations. Use formal tone.';
+        systemInstruction = '$preamble$interactiveInstruction '
+            'You are a highly analytical deep researcher. Provide comprehensive, '
+            'fact-based answers with structure and simulated citations with author, '
+            'journal, and year. Use a formal, academic tone. Always include a '
+            'Summary, Key Findings, and Further Reading section.';
         model = 'gemini-2.5-flash';
         break;
       case 'Web Search':
-        systemInstruction = '$preamble$interactiveInstruction You act as a live web search aggregator. Summarize top simulated web results and provide an aggregated overview with bullet points.';
+        systemInstruction = '$preamble$interactiveInstruction '
+            'You simulate a smart web search engine. When given a query, respond as '
+            'if you searched the web and are presenting the top aggregated results. '
+            'Show 3-5 summarised results with bullet points, URLs (simulated), and a '
+            'final summary paragraph. Label each result with a numbered source.';
         model = 'gemini-2.5-flash';
         break;
       case 'Homework':
-        systemInstruction = '$preamble$interactiveInstruction You are a helpful tutor. Do not give the direct answer to homework questions. Provide hints, principles, and guide the user to solve it themselves.';
+        systemInstruction = '$preamble$interactiveInstruction '
+            'You are a patient homework tutor. Your role is to NEVER give the direct '
+            'answer. Instead: (1) Ask what the student has tried so far. (2) Give a '
+            'relevant hint or principle. (3) Break the problem into smaller steps. '
+            '(4) Encourage the student to attempt each step themselves. Only confirm '
+            'correct reasoning — never complete the work for them.';
+        model = 'gemini-2.5-flash';
+        break;
+      case 'Exam Prep':
+        systemInstruction = '$preamble '
+            'You are a Socratic Exam Coach. Your job is to QUIZ the student, not explain. '
+            'Rules: '
+            '1. When the student gives you a topic (e.g. "Photosynthesis"), immediately generate ONE practice question about it — MCQ, short answer, or fill-in-the-blank. '
+            '2. Wait for the student to answer before asking the next question. '
+            '3. After each answer: evaluate it (Correct / Partially correct / Incorrect), explain why briefly, then give the NEXT question. '
+            '4. Keep a running score (e.g. "Score: 3/5"). '
+            '5. After 5 questions, give a performance summary and recommend weak areas to review. '
+            '6. NEVER just explain a topic without asking a question first. '
+            'Start by asking: "What topic would you like to be quizzed on today? 📝"';
         model = 'gemini-2.5-flash';
         break;
       case 'Guided Learning':
       default:
-        systemInstruction = '$preamble$interactiveInstruction You are a friendly, step-by-step educational AI. Break down complex topics into simple, easy-to-understand explanations with emojis.';
+        systemInstruction = '$preamble$interactiveInstruction '
+            'You are a friendly, step-by-step educational AI. Break down complex topics '
+            'into simple, easy-to-understand explanations with emojis. Always end your '
+            'response with a quick comprehension check question.';
         model = 'gemini-2.5-flash';
         break;
     }
@@ -180,78 +208,115 @@ Rules:
         });
       }
 
-      // Current user message (with optional image attachments)
-      // When only images are sent (no text), use an explicit analysis prompt
-      // so Gemini describes the actual image content rather than hallucinating.
+      // ── STAGE 1: Build prompt — if no text, use vision instruction ──
       final effectivePrompt = prompt.isNotEmpty
           ? prompt
-          : 'Carefully examine and explain exactly what is shown in this image in detail. Describe every element, diagram, chart, or text you can see.';
+          : 'Carefully examine and explain exactly what is shown in this image in detail. Describe every element, diagram, chart, text, equation, or drawing you can see.';
 
       if (attachments.isEmpty) {
-        messages.add({
-          'role': 'user',
-          'content': effectivePrompt,
-        });
+        messages.add({'role': 'user', 'content': effectivePrompt});
       } else {
-        // Multi-part content for images — XFile.readAsBytes() works on web & mobile
+        // ── STAGE 2: Build multipart content (text + image bytes) ──
         final List<Map<String, dynamic>> contentParts = [
           {'type': 'text', 'text': effectivePrompt},
         ];
 
         for (var xfile in attachments) {
-          final bytes = await xfile.readAsBytes();
-          final base64String = base64Encode(bytes);
           final name = xfile.name.toLowerCase();
-          final ext = name.contains('.') ? name.split('.').last : 'jpg';
-          String mimeType = 'image/jpeg';
-          if (ext == 'png') mimeType = 'image/png';
-          if (ext == 'webp') mimeType = 'image/webp';
-          if (ext == 'gif') mimeType = 'image/gif';
+          final ext = name.contains('.') ? name.split('.').last : '';
 
-          contentParts.add({
-            'type': 'image_url',
-            'image_url': {'url': 'data:$mimeType;base64,$base64String'},
-          });
+          // ── Determine if file is an image or a document ──
+          const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic'];
+          const textExts  = ['txt', 'md', 'csv', 'json', 'xml', 'log'];
+          final isImage = imageExts.contains(ext);
+          final isText  = textExts.contains(ext);
+
+          if (isImage) {
+            // ── Image → encode as base64 inline data ──
+            final bytes = await xfile.readAsBytes();
+            if (bytes.isEmpty) {
+              debugPrint('[Vision] WARNING: Empty image bytes for ${xfile.name}');
+              continue;
+            }
+            String mimeType = 'image/jpeg';
+            if (ext == 'png')  mimeType = 'image/png';
+            if (ext == 'webp') mimeType = 'image/webp';
+            if (ext == 'gif')  mimeType = 'image/gif';
+            if (ext == 'bmp')  mimeType = 'image/bmp';
+            debugPrint('[Vision] Attaching image: ${xfile.name} | MIME: $mimeType | Size: ${(bytes.length / 1024).toStringAsFixed(1)}KB');
+            contentParts.add({
+              'type': 'image_url',
+              'image_url': {'url': 'data:$mimeType;base64,${base64Encode(bytes)}'},
+            });
+          } else if (isText) {
+            // ── Plain text file → read content and inject as text ──
+            final bytes = await xfile.readAsBytes();
+            final textContent = String.fromCharCodes(bytes);
+            debugPrint('[Vision] Attaching text file: ${xfile.name} (${textContent.length} chars)');
+            contentParts.add({
+              'type': 'text',
+              'text': '--- File: ${xfile.name} ---\n$textContent\n--- End of file ---',
+            });
+          } else {
+            // ── PDF / DOC / DOCX / other binary ── cannot be processed as image
+            debugPrint('[Vision] Unsupported file type: ${xfile.name} ($ext) — sending as note');
+            contentParts.add({
+              'type': 'text',
+              'text': '📎 The student attached a file named "${xfile.name}" (.$ext). '
+                  'Unfortunately, PDF and Word document parsing is not yet supported for direct analysis. '
+                  'Please ask the student to paste the relevant text content directly into the chat, '
+                  'or describe what the document is about so you can help them.',
+            });
+          }
         }
 
-        messages.add({
-          'role': 'user',
-          'content': contentParts,
-        });
+        messages.add({'role': 'user', 'content': contentParts});
+        debugPrint('[Vision] Sending ${attachments.length} image(s) + text to server');
       }
 
-      // ── Call our Jeeni backend server ──
+      // ── STAGE 3: Send to Jeeni backend (Vision or Text pipeline) ──
+      debugPrint('[Vision] POST /api/chat | Has images: ${attachments.isNotEmpty} | Prompt: "${effectivePrompt.length > 60 ? effectivePrompt.substring(0, 60) : effectivePrompt}..."');
+
       final response = await http
           .post(
             Uri.parse('$_serverUrl/api/chat'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'model': model, 'messages': messages}),
           )
-          .timeout(const Duration(seconds: 90));
+          .timeout(const Duration(seconds: 120));
 
+      // ── STAGE 4: Handle response ──────────────────────────────────
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final rawText = (data['content'] as String?) ?? 'Sorry, I could not generate a response.';
         final sources = (data['sources'] as List?) ?? [];
+        final pipeline = (data['pipeline'] as String?) ?? 'TEXT_ONLY';
 
-        // Only inject interactive widget when there are NO image attachments —
-        // image analysis responses should never get a random physics widget appended.
+        debugPrint('[Vision] Response received | Pipeline: $pipeline | Length: ${rawText.length} chars');
+
+        // NEVER inject interactive widgets for image analysis responses
         String resultText = attachments.isEmpty
             ? _appendInteractiveWidget(rawText, prompt)
-            : rawText;
+            : rawText;  // Images: return Gemini Vision response as-is
+
         if (sources.isNotEmpty) {
           final sourcesJson = jsonEncode(sources);
           resultText = '$resultText\n\n[rag_sources:$sourcesJson]';
         }
         return resultText;
       } else {
-        debugPrint('Server error ${response.statusCode}: ${response.body}');
-        // Don't inject widgets on server errors — return the error message cleanly.
+        debugPrint('[Vision] Server error ${response.statusCode}: ${response.body}');
+        // Return specific message for image failures vs text failures
+        if (attachments.isNotEmpty) {
+          return '🔴 **Jeeni Vision could not analyze the image.**\n\nThe server returned an error (${response.statusCode}). This may be because:\n- The image file is too large (try under 4MB)\n- The image format is not supported\n- The server is temporarily overloaded\n\nPlease try again or upload a different image.';
+        }
         return _getMockFallbackResponse(prompt);
       }
     } catch (e) {
-      debugPrint('AI Service Error: $e');
-      // Don't inject widgets on exceptions — return the error message cleanly.
+      debugPrint('[Vision] AI Service Error: $e');
+      if (attachments.isNotEmpty) {
+        return '🔴 **Jeeni Vision Error**\n\nFailed to analyze the image: $e\n\nPlease try again. If the image is large, try resizing it first.';
+      }
       return _getMockFallbackResponse(prompt);
     }
   }

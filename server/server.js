@@ -169,27 +169,41 @@ app.post('/api/textbooks/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// ── Chat API with Automatic RAG ──────────────────────────
+// ── Chat API with Vision + RAG Pipeline ──────────────────
 app.post('/api/chat', async (req, res) => {
+  const startTime = Date.now();
   try {
     const { messages, model, collection = 'textbooks', enableRag = true } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages array is required' });
     }
 
-    // Get last user query for RAG lookup
+    // ── STAGE 1: Router AI — Detect Input Type ────────────
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+
+    // Detect if any user message contains image parts
+    const hasImages = messages.some(m =>
+      m.role === 'user' &&
+      Array.isArray(m.content) &&
+      m.content.some(p => p.type === 'image_url')
+    );
+
+    // Extract text portion of the last user message
     const userQuery = lastUserMsg
       ? (typeof lastUserMsg.content === 'string'
           ? lastUserMsg.content
-          : lastUserMsg.content.map(p => p.text || '').join(' '))
+          : lastUserMsg.content.map(p => (p.type === 'text' ? p.text : '')).join(' ').trim())
       : '';
 
+    const inputType = hasImages ? 'IMAGE+TEXT' : 'TEXT_ONLY';
+    console.log(`[Router AI] Input Type: ${inputType} | Query: "${userQuery.slice(0, 80)}"`);
+
+    // ── STAGE 2: RAG — Skip entirely for image requests ───
     let ragContext = '';
     let retrievedSources = [];
 
-    // Search ChromoDB if RAG enabled and query present
-    if (enableRag && userQuery) {
+    if (enableRag && userQuery && !hasImages) {
+      // Only run RAG for text-only queries — image queries go straight to Vision
       try {
         const searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
           query: userQuery,
@@ -213,19 +227,44 @@ app.post('/api/chat', async (req, res) => {
           console.log(`[RAG] Retrieved ${searchRes.results.length} chunks from ChromoDB`);
         }
       } catch (ragErr) {
-        // RAG fail non-blocking fallback
         console.warn('[RAG Search Warning]', ragErr.message);
       }
+    } else if (hasImages) {
+      console.log('[RAG] Skipped — image request routed directly to Gemini Vision');
     }
 
-    // Extract system instruction (Gemini handles it separately)
+    // ── STAGE 3: System Instruction — Vision vs Text ──────
     const systemMsg = messages.find(m => m.role === 'system');
     let systemInstruction = systemMsg ? systemMsg.content : undefined;
-    if (ragContext) {
+
+    if (hasImages) {
+      // Dedicated Vision system instruction — overrides generic tutor prompt
+      systemInstruction = `You are Jeeni, an advanced AI teacher with full vision capabilities powered by Gemini Vision.
+
+CRITICAL RULE: An image has been uploaded by the student. You MUST analyze the actual visual content of the image before responding.
+
+Your Vision Analysis Protocol:
+1. LOOK at the image carefully — identify every element, diagram, text, equation, chart, table, or drawing.
+2. IDENTIFY the subject: Physics / Chemistry / Biology / Mathematics / Geography / History / Computer Science / etc.
+3. DESCRIBE what you see in the image clearly and completely.
+4. EXPLAIN the educational concept shown, as a knowledgeable teacher would.
+5. If there is text or equations in the image, read and explain them.
+6. If there is a diagram, label and explain each component.
+7. If there is a graph or chart, interpret the data and trend.
+8. If there is handwritten content, read and explain it.
+9. If there is a screenshot of a question, solve it step by step.
+10. NEVER say you cannot see the image — you have full vision capability.
+11. NEVER give a generic study advice response — always respond to the actual image content.
+12. Structure your response with: Image Description → Subject Identified → Detailed Explanation → Key Concepts → Practice Question.
+
+Format your response in beautiful markdown with headers, bullet points, and emojis.`;
+
+      console.log('[Vision Pipeline] Using vision-specific system instruction');
+    } else if (ragContext) {
       systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + ragContext;
     }
 
-    // Convert OpenAI-format messages to Gemini format
+    // ── STAGE 4: Build Gemini-format contents ────────────
     const contents = messages
       .filter(m => m.role !== 'system')
       .map(m => ({
@@ -235,8 +274,14 @@ app.post('/api/chat', async (req, res) => {
               if (part.type === 'text') return { text: part.text };
               if (part.type === 'image_url') {
                 const url = part.image_url.url;
-                const mimeType = url.match(/data:(.*?);base64/)[1];
+                const mimeMatch = url.match(/data:(.*?);base64/);
+                if (!mimeMatch) {
+                  console.error('[Vision] Could not parse MIME type from image_url');
+                  return { text: '[image processing error]' };
+                }
+                const mimeType = mimeMatch[1];
                 const data = url.split(',')[1];
+                console.log(`[Vision] Image attached — MIME: ${mimeType} | Size: ${Math.round(data.length * 0.75 / 1024)}KB`);
                 return { inlineData: { mimeType, data } };
               }
               return { text: '' };
@@ -244,7 +289,9 @@ app.post('/api/chat', async (req, res) => {
           : [{ text: m.content }],
       }));
 
+    // ── STAGE 5: Gemini Vision API Call ──────────────────
     const geminiModel = model || 'gemini-2.5-flash';
+    console.log(`[Gemini] Calling model: ${geminiModel} | Has images: ${hasImages}`);
 
     const config = {};
     if (systemInstruction) {
@@ -257,12 +304,17 @@ app.post('/api/chat', async (req, res) => {
       config,
     });
 
+    const elapsed = Date.now() - startTime;
+    console.log(`[Gemini] Response received in ${elapsed}ms | Type: ${inputType}`);
+
+    // ── STAGE 6: Return response ──────────────────────────
     res.json({
       content: response.text,
       sources: retrievedSources,
+      pipeline: inputType,
     });
   } catch (err) {
-    console.error('Gemini Error:', err.message);
+    console.error('[Gemini Error]', err.message);
     res.status(500).json({ error: err.message });
   }
 });

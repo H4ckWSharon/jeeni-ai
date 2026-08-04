@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/temp_chat_screen.dart';
+import '../screens/history_screen.dart';
 import '../screens/auth/auth_gate.dart';
 import '../services/database_service.dart';
 
@@ -968,6 +970,173 @@ class _ChatSidebarState extends State<ChatSidebar> {
     );
   }
 
+  void _showSettingsSheet(BuildContext context, User user) {
+    final email = user.email ?? '';
+    final displayName = user.displayName ?? email.split('@').first;
+    final letter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'J';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.only(top: 12, left: 24, right: 24, bottom: 40),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111111),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+
+            const Text('Settings', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+
+            // ── Profile card ──
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48, height: 48,
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2E2E2E)),
+                    child: Center(child: Text(letter, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text(email, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Settings options ──
+            _SettingsOption(
+              icon: Icons.notifications_outlined,
+              label: 'Notifications',
+              trailing: Switch(
+                value: false,
+                onChanged: (_) {},
+                activeColor: Colors.white,
+                trackColor: WidgetStateProperty.all(Colors.white24),
+              ),
+            ),
+
+            _SettingsOption(
+              icon: Icons.delete_sweep_outlined,
+              label: 'Clear All Chats',
+              labelColor: Colors.redAccent,
+              iconColor: Colors.redAccent,
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (d) => AlertDialog(
+                    backgroundColor: const Color(0xFF171717),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    title: const Text('Clear All Chats?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    content: const Text(
+                      'This will permanently delete all your conversations. This action cannot be undone.',
+                      style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(d).pop(false),
+                        child: const Text('Cancel', style: TextStyle(color: Color(0xFFA1A1AA))),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => Navigator.of(d).pop(true),
+                        child: const Text('Clear All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  // Delete all chats one by one
+                  final chats = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .collection('chats')
+                      .get();
+                  for (var doc in chats.docs) {
+                    await DatabaseService.deleteChat(user.uid, doc.id);
+                  }
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('All chats cleared.'),
+                        backgroundColor: const Color(0xFF171717),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+
+            _SettingsOption(
+              icon: Icons.logout_rounded,
+              label: 'Sign Out',
+              labelColor: Colors.redAccent,
+              iconColor: Colors.redAccent,
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                await FirebaseAuth.instance.signOut();
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const AuthGate()),
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── App version ──
+            Center(
+              child: Text(
+                'Jeeni AI  ·  v1.0.0  ·  Built with \u2764\ufe0f',
+                style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -1003,9 +1172,29 @@ class _ChatSidebarState extends State<ChatSidebar> {
             },
           ),
           _BottomItem(
+            icon: Icons.history_rounded,
+            label: 'All History',
+            onTap: () async {
+              Navigator.of(context).pop();
+              final selectedChatId = await Navigator.of(context).push<String>(
+                MaterialPageRoute(builder: (_) => const HistoryScreen()),
+              );
+              if (selectedChatId != null && selectedChatId.isNotEmpty) {
+                widget.onChatSelected(selectedChatId);
+              }
+            },
+          ),
+          _BottomItem(
             icon: Icons.settings_outlined,
             label: 'Settings',
-            onTap: widget.onSettingsTap,
+            onTap: () {
+              // Close drawer first, then show settings sheet
+              Navigator.of(context).pop();
+              final u = FirebaseAuth.instance.currentUser;
+              if (u != null) {
+                Future.microtask(() => _showSettingsSheet(context, u));
+              }
+            },
           ),
           _BottomItem(
             icon: Icons.logout_rounded,
@@ -1110,6 +1299,63 @@ class _ProfileRow extends StatelessWidget {
           ),
           const Icon(Icons.more_horiz, size: 14, color: Color(0xFFA1A1AA)),
         ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS OPTION ROW
+// ═══════════════════════════════════════════════════
+
+class _SettingsOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? labelColor;
+  final Color? iconColor;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  const _SettingsOption({
+    required this.icon,
+    required this.label,
+    this.labelColor,
+    this.iconColor,
+    this.onTap,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF171717),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: iconColor ?? const Color(0xFFA1A1AA)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: labelColor ?? Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (trailing != null) trailing!
+            else if (onTap != null)
+              Icon(Icons.chevron_right_rounded, size: 18, color: Colors.white.withOpacity(0.3)),
+          ],
+        ),
       ),
     );
   }
