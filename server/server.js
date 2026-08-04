@@ -88,9 +88,9 @@ app.get('/api/admin/collections', requireAdmin, async (req, res) => {
   }
 });
 
-// ── Health Check ──────────────────────────────────────────
+// ── Redirect Root URL to Web App ─────────────────────────
 app.get('/', (req, res) => {
-  res.send('Jeeni Server Running (Gemini 2.5 Flash + ChromoDB RAG) OK');
+  res.redirect('/app/');
 });
 
 // ── PDF & Textbook Upload Endpoint (Protected Admin Only) ─
