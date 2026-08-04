@@ -21,10 +21,11 @@ android {
 
     defaultConfig {
         applicationId "com.jeeni.jeeni_ai"
-        minSdk flutter.minSdkVersion
+        minSdkVersion flutter.minSdkVersion
         targetSdk flutter.targetSdkVersion
         versionCode flutter.versionCode
         versionName flutter.versionName
+        multiDexEnabled true
     }
 
     buildTypes {
