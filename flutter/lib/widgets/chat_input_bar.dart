@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,7 +14,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 class ChatInputBar extends StatefulWidget {
   final TextEditingController controller;
-  final Future<void> Function(String, {List<File> attachments}) onSend;
+  final Future<void> Function(String, {List<XFile> attachments}) onSend;
   final bool isTyping;
   final String selectedModel;
   final VoidCallback onModelTap;
@@ -33,7 +34,7 @@ class ChatInputBar extends StatefulWidget {
 
 class _ChatInputBarState extends State<ChatInputBar> {
   bool _hasText = false;
-  final List<File> _attachments = [];
+  final List<XFile> _attachments = [];
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
 
@@ -60,7 +61,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final t = widget.controller.text.trim();
     if (t.isNotEmpty || _attachments.isNotEmpty) {
       HapticFeedback.lightImpact();
-      final attachmentsCopy = List<File>.from(_attachments);
+      final attachmentsCopy = List<XFile>.from(_attachments);
       setState(() {
         _attachments.clear();
         _hasText = false;
@@ -100,7 +101,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   onTap: () async {
                     Navigator.pop(context);
                     final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-                    if (img != null) setState(() { _attachments.add(File(img.path)); _hasText = true; });
+                    if (img != null) setState(() { _attachments.add(img); _hasText = true; });
                   },
                 ),
                 _AttachOption(
@@ -110,7 +111,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   onTap: () async {
                     Navigator.pop(context);
                     final img = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85);
-                    if (img != null) setState(() { _attachments.add(File(img.path)); _hasText = true; });
+                    if (img != null) setState(() { _attachments.add(img); _hasText = true; });
                   },
                 ),
                 _AttachOption(
@@ -125,8 +126,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
                       allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg'],
                     );
                     if (result != null) {
+                      final xfiles = result.files
+                          .where((f) => kIsWeb ? f.bytes != null : f.path != null)
+                          .map((f) => kIsWeb
+                              ? XFile.fromData(f.bytes!, name: f.name, mimeType: 'image/${f.extension ?? 'jpeg'}')
+                              : XFile(f.path!))
+                          .toList();
                       setState(() {
-                        _attachments.addAll(result.paths.whereType<String>().map((p) => File(p)));
+                        _attachments.addAll(xfiles);
                         _hasText = true;
                       });
                     }
@@ -276,7 +283,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 // ═══════════════════════════════════════════════════
 
 class _AttachmentPreviewRow extends StatelessWidget {
-  final List<File> attachments;
+  final List<XFile> attachments;
   final void Function(int) onRemove;
   const _AttachmentPreviewRow({required this.attachments, required this.onRemove});
 
@@ -289,8 +296,9 @@ class _AttachmentPreviewRow extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8),
         itemCount: attachments.length,
         itemBuilder: (_, i) {
-          final file = attachments[i];
-          final isImage = ['jpg', 'jpeg', 'png', 'webp'].contains(file.path.split('.').last.toLowerCase());
+          final xfile = attachments[i];
+          final ext = (xfile.name.split('.').last).toLowerCase();
+          final isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif'].contains(ext);
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Stack(
@@ -301,9 +309,19 @@ class _AttachmentPreviewRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     color: Colors.white.withOpacity(0.07),
                     border: Border.all(color: Colors.white.withOpacity(0.12)),
-                    image: isImage ? DecorationImage(image: FileImage(file), fit: BoxFit.cover) : null,
                   ),
-                  child: !isImage ? const Icon(Icons.insert_drive_file_rounded, color: Colors.white54, size: 28) : null,
+                  clipBehavior: Clip.antiAlias,
+                  child: isImage
+                      ? FutureBuilder<Uint8List>(
+                          future: xfile.readAsBytes(),
+                          builder: (ctx, snap) {
+                            if (snap.hasData) {
+                              return Image.memory(snap.data!, fit: BoxFit.cover);
+                            }
+                            return const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)));
+                          },
+                        )
+                      : const Icon(Icons.insert_drive_file_rounded, color: Colors.white54, size: 28),
                 ),
                 Positioned(
                   top: -2, right: -2,

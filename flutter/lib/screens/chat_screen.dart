@@ -10,7 +10,8 @@ import '../widgets/empty_chat_state.dart';
 import '../widgets/chat_sidebar.dart';
 import '../services/database_service.dart';
 import '../services/ai_service.dart';
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:image_picker/image_picker.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? chatId;
@@ -140,7 +141,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _setupMessagesSubscription();
   }
 
-  Future<void> _sendMessage(String text, {List<File> attachments = const []}) async {
+  Future<void> _sendMessage(String text, {List<XFile> attachments = const []}) async {
     final t = text.trim();
     if (t.isEmpty && attachments.isEmpty) return;
     _inputController.clear();
@@ -173,7 +174,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ? _messages.sublist(0, _messages.length - 1)
         : <ChatMessage>[];
 
-    final promptForAI = t.isNotEmpty ? t : 'Please describe or analyse the attached file(s).';
+    final promptForAI = t.isNotEmpty ? t : 'Carefully examine and explain exactly what is shown in this image in detail. Describe every element, diagram, chart, or text you can see.';
 
     final aiText = await AIService.generateResponse(
       prompt: promptForAI,
@@ -214,7 +215,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   /// Saves to Firestore without blocking the UI. Creates chat session if needed.
   /// All calls are chained onto _saveQueue so createChat() runs EXACTLY ONCE.
-  void _saveToFirestoreInBackground(String uid, ChatMessage userMessage, String text, List<File> attachments) {
+  void _saveToFirestoreInBackground(String uid, ChatMessage userMessage, String text, List<XFile> attachments) {
     _saveQueue = _saveQueue.then((_) async {
       try {
         // Only create the chat if we haven't started creating it yet

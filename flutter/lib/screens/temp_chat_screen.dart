@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' show File;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/chat_message.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/typing_indicator.dart';
@@ -50,7 +51,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     });
   }
 
-  Future<void> _sendMessage(String text, {List<File> attachments = const []}) async {
+  Future<void> _sendMessage(String text, {List<XFile> attachments = const []}) async {
     final t = text.trim();
     if (t.isEmpty && attachments.isEmpty) return;
     _inputController.clear();
@@ -81,7 +82,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
 
     // Call Gemini AI
     try {
-      final promptForAI = t.isNotEmpty ? t : 'Please describe or analyse the attached file(s).';
+      final promptForAI = t.isNotEmpty ? t : 'Carefully examine and explain exactly what is shown in this image in detail. Describe every element, diagram, chart, or text you can see.';
       final historyForAI = _messages.length > 1
           ? _messages.sublist(0, _messages.length - 1)
           : <ChatMessage>[];
