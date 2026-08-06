@@ -290,7 +290,7 @@ Format your response in beautiful markdown with headers, bullet points, and emoj
       }));
 
     // ── STAGE 5: Gemini Vision API Call ──────────────────
-    const geminiModel = model || 'gemini-2.5-flash-lite';
+    const geminiModel = model || 'gemini-2.0-flash-lite';
     console.log(`[Gemini] Calling model: ${geminiModel} | Has images: ${hasImages}`);
 
     const config = {};
