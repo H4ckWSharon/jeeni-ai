@@ -118,7 +118,7 @@ Rules:
 """;
 
     String systemInstruction = '';
-    String model = 'gemini-2.0-flash-lite';
+    String model = 'gemini-2.5-flash';
 
     switch (mode) {
       case 'Deep Research':
@@ -127,7 +127,7 @@ Rules:
             'fact-based answers with structure and simulated citations with author, '
             'journal, and year. Use a formal, academic tone. Always include a '
             'Summary, Key Findings, and Further Reading section.';
-        model = 'gemini-2.0-flash-lite';
+        model = 'gemini-2.5-flash';
         break;
       case 'Web Search':
         systemInstruction = '$preamble$interactiveInstruction '
@@ -135,7 +135,7 @@ Rules:
             'if you searched the web and are presenting the top aggregated results. '
             'Show 3-5 summarised results with bullet points, URLs (simulated), and a '
             'final summary paragraph. Label each result with a numbered source.';
-        model = 'gemini-2.0-flash-lite';
+        model = 'gemini-2.5-flash';
         break;
       case 'Homework':
         systemInstruction = '$preamble$interactiveInstruction '
@@ -144,7 +144,7 @@ Rules:
             'relevant hint or principle. (3) Break the problem into smaller steps. '
             '(4) Encourage the student to attempt each step themselves. Only confirm '
             'correct reasoning — never complete the work for them.';
-        model = 'gemini-2.0-flash-lite';
+        model = 'gemini-2.5-flash';
         break;
       case 'Exam Prep':
         systemInstruction = '$preamble '
@@ -157,7 +157,7 @@ Rules:
             '5. After 5 questions, give a performance summary and recommend weak areas to review. '
             '6. NEVER just explain a topic without asking a question first. '
             'Start by asking: "What topic would you like to be quizzed on today? 📝"';
-        model = 'gemini-2.0-flash-lite';
+        model = 'gemini-2.5-flash';
         break;
       case 'Guided Learning':
       default:
@@ -165,7 +165,7 @@ Rules:
             'You are a friendly, step-by-step educational AI. Break down complex topics '
             'into simple, easy-to-understand explanations with emojis. Always end your '
             'response with a quick comprehension check question.';
-        model = 'gemini-2.0-flash-lite';
+        model = 'gemini-2.5-flash';
         break;
     }
 
