@@ -1,12 +1,16 @@
-import paramiko, sys
-sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+import paramiko
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect('213.133.97.141', username='root', password='AfjbCUvqgdpST8', timeout=30)
+ssh.connect('213.133.97.141', username='root', password='AfjbCUvqgdpST8')
 
-stdin, stdout, stderr = ssh.exec_command('cat /root/jeeni-server/.env')
-print("=== /root/jeeni-server/.env ===")
-print(stdout.read().decode('utf-8', errors='ignore'))
+_, o, _ = ssh.exec_command('grep -n "gemini-" /root/jeeni-server/server.js')
+result = o.read().decode()
+print('=== Gemini model lines in server.js (VPS) ===')
+print(result)
+
+_, o2, _ = ssh.exec_command('pm2 list')
+print('=== PM2 Status ===')
+print(o2.read().decode())
 
 ssh.close()
