@@ -1040,7 +1040,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
               trailing: Switch(
                 value: false,
                 onChanged: (_) {},
-                activeColor: Colors.white,
+                activeThumbColor: Colors.white,
                 trackColor: WidgetStateProperty.all(Colors.white24),
               ),
             ),

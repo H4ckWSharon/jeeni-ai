@@ -716,7 +716,7 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ],
       ),
