@@ -613,30 +613,51 @@ app.post('/api/chat', async (req, res) => {
 
     if (useRag && userQuery && !useVision) {
       try {
-        // Construct dense search query from router output
+        // Extract metadata from metadata or rag_metadata
+        const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
         const searchQuery = routingDecision?.search_query || routingDecision?.original_question || userQuery;
-        const searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
-          query: searchQuery,
-          n_results: 3,
-          threshold: 0.35,
-          // Pass subject filter if identified
-          ...(routingDecision?.metadata?.subject && { subject: routingDecision.metadata.subject }),
-        });
 
-        if (searchRes.results && searchRes.results.length > 0) {
+        // Build metadata filters if available
+        const whereFilter = {};
+        if (meta.subject) whereFilter.subject = meta.subject;
+        if (meta.class) whereFilter.class = String(meta.class);
+        if (meta.board) whereFilter.board = meta.board;
+
+        let searchRes = null;
+
+        // 1. Try with strict metadata filter first
+        if (Object.keys(whereFilter).length > 0) {
+          searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+            query: searchQuery,
+            n_results: 3,
+            threshold: 0.30,
+            where: whereFilter,
+          });
+        }
+
+        // 2. If filtered search returns 0 results, fallback to semantic search on the dense query
+        if (!searchRes || !searchRes.results || searchRes.results.length === 0) {
+          searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+            query: searchQuery,
+            n_results: 3,
+            threshold: 0.30,
+          });
+        }
+
+        if (searchRes && searchRes.results && searchRes.results.length > 0) {
           retrievedSources = searchRes.results.map(r => ({
             title: r.metadata.title || 'Textbook',
-            subject: r.metadata.subject || 'General',
+            subject: r.metadata.subject || meta.subject || 'General',
             score: parseFloat((r.score * 100).toFixed(1)),
             page: r.metadata.page || (r.metadata.chunk_index + 1),
             snippet: r.text.slice(0, 150) + '...',
           }));
 
           const contextBlocks = searchRes.results.map(
-            (r, i) => `[Source ${i + 1}: ${r.metadata.title || 'Textbook'} | Subject: ${r.metadata.subject || 'General'} | Page: ${r.metadata.page || (r.metadata.chunk_index + 1)}]\n${r.text}`
+            (r, i) => `[Source ${i + 1}: ${r.metadata.title || 'Textbook'} | Subject: ${r.metadata.subject || meta.subject || 'General'} | Page: ${r.metadata.page || (r.metadata.chunk_index + 1)}]\n${r.text}`
           );
           ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations.`;
-          console.log(`[RAG] Retrieved ${searchRes.results.length} chunks from ChromoDB for: "${searchQuery.slice(0, 60)}"`);
+          console.log(`[RAG] Retrieved ${searchRes.results.length} chunks from ChromoDB (filtered: ${Object.keys(whereFilter).length > 0}) for: "${searchQuery.slice(0, 60)}"`);
         }
       } catch (ragErr) {
         console.warn('[RAG Search Warning]', ragErr.message);
