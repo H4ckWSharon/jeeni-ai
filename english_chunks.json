@@ -1,0 +1,325 @@
+[
+  {
+    "chunk_id": "CBSE10ENG_CH01_T01",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God + Dust of Snow + Fire and Ice",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "author": "G.L. Fuentes (prose); Robert Frost (poems)",
+    "chunk_type": 1,
+    "chunk_type_label": "intro_theme",
+    "topic": "Thematic introduction to all three pieces",
+    "content": "This unit brings together a short story and two short poems, all centred on a single question: what happens when ordinary life is tested by forces beyond our control, and how do people respond? The prose piece follows a poor farmer named Lencho who places complete, unquestioning faith in divine help after his crops are ruined by a hailstorm; the story invites readers to think about what faith really means, and whether it can survive disappointment. Before reading, students are encouraged to predict whether Lencho's letter will actually reach 'God' and whether help will arrive, priming them to notice irony as the plot unfolds. The two accompanying poems by Robert Frost work on a smaller emotional canvas but ask related questions. 'Dust of Snow' shows how a tiny, almost accidental moment in nature - snow falling from a tree - can shift a person's entire mood, suggesting that meaning and comfort can come from unexpected, humble sources rather than grand or beautiful ones. 'Fire and Ice' takes on a much larger scale, imagining how the world itself might end, and uses that image to reflect on human emotions like desire and hatred as forces of destruction. Across all three texts the recurring thread is that big truths about hope, faith, and human nature often surface through small, everyday, or unglamorous events - a hailstorm, a bird shaking snow off a poisonous tree, a philosophical musing on two elements.",
+    "keywords": [
+      "faith",
+      "irony",
+      "mood change",
+      "nature",
+      "hope",
+      "human emotion"
+    ],
+    "token_estimate": 280
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T02",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "author": "G.L. Fuentes",
+    "chunk_type": 2,
+    "chunk_type_label": "prose_paraphrase_summary",
+    "topic": "Story walkthrough (paraphrased - not verbatim, per copyright)",
+    "content": "Lencho, a farmer, lives with his family in the only house atop a low hill overlooking his ripening cornfield. He has been anxiously watching the sky, hoping for rain that will guarantee a good harvest. When rain finally arrives, he is overjoyed and even jokes that the drops look like coins falling from the sky. His delight turns to alarm as the rain intensifies into a violent hailstorm that lasts about an hour, stripping every leaf from the trees and completely destroying his cornfield, leaving the ground looking as if covered in salt. That night the family is devastated, having lost an entire year's livelihood, but they cling to the hope that God will not let them starve. Lencho, though a simple, uneducated man, knows how to write, and on the following Sunday he composes a letter addressed directly 'To God', asking for a hundred pesos to replant his field and survive until the next harvest. He personally posts it. A postal worker discovers the unusual address and shows it to the postmaster, who is amused but also touched by such deep faith. To avoid shaking the farmer's belief, the postmaster decides to answer the letter himself, collecting donations from staff and friends. He can only gather a little more than half the requested amount, which he sends to Lencho in an envelope signed simply 'God'. The following week Lencho collects the money, feels no surprise at receiving it (since his faith was absolute), but becomes furious on realising it is short of a hundred pesos. Certain that God could not have made such an error, he writes back demanding the rest, but instructs that it not be sent through the post office, accusing the postal employees of being thieves - the story's central irony, since it was the very postal staff whose honest generosity provided the money he received.",
+    "keywords": [
+      "Lencho",
+      "hailstorm",
+      "letter to God",
+      "postmaster",
+      "irony",
+      "faith"
+    ],
+    "token_estimate": 400
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T03",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God + Dust of Snow + Fire and Ice",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 3,
+    "chunk_type_label": "glossary",
+    "topic": "Difficult words with meanings across all three texts",
+    "content": "From 'A Letter to God': crest - the top of a hill; draped - covered as if with cloth; locusts - insect swarms that fly in large groups and devastate crops; peso - the currency used in several Latin American countries; conscience - an inner sense that distinguishes right from wrong; amiable - friendly and pleasant in nature; contentment - a feeling of quiet satisfaction, especially after doing something good. From 'Dust of Snow': hemlock - a poisonous plant or tree that bears small white flowers; rued - regretted, held as a source of sorrow. From 'Fire and Ice': perish - to die or come to an end; suffice - to be enough or sufficient for a purpose. These glossary items are drawn directly from the textbook's own word-meaning boxes placed in the margins beside the relevant paragraphs, intended to help students decode vocabulary without breaking their reading flow. Teachers typically encourage students to notice how several of these words (crest, draped, locusts) build the vivid, almost cinematic imagery of the storm scene, while conscience and amiable are used to characterise God's imagined perception and the postmaster's temperament respectively. In the poems, hemlock and rued are essential to interpreting symbolism - hemlock's poisonous, unglamorous nature contrasts with the relief the speaker feels, and rued sets up the 'change of mood' that is the poem's central turn. Perish and suffice are key to Fire and Ice's closing argument about which force - passion or hatred - would be adequate to end the world.",
+    "keywords": [
+      "glossary",
+      "word meanings",
+      "vocabulary support"
+    ],
+    "token_estimate": 260
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T04",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 4,
+    "chunk_type_label": "character_sketch",
+    "topic": "Character analysis - Lencho and the Postmaster",
+    "content": "Lencho is portrayed as a humble farmer, physically compared to 'an ox of a man' - strong, hardworking, and used to labouring in the fields like an animal, yet unusually able to read and write for someone of his background. His defining trait is an absolute, unquestioning faith: he believes God observes everything, even a person's innermost thoughts, and this belief never wavers even after catastrophic loss. This faith, however, is double-edged - it gives him resilience after the hailstorm, but it also makes him incapable of imagining that ordinary, fallible humans (rather than God) were responsible for the help he received, leading him to wrongly accuse the postal staff. He can be read as naive, unquestioning, and somewhat self-centred, since he never once considers that people, not miracles, helped him. The Postmaster, in contrast, is a warm, 'fat, amiable fellow' who begins by laughing at the letter's unusual address but is quickly moved by the depth of Lencho's faith. His actions reveal genuine kindness and resourcefulness: rather than dismiss the letter, he organises a collection from his own staff, donates part of his own salary, and solicits friends for charity, going out of his way to protect a stranger's belief system even though it costs him personal effort and money. He signs the letter 'God' partly out of necessity (to keep the fiction consistent) and partly out of humility, not seeking credit for his generosity. His character embodies quiet, practical compassion, standing in gentle contrast to Lencho's passive, expectant faith.",
+    "keywords": [
+      "character sketch",
+      "Lencho",
+      "postmaster",
+      "faith",
+      "compassion"
+    ],
+    "token_estimate": 290
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T05",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God + Dust of Snow + Fire and Ice",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 5,
+    "chunk_type_label": "summary",
+    "topic": "Condensed one-paragraph summaries of all three texts",
+    "content": "'A Letter to God': A farmer's crop is destroyed by hail; he writes to God for a hundred pesos; a kind postmaster arranges partial funds and signs the reply 'God'; the farmer, angry that the sum is short, ironically blames the very postal workers who helped him. 'Dust of Snow': A crow shakes snow off a hemlock tree onto the poet, and this small, unremarkable moment unexpectedly lifts the poet's low mood and rescues part of an otherwise regretted day - suggesting comfort can come from ordinary, even gloomy-seeming sources. 'Fire and Ice': The poet reflects on two popular ideas about how the world might end - by fire or by ice - and uses 'fire' to represent destructive desire and passion, and 'ice' to represent equally destructive hatred and coldness, concluding both are powerful enough to bring about total destruction. Together, the three pieces move from a full-length narrative about faith and irony, to two compact philosophical poems about mood and destruction, giving students a range of textual lengths and genres (short story, lyric poem, philosophical/reflective poem) within a single thematic unit centred on the tension between small human experiences and larger, uncontrollable forces.",
+    "keywords": [
+      "summary",
+      "condensed overview",
+      "unit summary"
+    ],
+    "token_estimate": 260
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T06",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God + Dust of Snow + Fire and Ice",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 6,
+    "chunk_type_label": "comprehension_qa",
+    "topic": "Oral Comprehension Checks + Thinking about the Text/Poem questions (paraphrased) with brief answer guidance",
+    "content": "Story-based checks (paraphrased): What outcome was Lencho hoping for before the storm? (A good harvest from timely rain.) Why did he compare the falling raindrops to coins? (Because rain meant prosperity and a bountiful crop, so it felt as valuable as money.) How did the weather turn, and what was the effect on his fields? (A hailstorm followed the rain and completely destroyed the corn.) How did Lencho feel once the hail stopped? (Devastated and sorrowful, believing the year's work was wasted.) Who did Lencho trust to help him, and what did he do about it? (He trusted God completely and wrote a letter asking for a hundred pesos.) Who actually read and responded to the letter? (The postmaster, after a postal employee discovered it.) What did the postmaster do next? (He raised money from staff, his own salary, and friends, and sent it signed 'God'.) Was Lencho surprised by receiving money? What caused his anger? (No surprise, since his faith was absolute; anger came from the amount being less than requested.) Extended 'Thinking about the Text' prompts ask students to identify textual evidence of Lencho's complete faith, explain the postmaster's motive and choice of signature, discuss whether Lencho investigated the source of the money and why not, and analyse the central irony - that Lencho blames postal workers for a theft that never occurred, when in fact those same workers were his benefactors, illustrating conflict both between humans and nature (the hailstorm) and between humans themselves (Lencho's misplaced accusation). For the poems, comprehension questions ask what a 'dust of snow' is and how it changed the poet's mood in the first poem, and in the second poem, what fire and ice symbolise and how the chosen rhyme scheme reinforces the contrast between the two destructive forces.",
+    "keywords": [
+      "comprehension check",
+      "thinking about text",
+      "irony",
+      "Q&A"
+    ],
+    "token_estimate": 400
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T07",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 7,
+    "chunk_type_label": "textbook_exercise",
+    "topic": "Thinking about the Text - character judgement and conflict analysis exercise",
+    "content": "The textbook asks students to decide, using a given word bank, what kind of person Lencho represents in real-world terms - options provided include greedy, naive, stupid, ungrateful, selfish, comical, and unquestioning - encouraging debate rather than a single correct answer, since Lencho's faith can be read sympathetically (as touching and sincere) or critically (as blind and self-defeating). A follow-up question asks students to identify and explain the two layers of conflict running through the story: the conflict between humans and nature, illustrated by Lencho's struggle against the destructive hailstorm which he is powerless to prevent or predict beyond hoping and watching the sky; and the conflict between humans themselves, illustrated by Lencho's unfounded suspicion and accusation against the postal employees who, ironically, were the ones who helped him. This exercise is designed to move students beyond simple plot recall toward interpretive, discussion-based thinking, often used for classroom debate or short written responses, and pairs naturally with the character-sketch and irony-focused questions elsewhere in the chapter.",
+    "keywords": [
+      "textbook exercise",
+      "conflict analysis",
+      "character judgement"
+    ],
+    "token_estimate": 220
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T08",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 8,
+    "chunk_type_label": "grammar_concept",
+    "topic": "Non-defining relative clauses, hidden relative pronouns, and negatives used for emphasis",
+    "content": "Non-defining relative clauses add extra, non-essential information about a person or thing whose identity is already clear, and are typically introduced by relative pronouns such as who, whom, whose, and which. Unlike defining relative clauses, they are set off from the main sentence by commas (or occasionally a dash), and if they fall at the end of a sentence, the sentence simply ends with a full stop after the clause. For example, describing a specific, already-identified person with extra detail ('Lencho, who knew his fields intimately, ...') is non-defining because the reader doesn't need that clause to know who is being talked about. Sometimes the relative pronoun and the verb 'to be' are dropped entirely, leaving the descriptive phrase 'hidden' inside dashes - this is common in narrative prose for a more compact, literary style. Separately, the lesson introduces how negative words (no, not, nothing) can serve two purposes: showing plain absence or contradiction of an idea, or - more subtly - creating emphasis by ruling out every alternative except one ('had done nothing else but...' means 'had done only this'; 'no other reason than' means 'only this reason'; 'not the slightest surprise' means 'no surprise at all'). Recognising this emphatic use helps students appreciate how negation can intensify meaning rather than simply negate it, and is a stylistic device worth noticing in narrative and descriptive writing.",
+    "keywords": [
+      "relative clause",
+      "non-defining",
+      "negatives for emphasis",
+      "grammar concept"
+    ],
+    "token_estimate": 280
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T09",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 9,
+    "chunk_type_label": "grammar_exercise",
+    "topic": "Sentence-joining practice using relative pronouns; find-the-emphatic-negative practice",
+    "content": "Sentence-joining exercise: students combine five pairs of simple sentences into single sentences using a specified relative pronoun. The pairs involve joining facts about a frequently visited city and its status as a commercial capital (using 'which'); a mother hosting a cookery show and her cooking skill (using 'who'); sportspersons meeting the President and their excellent performance (using 'whose'); Lencho praying to God and God's all-seeing eyes (using 'whose'); and a man who cheated the speaker after being trusted (using 'whom'). Students are expected to correctly place commas around the non-defining clause and choose the pronoun that matches the grammatical role (subject, object, or possessive) of the noun being described. A second exercise on emphatic negatives asks students to locate the exact sentences in the story that express three specific ideas using negative-word emphasis rather than plain statement: that the trees lost every single leaf, that the letter was addressed to God personally with no other addressee implied, and that the postman had genuinely never before encountered such an address in his entire career. This trains students to notice how authors choose negation for rhetorical strength instead of a straightforward positive statement.",
+    "keywords": [
+      "grammar exercise",
+      "relative pronouns",
+      "sentence joining",
+      "negatives practice"
+    ],
+    "token_estimate": 240
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T10",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 10,
+    "chunk_type_label": "vocabulary_exercise",
+    "topic": "Storm-related vocabulary matching and 'hope' word-class/usage matching exercises",
+    "content": "The first vocabulary task introduces the concept that different violent weather events have specific English names depending on their nature and region, and gives students six word-clue definitions to match against a supplied word bank (gale, whirlwind, cyclone, hurricane, tornado, typhoon), each clue also providing partial letters as a scaffold - for example, a violent tropical storm with winds circling a centre, an extremely strong wind, a funnel-shaped storm centre, and a very strong Atlantic storm. The second task focuses on the word 'hope', which the story uses both as a verb (wishing for something to happen, as in hoping a hailstorm passes quickly) and as a noun (a chance or expectation of something good, as in the family's single hope of help from God). Students match six example sentences to six shades of meaning ranging from a general feeling that something good will happen, to polite hedging in conversation, to hoping against strong odds, to giving up hope entirely - training students to recognise how a single common word shifts meaning and grammatical function depending on context, a useful skill for both comprehension and their own writing.",
+    "keywords": [
+      "vocabulary exercise",
+      "storm words",
+      "hope usage",
+      "word matching"
+    ],
+    "token_estimate": 230
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T11",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God + Dust of Snow + Fire and Ice",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 11,
+    "chunk_type_label": "literary_device",
+    "topic": "Metaphors in the story; symbolism and rhyme scheme in the two poems",
+    "content": "The story's metaphor exercise asks students to identify comparisons where a quality of one thing is transferred to another: clouds are described as 'huge mountains', transferring the quality of massive scale; large raindrops and hailstones are compared to coins and silver pieces, transferring monetary value and hardness/shine; the total destruction of the crop is compared to a 'plague of locusts', an image representing an epidemic-like, rapidly spreading disaster; and Lencho himself is called 'an ox of a man', transferring the qualities of physical strength and animal-like endurance in labour. Two everyday metaphor examples (leg of a table, heart of the city) are given first as models before students search the story text themselves. In 'Dust of Snow', the crow and the hemlock tree are read symbolically - a crow is typically associated with ill omen or sorrow rather than beauty, and hemlock, a poisonous plant, is a deliberately 'unbeautiful' and ominous choice of tree, yet from this unlikely combination comes an unexpectedly positive shift in mood, symbolising how relief or comfort can arise from small, humble, even negative-seeming sources rather than obviously pleasant ones. In 'Fire and Ice', fire is presented as a symbol of desire, passion, greed, and similar consuming emotions, while ice symbolises hatred, coldness, indifference, and rigidity; the poem's tight rhyme scheme (ABAABCBCB pattern across its two stanzas) is compact and controlled, mirroring the poem's restrained, almost matter-of-fact tone even while discussing apocalyptic destruction, and the contrast between the two rhymed sound-groups helps reinforce the fire-versus-ice opposition structurally as well as thematically.",
+    "keywords": [
+      "metaphor",
+      "symbolism",
+      "rhyme scheme",
+      "literary device"
+    ],
+    "token_estimate": 320
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T12",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 12,
+    "chunk_type_label": "speaking_activity",
+    "topic": "Classroom speaking task - personal experience of difficulty resolved unexpectedly",
+    "content": "The Speaking section prompts students to reflect on and orally share a personal experience with the class, guided by the question of whether they have ever faced a serious difficulty and felt that only something like a miracle could resolve it, and if so, how the problem was actually solved in the end. This activity is designed to bridge the fictional situation in the story - where Lencho faces near-total crop loss and pins his hope on divine intervention - with students' own lives, encouraging them to notice parallels between literary themes of faith, hope, and resolution and their real, everyday experiences. Teachers are advised to model the activity first by sharing an example from their own life or someone they know, which helps lower the barrier for shy students and sets an appropriate tone (serious but not overly heavy) for the discussion. The exercise builds oral fluency, encourages personal narrative structuring (situation, difficulty, resolution), and reinforces the chapter's central theme of hope in the face of hardship, giving students a low-stakes, discussion-based way to engage more deeply with the text's emotional core rather than only its plot.",
+    "keywords": [
+      "speaking activity",
+      "personal narrative",
+      "classroom discussion"
+    ],
+    "token_estimate": 210
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T13",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 13,
+    "chunk_type_label": "listening_activity",
+    "topic": "Listening comprehension task based on a short personal letter",
+    "content": "The Listening activity requires students to listen to a short informal letter (read aloud by the teacher or played from an audio recording) and complete a comprehension table while listening. The letter, from a mother named Jaya to a friend named Arti, briefly explains that she has recently moved house, mentions that her daughter has just started attending a nearby school, apologises for a long gap since her last correspondence, and reflects fondly on a past visit the two friends shared together, closing with a request to write back. The table students must fill in while listening asks them to identify: the reason the writer apologises, what the letter itself represents as an object being sent, the month it was written in, the stated reason for the earlier delay in writing, where the writer's daughter now goes to school, who is writing to whom, and where and when the two friends were last together. This activity develops focused listening-for-detail skills using a naturalistic, low-complexity personal letter format, distinct from the story's formal literary narration, and reinforces the chapter's broader theme of personal correspondence (paralleling Lencho's own letter-writing) in a real-world, everyday context.",
+    "keywords": [
+      "listening activity",
+      "informal letter",
+      "comprehension table"
+    ],
+    "token_estimate": 230
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T14",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 14,
+    "chunk_type_label": "writing_activity",
+    "topic": "Poster-design writing task on water conservation",
+    "content": "The Writing task connects the story's central crisis - crop destruction, first threatened by drought and then compounded by an unexpected hailstorm - to a real, contemporary national issue: many regions currently experience both flooding and drought in different seasons or areas, creating an urgent need for water conservation through practices like rainwater harvesting. Students are asked to design a poster relevant to their own local area that communicates two linked messages: practical methods for saving and using water carefully during summer months when it is scarce, and strategies for capturing and storing water responsibly during periods when it is available in excess (such as monsoon flooding). This task moves students from literary analysis into applied, socially relevant writing and visual design, requiring them to synthesise persuasive slogans, clear instructional text, and appropriate visual layout - skills that combine English composition with civic and environmental awareness, and that can be assessed for clarity, persuasiveness, and relevance to local conditions rather than narrow grammatical accuracy alone.",
+    "keywords": [
+      "writing activity",
+      "poster design",
+      "water conservation"
+    ],
+    "token_estimate": 200
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T15",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 15,
+    "chunk_type_label": "extra_activity",
+    "topic": "Money Order procedural activity and form-completion task",
+    "content": "This activity uses the story's plot device (money sent through the postal system) as a springboard for a real-world procedural task. Students first learn the step-by-step process for sending money through India Post's Money Order service: going to the counter marked 'Money Order' inside a post office, purchasing an MO form for a small fee, filling in the required fields (preferably in block letters), paying the counter clerk the amount to be sent along with applicable charges, and finally retaining the acknowledgement counterfoil as a personal record. Students are also asked to discuss unfamiliar terms such as counter, counter clerk, appropriate, acknowledgement, counterfoil, and record with their teacher, and to check whether equivalent words exist in their own languages, building cross-linguistic vocabulary awareness. A second part of the activity asks students to actually fill out a sample Money Order form using contextual clues, deciding realistically who they would send money to and how much (a relative, friend, or even a classmate as practice), and to reflect on what they might write in the form's 'Space for Communication' section. A follow-up fill-in-the-blank set checks whether students understood the form's structure: that in addition to the sender, an official at the post office must also sign it; that the acknowledgement section is returned to the sender only after the receiver has signed it; that the communication space is used for a brief personal message; and that of the form's six sections, the sender completes some and the receiver completes the remainder.",
+    "keywords": [
+      "extra activity",
+      "money order",
+      "post office procedure",
+      "form filling"
+    ],
+    "token_estimate": 280
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T16",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 16,
+    "chunk_type_label": "teacher_note",
+    "topic": "Teaching guidance summary - lesson objectives and classroom delivery notes ('In This Lesson')",
+    "content": "The teacher's guidance section, titled 'In This Lesson', summarises the pedagogical goals achieved through the chapter and offers practical classroom delivery advice. Under 'What We Have Done', it notes that the lesson introduces the story's premise before reading, presents a thought-provoking narrative about the nature of belief, uses the money-order activity to build practical real-world understanding relevant to the plot, structures the reading with periodic oral comprehension checks followed by holistic post-reading questions, and provides vocabulary-building exercises tied specifically to words found in the story. Under 'What You Can Do', it advises teachers to first let students predict the story's outcome before reading; to have students read through the Money Order form and decide which sections are filled by sender versus postal staff before attempting it, optionally sending an actual small-value money order as a real-world extension; to break the main text into manageable three-paragraph chunks for silent reading, pausing for discussion at each Oral Comprehension Check and using the end-of-chapter 'Thinking about the Text' questions for deeper analysis; to have students construct their own original sentences using non-defining relative clauses after completing the grammar exercise, using classroom-relevant examples (e.g., describing a clever classmate or a knowledgeable school gardener); and to open the Speaking activity themselves by sharing a personal or acquaintance's experience first, to model the expected depth and tone before asking students to share their own.",
+    "keywords": [
+      "teacher note",
+      "lesson plan",
+      "classroom delivery"
+    ],
+    "token_estimate": 280
+  },
+  {
+    "chunk_id": "CBSE10ENG_CH01_T17",
+    "chapter_id": "CBSE10ENG_CH01",
+    "chapter": "A Letter to God + Dust of Snow + Fire and Ice",
+    "board": "CBSE",
+    "class": 10,
+    "subject": "English",
+    "chunk_type": 17,
+    "chunk_type_label": "pyq_hots",
+    "topic": "Generated exam-style question patterns (not from textbook - author-created for router training)",
+    "content": "No official Previous Year Questions or HOTS section exists inside this particular textbook unit's printed pages; the following question patterns are generated independently (not copied from any source) to support router training and exam-style RAG retrieval, modelled on the kind of higher-order questions typically asked on this chapter in CBSE Class 10 board exams. Sample patterns include: 'Justify the title \"A Letter to God\" with reference to Lencho's character and actions.' 'Explain the irony in the story's conclusion and its significance to the story's central theme.' 'Do you think the postmaster's decision to sign the letter as \"God\" was justified? Give reasons.' 'Analyse how the story explores two different kinds of conflict simultaneously.' 'In \"Dust of Snow\", explain how ordinary, even negative, images are used to convey a positive emotional shift.' 'Compare how Frost uses fire and ice as symbols in \"Fire and Ice\" to represent human emotions, and evaluate which he considers more destructive and why.' 'Describe the significance of the rhyme scheme in \"Fire and Ice\" in relation to its central contrast.' These patterns are tagged clearly as generated content so the router or downstream evaluation pipeline can distinguish them from verified textbook-sourced material, and they should be reviewed against actual CBSE sample papers or PYQ banks before being treated as authoritative exam predictions.",
+    "keywords": [
+      "PYQ",
+      "HOTS",
+      "exam question patterns",
+      "generated content"
+    ],
+    "token_estimate": 260
+  }
+]
