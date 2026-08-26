@@ -540,10 +540,12 @@ app.post('/api/route', async (req, res) => {
 app.post('/api/chat', async (req, res) => {
   const startTime = Date.now();
   try {
-    const { messages, model, collection = 'textbooks', enableRag = true } = req.body;
+    const { messages, model, mode, webSearch = false, enableWebSearch = false, collection = 'textbooks', enableRag = true } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages array is required' });
     }
+
+    const isWebSearch = mode === 'Web Search' || webSearch === true || enableWebSearch === true;
 
     // ── STAGE 0: Extract message context ──────────────────
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
@@ -562,15 +564,19 @@ app.post('/api/chat', async (req, res) => {
 
     // ── STAGE 1: Router AI v8.2 Decision ──────────────────
     let routingDecision = null;
-    try {
-      routingDecision = await callRouterAI(userQuery, hasImages, messages);
-      console.log(`[Router AI v8.2] Action: ${routingDecision.action} | LLM Required: ${routingDecision.llm_required} | ContentType: ${routingDecision.metadata?.content_type || 'N/A'}`);
-    } catch (routerErr) {
-      console.warn('[Router AI] Failed, falling back to heuristic routing:', routerErr.message);
-      // Graceful fallback
+    if (!isWebSearch) {
+      try {
+        routingDecision = await callRouterAI(userQuery, hasImages, messages);
+        console.log(`[Router AI v8.2] Action: ${routingDecision.action} | LLM Required: ${routingDecision.llm_required} | ContentType: ${routingDecision.metadata?.content_type || 'N/A'}`);
+      } catch (routerErr) {
+        console.warn('[Router AI] Failed, falling back to heuristic routing:', routerErr.message);
+        // Graceful fallback
+      }
+    } else {
+      console.log('[Router AI] Web Search mode requested — skipping textbook router, enabling Google Search Grounding');
     }
 
-    const action = routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer');
+    const action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer'));
 
     // ── STAGE 1.1: Pathway D — Safety Block ───────────────
     if (action === 'safety_block' && routingDecision?.direct_response_text) {
@@ -606,7 +612,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // ── STAGE 2: Pathway B — RAG Search ───────────────────
-    const useRag = enableRag && (action === 'rag_search' || (!hasImages && !routingDecision));
+    const useRag = !isWebSearch && enableRag && (action === 'rag_search' || (!hasImages && !routingDecision));
     const useVision = hasImages;
     let ragContext = '';
     let retrievedSources = [];
@@ -690,6 +696,12 @@ Your Vision Analysis Protocol:
 12. Structure your response with: Image Description → Subject Identified → Detailed Explanation → Key Concepts → Practice Question.
 
 Format your response in beautiful markdown with headers, bullet points, and emojis.`;
+    } else if (isWebSearch) {
+      systemInstruction = `You are Jeeni Web Search Engine — powered by live Google Search Grounding.
+Your role is to provide up-to-date, real-time factual information retrieved from the web.
+- Summarize the top findings clearly with key dates, facts, and explanations.
+- Use structured markdown with headings, bullet points, and emojis.
+- Reference authoritative sources accurately.`;
     } else if (ragContext) {
       systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + ragContext;
     }
@@ -721,12 +733,17 @@ Format your response in beautiful markdown with headers, bullet points, and emoj
 
     // ── STAGE 5: Downstream Gemini API Call ────────────────
     const geminiModel = model || 'gemini-3.1-flash-lite';
-    const pipelineLabel = action || (useVision ? 'VISION' : ragContext ? 'RAG' : 'DIRECT');
-    console.log(`[Gemini] Model: ${geminiModel} | Pipeline: ${pipelineLabel}`);
+    const pipelineLabel = isWebSearch ? 'WEB_SEARCH_GROUNDING' : (action || (useVision ? 'VISION' : ragContext ? 'RAG' : 'DIRECT'));
+    console.log(`[Gemini] Model: ${geminiModel} | Pipeline: ${pipelineLabel} | Google Search: ${isWebSearch}`);
 
     const config = {};
     if (systemInstruction) {
       config.systemInstruction = systemInstruction;
+    }
+
+    // Enable Google Search Grounding Tool if web search requested
+    if (isWebSearch) {
+      config.tools = [{ googleSearch: {} }];
     }
 
     const response = await ai.models.generateContent({
@@ -738,11 +755,35 @@ Format your response in beautiful markdown with headers, bullet points, and emoj
     const elapsed = Date.now() - startTime;
     console.log(`[Gemini] Response received in ${elapsed}ms | Pipeline: ${pipelineLabel}`);
 
-    // ── STAGE 6: Return response with routing metadata ─────
+    // Extract Google Search Grounding sources if available
+    let webSources = [];
+    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+    if (groundingMetadata) {
+      const searchQueries = groundingMetadata.webSearchQueries || [];
+      const searchChunks = groundingMetadata.groundingChunks || [];
+
+      webSources = searchChunks
+        .filter(c => c.web)
+        .map(c => ({
+          title: c.web.title || 'Web Search Source',
+          subject: 'Web Search',
+          url: c.web.uri || '',
+          snippet: c.web.snippet || (searchQueries.length > 0 ? `Query: ${searchQueries[0]}` : ''),
+          score: 95.0,
+          page: 1,
+        }));
+
+      console.log(`[Google Grounding] Executed queries: ${searchQueries.join(', ')} | Extracted ${webSources.length} web sources`);
+    }
+
+    const finalSources = (retrievedSources && retrievedSources.length > 0) ? retrievedSources : webSources;
+
+    // ── STAGE 6: Return response with routing & grounding metadata ─────
     res.json({
       content: response.text,
-      sources: retrievedSources,
+      sources: finalSources,
       pipeline: pipelineLabel,
+      grounding: groundingMetadata,
       routing: routingDecision,
     });
   } catch (err) {

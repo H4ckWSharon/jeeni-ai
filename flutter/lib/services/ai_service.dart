@@ -274,14 +274,19 @@ Rules:
         debugPrint('[Vision] Sending ${attachments.length} image(s) + text to server');
       }
 
-      // ── STAGE 3: Send to Jeeni backend (Vision or Text pipeline) ──
-      debugPrint('[Vision] POST /api/chat | Has images: ${attachments.isNotEmpty} | Prompt: "${effectivePrompt.length > 60 ? effectivePrompt.substring(0, 60) : effectivePrompt}..."');
+      // ── STAGE 3: Send to Jeeni backend (Vision, Web Search, or Text pipeline) ──
+      debugPrint('[Vision] POST /api/chat | Mode: $mode | Has images: ${attachments.isNotEmpty} | Prompt: "${effectivePrompt.length > 60 ? effectivePrompt.substring(0, 60) : effectivePrompt}..."');
 
       final response = await http
           .post(
             Uri.parse('$_serverUrl/api/chat'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'model': model, 'messages': messages}),
+            body: jsonEncode({
+              'model': model,
+              'mode': mode,
+              'webSearch': mode == 'Web Search',
+              'messages': messages,
+            }),
           )
           .timeout(const Duration(seconds: 120));
 
