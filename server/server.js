@@ -6,6 +6,11 @@ const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
 const { extractTextFromPDF, chunkText } = require('./src/chunker');
+const {
+  determineZeroChunkReason,
+  buildZeroChunkResponse,
+  getPredefinedMessage,
+} = require('./src/zeroChunksHandler');
 
 const app = express();
 app.use(cors());
@@ -618,18 +623,17 @@ app.post('/api/chat', async (req, res) => {
     let retrievedSources = [];
 
     if (useRag && userQuery && !useVision) {
-      try {
-        // Extract metadata from metadata or rag_metadata
-        const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
-        const searchQuery = routingDecision?.search_query || routingDecision?.original_question || userQuery;
+      let searchError = null;
+      let searchRes = null;
+      const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
+      const searchQuery = routingDecision?.search_query || routingDecision?.original_question || userQuery;
 
+      try {
         // Build metadata filters if available
         const whereFilter = {};
         if (meta.subject) whereFilter.subject = meta.subject;
         if (meta.class) whereFilter.class = String(meta.class);
         if (meta.board) whereFilter.board = meta.board;
-
-        let searchRes = null;
 
         // 1. Try with strict metadata filter first
         if (Object.keys(whereFilter).length > 0) {
@@ -641,32 +645,67 @@ app.post('/api/chat', async (req, res) => {
           });
         }
 
-        // 2. If filtered search returns 0 results, fallback to semantic search on the dense query
+        // 2. If strict filtered search returns 0 results, relax secondary filters while preserving subject
         if (!searchRes || !searchRes.results || searchRes.results.length === 0) {
-          searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
-            query: searchQuery,
-            n_results: 3,
-            threshold: 0.30,
-          });
+          if (whereFilter.subject) {
+            searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+              query: searchQuery,
+              n_results: 3,
+              threshold: 0.35,
+              where: { subject: whereFilter.subject },
+            });
+          } else if (Object.keys(whereFilter).length === 0) {
+            // Only perform unconstrained search if no subject filter was specified
+            searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+              query: searchQuery,
+              n_results: 3,
+              threshold: 0.50,
+            });
+          }
         }
 
-        if (searchRes && searchRes.results && searchRes.results.length > 0) {
-          retrievedSources = searchRes.results.map(r => ({
-            title: r.metadata.title || 'Textbook',
-            subject: r.metadata.subject || meta.subject || 'General',
-            score: parseFloat((r.score * 100).toFixed(1)),
-            page: r.metadata.page || (r.metadata.chunk_index + 1),
-            snippet: r.text.slice(0, 150) + '...',
-          }));
-
-          const contextBlocks = searchRes.results.map(
-            (r, i) => `[Source ${i + 1}: ${r.metadata.title || 'Textbook'} | Subject: ${r.metadata.subject || meta.subject || 'General'} | Page: ${r.metadata.page || (r.metadata.chunk_index + 1)}]\n${r.text}`
-          );
-          ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations.`;
-          console.log(`[RAG] Retrieved ${searchRes.results.length} chunks from ChromoDB (filtered: ${Object.keys(whereFilter).length > 0}) for: "${searchQuery.slice(0, 60)}"`);
+        if (searchRes && searchRes.error) {
+          searchError = new Error(searchRes.error);
         }
       } catch (ragErr) {
         console.warn('[RAG Search Warning]', ragErr.message);
+        searchError = ragErr;
+      }
+
+      const chunks = (searchRes && Array.isArray(searchRes.results)) ? searchRes.results : [];
+
+      // ── ZERO CHUNKS HANDLING (No Second API Call • Direct Backend Response) ──
+      if (action === 'rag_search' && chunks.length === 0) {
+        const reasonType = determineZeroChunkReason({
+          metadata: meta,
+          searchError: searchError,
+        });
+
+        console.log(`[Zero Chunks Handling] action=rag_search | chunks=0 | Reason: ${reasonType} | Skipping second LLM call (Tokens Saved)`);
+
+        const zeroChunkResponse = buildZeroChunkResponse({
+          type: reasonType,
+          routingDecision,
+        });
+
+        return res.json(zeroChunkResponse);
+      }
+
+      // If chunks found, format context blocks for downstream LLM
+      if (chunks.length > 0) {
+        retrievedSources = chunks.map(r => ({
+          title: r.metadata.title || 'Textbook',
+          subject: r.metadata.subject || meta.subject || 'General',
+          score: parseFloat((r.score * 100).toFixed(1)),
+          page: r.metadata.page || (r.metadata.chunk_index + 1),
+          snippet: r.text.slice(0, 150) + '...',
+        }));
+
+        const contextBlocks = chunks.map(
+          (r, i) => `[Source ${i + 1}: ${r.metadata.title || 'Textbook'} | Subject: ${r.metadata.subject || meta.subject || 'General'} | Page: ${r.metadata.page || (r.metadata.chunk_index + 1)}]\n${r.text}`
+        );
+        ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations.`;
+        console.log(`[RAG] Retrieved ${chunks.length} chunks from ChromoDB for: "${searchQuery.slice(0, 60)}"`);
       }
     } else if (useVision) {
       console.log('[RAG] Skipped — vision analysis active');

@@ -1,4 +1,5 @@
 import requests
+import json
 import sys
 
 SERVER = "http://213.133.97.141:3000"
@@ -7,22 +8,21 @@ payload = {
     "mode": "Web Search",
     "webSearch": True,
     "messages": [
-        {"role": "user", "content": "What are the latest news updates about ISRO space missions and Gaganyaan today?"}
+        {"role": "user", "content": "What is the latest score of today's cricket match or latest news today?"}
     ]
 }
 
 r = requests.post(f"{SERVER}/api/chat", json=payload, timeout=60)
-print(f"Status Code: {r.status_code}")
-
 if r.status_code == 200:
     data = r.json()
-    print(f"Pipeline: {data.get('pipeline')}")
-    print(f"Sources Count: {len(data.get('sources', []))}")
-    for i, s in enumerate(data.get('sources', [])[:3]):
-        print(f"  Source {i+1}: {s.get('title')} ({s.get('url')})")
-    
-    print("\n--- GROUNDED RESPONSE (encoded) ---")
-    sys.stdout.buffer.write(data.get('content', '').encode('utf-8'))
+    print("Pipeline:", data.get("pipeline"))
+    print("Grounding Keys:", list(data.get("grounding", {}).keys()) if data.get("grounding") else None)
+    if data.get("grounding"):
+        print("webSearchQueries:", data.get("grounding", {}).get("webSearchQueries"))
+        print("groundingChunks:", len(data.get("grounding", {}).get("groundingChunks", [])))
+    print("Sources:", len(data.get("sources", [])))
+    print("\nPreview:")
+    sys.stdout.buffer.write(data.get("content", "")[:300].encode("utf-8"))
     print("\n")
 else:
-    print(f"Error: {r.text}")
+    print("Error:", r.text)
