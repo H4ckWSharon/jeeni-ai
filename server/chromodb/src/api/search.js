@@ -54,10 +54,44 @@ router.post('/:collection', async (req, res) => {
       vector:     d.vector,
     }));
 
-    // 4. Apply optional metadata filter
+    // 4. Apply optional metadata filter with normalization
+    // Normalize filter values to handle type/case mismatches between
+    // Router AI output and stored metadata (e.g. class 10 vs "10", "english" vs "English")
+    function normalizeFilterValue(key, val) {
+      if (val === null || val === undefined) return null;
+      const s = String(val).trim();
+      if (key === 'class') {
+        // Extract numeric string: "Class 10" → "10", 10 → "10"
+        const m = s.match(/\d+/);
+        return m ? m[0] : s;
+      }
+      if (key === 'board') {
+        const u = s.toUpperCase().replace(/\s+/g, ' ');
+        if (u.includes('KERALA') || u.includes('SCERT') || u.includes('STATE BOARD')) return 'SCERT_KERALA';
+        if (u === 'CBSE' || u.includes('CENTRAL BOARD')) return 'CBSE';
+        if (u === 'NCERT') return 'NCERT';
+        if (u === 'ICSE') return 'ICSE';
+        return u;
+      }
+      if (key === 'subject') {
+        // Title-case for comparison
+        return s.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
+      }
+      return s;
+    }
+
+    function normalizeStoredValue(key, val) {
+      // Apply same normalization to stored values for a symmetric comparison
+      return normalizeFilterValue(key, val);
+    }
+
     const filtered = Object.keys(where).length > 0
       ? docs.filter(d =>
-          Object.entries(where).every(([k, v]) => d.metadata[k] === v)
+          Object.entries(where).every(([k, v]) => {
+            const filterNorm  = normalizeFilterValue(k, v);
+            const storedNorm  = normalizeStoredValue(k, d.metadata[k]);
+            return filterNorm !== null && storedNorm !== null && storedNorm === filterNorm;
+          })
         )
       : docs;
 

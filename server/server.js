@@ -459,10 +459,60 @@ async function chromoFetch(endpoint, method = 'GET', body = null) {
   try { return JSON.parse(text); } catch { return { raw: text }; }
 }
 
+// ── Metadata Normalization Helpers ────────────────────────
+/**
+ * Normalizes a class value to a plain numeric string.
+ * Accepts: 10, "10", "Class 10", "Grade 10", "10th" → "10"
+ */
+function normalizeClass(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const match = String(val).match(/\d+/);
+  return match ? match[0] : null;
+}
+
+/**
+ * Normalizes a board string to a canonical uppercase form.
+ * e.g. "Kerala State Board" → "SCERT_KERALA", "cbse" → "CBSE"
+ */
+function normalizeBoard(val) {
+  if (!val) return null;
+  const v = String(val).trim().toUpperCase().replace(/\s+/g, ' ');
+  if (v.includes('KERALA') || v.includes('SCERT') || v.includes('STATE BOARD')) return 'SCERT_KERALA';
+  if (v === 'CBSE' || v.includes('CENTRAL BOARD')) return 'CBSE';
+  if (v === 'NCERT') return 'NCERT';
+  if (v === 'ICSE') return 'ICSE';
+  return v; // preserve unknown boards as-is (uppercased)
+}
+
+/**
+ * Normalizes a subject string to title-case.
+ */
+function normalizeSubject(val) {
+  if (!val) return null;
+  return String(val).trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+}
+
+/**
+ * Returns a fully normalized canonical metadata object.
+ * Always uses 'class' (not 'grade'), normalized board, title-case subject.
+ */
+function normalizeChunkMetadata(raw = {}) {
+  const meta = { ...raw };
+  // Canonicalize class field — accept 'class', 'grade', 'class_level' as input
+  const rawClass = meta.class ?? meta.grade ?? meta.class_level ?? null;
+  meta.class = normalizeClass(rawClass);
+  delete meta.grade;
+  delete meta.class_level;
+  if (meta.board) meta.board = normalizeBoard(meta.board);
+  if (meta.subject) meta.subject = normalizeSubject(meta.subject);
+  return meta;
+}
+
 // ── Upload PDF → ChromoDB ──────────────────────────────────
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    const { title, subject, class: cls, board, collection = 'textbooks' } = req.body;
+    const { title, subject, class: cls, board, collection = 'textbooks',
+            chapter, chapter_number, language = 'English' } = req.body;
     if (!req.file && !title) {
       return res.status(400).json({ error: 'File or title required' });
     }
@@ -480,14 +530,27 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No extractable text content found' });
     }
 
-    // 2. Chunk the text
+    // 2. Build canonical base metadata (normalized field names + values)
+    const baseMetadata = normalizeChunkMetadata({
+      title,
+      subject,
+      class: cls,
+      board,
+      chapter: chapter || title,
+      chapter_number: chapter_number ? parseInt(chapter_number, 10) : null,
+      language,
+    });
+
+    console.log('[Upload] Normalized metadata:', JSON.stringify(baseMetadata));
+
+    // 3. Chunk the text with canonical metadata
     const chunks = chunkText(textContent, {
       chunkSize: 1000,
       overlap: 100,
-      metadata: { title, subject, class: cls, board },
+      metadata: baseMetadata,
     });
 
-    // 3. Batch insert chunks into ChromoDB
+    // 4. Batch insert chunks into ChromoDB
     const chromoRes = await chromoFetch(
       `/api/documents/${collection}/add-batch`,
       'POST',
@@ -501,6 +564,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       file_name: req.file ? req.file.originalname : title,
       pages: pageCount,
       chunks_created: chunks.length,
+      normalized_metadata: baseMetadata,
       chromo_response: chromoRes,
     });
   } catch (err) {
@@ -629,39 +693,63 @@ app.post('/api/chat', async (req, res) => {
       const searchQuery = routingDecision?.search_query || routingDecision?.original_question || userQuery;
 
       try {
-        // Build metadata filters if available
+        // ── Build normalized metadata filters ────────────────
+        // Always normalize values to match stored canonical format:
+        //   class  → plain numeric string ("10", "9")
+        //   board  → canonical form ("SCERT_KERALA", "CBSE")
+        //   subject → title-case ("Biology", "English")
         const whereFilter = {};
-        if (meta.subject) whereFilter.subject = meta.subject;
-        if (meta.class) whereFilter.class = String(meta.class);
-        if (meta.board) whereFilter.board = meta.board;
+        if (meta.subject) whereFilter.subject = normalizeSubject(meta.subject);
+        if (meta.class)   whereFilter.class   = normalizeClass(meta.class);
+        if (meta.board)   whereFilter.board   = normalizeBoard(meta.board);
 
-        // 1. Try with strict metadata filter first
+        // Determine whether the router pinned curriculum context
+        const hasCurriculumPin = !!(whereFilter.class || whereFilter.board);
+
+        console.log(`[RAG Filter] whereFilter=${JSON.stringify(whereFilter)} | hasCurriculumPin=${hasCurriculumPin}`);
+
+        // ── Search Strategy ───────────────────────────────────
+        // STRICT RULE: If class OR board was specified, NEVER relax those filters.
+        // Cross-curriculum contamination (wrong class/board result) is worse than zero chunks.
+        //
+        // Allowed fallback tiers:
+        //   Tier 1 (always):    Full filter {subject, class, board}
+        //   Tier 2 (only if no class & no board): Subject-only filter — safe within a subject
+        //   Tier 3 (only if no curriculum at all): Unconstrained semantic search
+
         if (Object.keys(whereFilter).length > 0) {
+          // Tier 1: Strict curriculum-aware search
           searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
             query: searchQuery,
-            n_results: 3,
-            threshold: 0.30,
+            n_results: 5,
+            threshold: 0.25,
             where: whereFilter,
           });
+          console.log(`[RAG Tier 1] Strict filter → ${searchRes?.results?.length ?? 0} results`);
         }
 
-        // 2. If strict filtered search returns 0 results, relax secondary filters while preserving subject
-        if (!searchRes || !searchRes.results || searchRes.results.length === 0) {
-          if (whereFilter.subject) {
-            searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
-              query: searchQuery,
-              n_results: 3,
-              threshold: 0.35,
-              where: { subject: whereFilter.subject },
-            });
-          } else if (Object.keys(whereFilter).length === 0) {
-            // Only perform unconstrained search if no subject filter was specified
-            searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
-              query: searchQuery,
-              n_results: 3,
-              threshold: 0.50,
-            });
-          }
+        // Tier 2: Subject-only (ONLY if no class and no board were specified)
+        if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
+            && whereFilter.subject
+            && !hasCurriculumPin) {
+          searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+            query: searchQuery,
+            n_results: 5,
+            threshold: 0.30,
+            where: { subject: whereFilter.subject },
+          });
+          console.log(`[RAG Tier 2] Subject-only filter → ${searchRes?.results?.length ?? 0} results`);
+        }
+
+        // Tier 3: Unconstrained (ONLY if router provided absolutely no curriculum metadata)
+        if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
+            && Object.keys(whereFilter).length === 0) {
+          searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+            query: searchQuery,
+            n_results: 5,
+            threshold: 0.40,
+          });
+          console.log(`[RAG Tier 3] Unconstrained search → ${searchRes?.results?.length ?? 0} results`);
         }
 
         if (searchRes && searchRes.error) {
@@ -694,15 +782,18 @@ app.post('/api/chat', async (req, res) => {
       // If chunks found, format context blocks for downstream LLM
       if (chunks.length > 0) {
         retrievedSources = chunks.map(r => ({
-          title: r.metadata.title || 'Textbook',
+          title: r.metadata.title || r.metadata.chapter || 'Textbook',
           subject: r.metadata.subject || meta.subject || 'General',
+          board: r.metadata.board || meta.board || null,
+          class: r.metadata.class || meta.class || null,
           score: parseFloat((r.score * 100).toFixed(1)),
-          page: r.metadata.page || (r.metadata.chunk_index + 1),
+          page: r.metadata.page || (r.metadata.chunk_index != null ? r.metadata.chunk_index + 1 : 1),
+          chunk_id: r.metadata.chunk_id || null,
           snippet: r.text.slice(0, 150) + '...',
         }));
 
         const contextBlocks = chunks.map(
-          (r, i) => `[Source ${i + 1}: ${r.metadata.title || 'Textbook'} | Subject: ${r.metadata.subject || meta.subject || 'General'} | Page: ${r.metadata.page || (r.metadata.chunk_index + 1)}]\n${r.text}`
+          (r, i) => `[Source ${i + 1}: ${r.metadata.title || r.metadata.chapter || 'Textbook'} | Board: ${r.metadata.board || 'N/A'} | Class: ${r.metadata.class || 'N/A'} | Subject: ${r.metadata.subject || meta.subject || 'General'}]\n${r.text}`
         );
         ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations.`;
         console.log(`[RAG] Retrieved ${chunks.length} chunks from ChromoDB for: "${searchQuery.slice(0, 60)}"`);
