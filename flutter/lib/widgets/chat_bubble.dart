@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:flutter_tts/flutter_tts.dart';
 import '../models/chat_message.dart';
 import '../learning_engine/services/widget_registry.dart';
 
@@ -41,11 +42,21 @@ class _ChatBubbleState extends State<ChatBubble>
   bool _isHovered = false;
   bool? _isLiked; // null = no response, true = liked, false = disliked
 
+  // TTS state
+  static final FlutterTts _tts = FlutterTts();
+  bool _isSpeaking = false;
+
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 380))..forward();
     _editController = TextEditingController(text: widget.message.text);
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+    _tts.setCancelHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
   }
 
   @override
@@ -60,7 +71,24 @@ class _ChatBubbleState extends State<ChatBubble>
   void dispose() {
     _ctrl.dispose();
     _editController.dispose();
+    if (_isSpeaking) _tts.stop();
     super.dispose();
+  }
+
+  Future<void> _toggleTts() async {
+    if (_isSpeaking) {
+      await _tts.stop();
+      if (mounted) setState(() => _isSpeaking = false);
+      return;
+    }
+    // Strip widget tags and RAG source markers from text before reading
+    final speakText = _cleanText(widget.message.text);
+    if (speakText.isEmpty) return;
+    await _tts.setLanguage('en-US');
+    await _tts.setSpeechRate(0.45);
+    await _tts.setPitch(1.0);
+    if (mounted) setState(() => _isSpeaking = true);
+    await _tts.speak(speakText);
   }
 
   void _copyMessage() {
@@ -443,6 +471,14 @@ class _ChatBubbleState extends State<ChatBubble>
                     children: [
                       _actionIcon(Icons.copy_rounded, 'Copy Message', _copyMessage),
                       const SizedBox(width: 8),
+                      // TTS Speaker button
+                      _actionIcon(
+                        _isSpeaking ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                        _isSpeaking ? 'Stop Reading' : 'Read Aloud',
+                        _toggleTts,
+                        color: _isSpeaking ? const Color(0xFF818CF8) : null,
+                      ),
+                      const SizedBox(width: 8),
                       if (widget.onRegenerate != null) ...[
                         _actionIcon(Icons.refresh_rounded, 'Regenerate Response', widget.onRegenerate!),
                         const SizedBox(width: 8),
@@ -660,10 +696,19 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
             const Divider(color: Color(0xFF2E313D), height: 1),
             const SizedBox(height: 10),
             ...widget.sources.map((src) {
-              final title = src['title'] ?? 'Textbook';
-              final page = src['page'] ?? 1;
-              final score = src['score'] ?? 0;
-              final snippet = src['snippet'] ?? '';
+              final title   = src['title']   as String? ?? 'Textbook';
+              final page    = src['page']    ?? 1;
+              final score   = src['score']   ?? 0;
+              final snippet = src['snippet'] as String? ?? '';
+              final board   = src['board']   as String?;
+              final cls     = src['class']   as String?;
+              final chunkId = src['chunk_id'] as String?;
+
+              // Build curriculum context string
+              final curriculumParts = <String>[];
+              if (board != null && board.isNotEmpty) curriculumParts.add(board);
+              if (cls != null && cls.isNotEmpty) curriculumParts.add('Class $cls');
+              final curriculumLabel = curriculumParts.join(' · ');
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -700,7 +745,34 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                         ),
                       ],
                     ),
-                    if (snippet.toString().isNotEmpty) ...[
+                    if (curriculumLabel.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.school_outlined, size: 11, color: Color(0xFF818CF8)),
+                          const SizedBox(width: 4),
+                          Text(
+                            curriculumLabel,
+                            style: const TextStyle(
+                              color: Color(0xFF818CF8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (chunkId != null) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              '· $chunkId',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                    if (snippet.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         '"$snippet"',
