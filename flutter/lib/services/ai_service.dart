@@ -285,6 +285,7 @@ Rules:
               'model': model,
               'mode': mode,
               'webSearch': mode == 'Web Search',
+              'enableRag': true, // Always enforce RAG — never allow Gemini to hallucinate textbook answers
               'messages': messages,
             }),
           )

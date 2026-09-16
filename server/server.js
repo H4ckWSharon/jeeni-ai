@@ -609,7 +609,10 @@ app.post('/api/route', async (req, res) => {
 app.post('/api/chat', async (req, res) => {
   const startTime = Date.now();
   try {
-    const { messages, model, mode, webSearch = false, enableWebSearch = false, collection = 'textbooks', enableRag = true } = req.body;
+    const { messages, model, mode, webSearch = false, enableWebSearch = false, collection = 'textbooks' } = req.body;
+    // RAG is ALWAYS enabled server-side — never allow client to bypass it.
+    // Disabling RAG when action=rag_search would allow Gemini to hallucinate textbook answers from training data.
+    const enableRag = true;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages array is required' });
     }
@@ -800,6 +803,18 @@ app.post('/api/chat', async (req, res) => {
       }
     } else if (useVision) {
       console.log('[RAG] Skipped — vision analysis active');
+    }
+
+    // ── SAFETY NET: Block Gemini hallucination when action=rag_search but RAG produced no chunks ──
+    // This catches edge cases where RAG ran but returned 0 chunks AND the early return at line 779
+    // was not triggered (e.g. useRag was true but ChromoDB was down and searchError was thrown
+    // before chunks were assigned), or any future code path that reaches here with empty context.
+    if (action === 'rag_search' && !ragContext && !useVision && !isWebSearch) {
+      const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
+      const reasonType = determineZeroChunkReason({ metadata: meta, searchError: null });
+      console.log(`[Safety Net] action=rag_search but ragContext is empty — blocking Gemini fallback | Reason: ${reasonType}`);
+      const zeroChunkResponse = buildZeroChunkResponse({ type: reasonType, routingDecision });
+      return res.json(zeroChunkResponse);
     }
 
     // ── STAGE 3: System Instruction ───────────────────────
