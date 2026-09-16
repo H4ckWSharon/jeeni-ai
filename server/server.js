@@ -412,6 +412,38 @@ Every response MUST be a valid JSON ARRAY beginning with "[" and ending with "]"
 NEVER output markdown code fences, comments, or explanations outside JSON.
 Return EXACTLY ONE pathway.`;
 
+// ── Router AI Context Caching (Gemini 3.1 Flash-Lite) ──────
+let routerCache = null;
+let routerCacheExpiresAt = 0;
+
+async function getOrCreateRouterCache() {
+  const now = Date.now();
+  // Reuse active cache if at least 10 minutes remain before expiry
+  if (routerCache && routerCacheExpiresAt - now > 10 * 60 * 1000) {
+    return routerCache.name;
+  }
+
+  try {
+    console.log('[Router Cache] Creating or refreshing Gemini context cache for ROUTER_SYSTEM_PROMPT...');
+    const cache = await ai.caches.create({
+      model: 'gemini-3.1-flash-lite',
+      config: {
+        displayName: 'jeeni_router_prompt_cache',
+        systemInstruction: ROUTER_SYSTEM_PROMPT,
+        ttl: '86400s', // 24 hours
+      },
+    });
+    routerCache = cache;
+    routerCacheExpiresAt = cache.expireTime ? new Date(cache.expireTime).getTime() : (now + 86400 * 1000);
+    console.log(`[Router Cache] Cached successfully: ${cache.name} | Expires at: ${cache.expireTime}`);
+    return cache.name;
+  } catch (err) {
+    console.warn('[Router Cache Warning] Failed to create context cache, fallback to direct systemInstruction:', err.message);
+    routerCache = null;
+    return null;
+  }
+}
+
 // ── Router AI Function ─────────────────────────────────────
 async function callRouterAI(userQuery, hasImages, conversationHistory = []) {
   const routerModel = 'gemini-3.1-flash-lite';
@@ -427,15 +459,47 @@ Image attached: ${hasImages}${historyContext}
 
 Evaluate the student query and return EXACTLY ONE execution pathway as a JSON array.`;
 
-  const routerResponse = await ai.models.generateContent({
-    model: routerModel,
-    contents: [{ role: 'user', parts: [{ text: routerInput }] }],
-    config: {
-      systemInstruction: ROUTER_SYSTEM_PROMPT,
-      temperature: 0.1, // Low temperature for consistent routing decisions
-      maxOutputTokens: 1024,
-    },
-  });
+  const cachedName = await getOrCreateRouterCache();
+  const config = {
+    temperature: 0.1,
+    maxOutputTokens: 1024,
+  };
+
+  if (cachedName) {
+    config.cachedContent = cachedName;
+  } else {
+    config.systemInstruction = ROUTER_SYSTEM_PROMPT;
+  }
+
+  let routerResponse;
+  try {
+    routerResponse = await ai.models.generateContent({
+      model: routerModel,
+      contents: [{ role: 'user', parts: [{ text: routerInput }] }],
+      config,
+    });
+  } catch (genErr) {
+    // If cache expired or invalidated, clear and retry with direct prompt
+    if (cachedName && (genErr.message.includes('404') || genErr.message.includes('not found') || genErr.message.includes('expired'))) {
+      console.warn('[Router Cache] Cache expired or not found, retrying with direct prompt...');
+      routerCache = null;
+      routerResponse = await ai.models.generateContent({
+        model: routerModel,
+        contents: [{ role: 'user', parts: [{ text: routerInput }] }],
+        config: {
+          systemInstruction: ROUTER_SYSTEM_PROMPT,
+          temperature: 0.1,
+          maxOutputTokens: 1024,
+        },
+      });
+    } else {
+      throw genErr;
+    }
+  }
+
+  const cachedTokens = routerResponse.usageMetadata?.cachedContentTokenCount || 0;
+  const totalTokens = routerResponse.usageMetadata?.totalTokenCount || 0;
+  console.log(`[Router AI] Execution complete | Total: ${totalTokens} | Cached: ${cachedTokens} (${cachedTokens > 0 ? 'CACHE HIT' : 'CACHE MISS'})`);
 
   const raw = routerResponse.text.trim();
 
