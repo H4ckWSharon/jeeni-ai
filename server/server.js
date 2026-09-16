@@ -414,7 +414,7 @@ Return EXACTLY ONE pathway.`;
 
 // ── Router AI Function ─────────────────────────────────────
 async function callRouterAI(userQuery, hasImages, conversationHistory = []) {
-  const routerModel = 'gemini-2.5-flash';
+  const routerModel = 'gemini-3.1-flash-lite';
 
   // Build a compact context summary for the router
   const historyContext = conversationHistory.length > 0
@@ -877,7 +877,7 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       }));
 
     // ── STAGE 5: Downstream Gemini API Call ────────────────
-    const geminiModel = model || 'gemini-2.5-flash';
+    const geminiModel = model || 'gemini-3.1-flash-lite';
     const pipelineLabel = isWebSearch ? 'WEB_SEARCH_GROUNDING' : (action || (useVision ? 'VISION' : ragContext ? 'RAG' : 'DIRECT'));
     console.log(`[Gemini] Model: ${geminiModel} | Pipeline: ${pipelineLabel} | Google Search: ${isWebSearch}`);
 
