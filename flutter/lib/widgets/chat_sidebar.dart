@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/temp_chat_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/auth/auth_gate.dart';
+import '../screens/profile_settings_screen.dart';
 import '../services/database_service.dart';
 
 class ChatSidebar extends StatefulWidget {
@@ -1003,37 +1004,68 @@ class _ChatSidebarState extends State<ChatSidebar> {
             const SizedBox(height: 20),
 
             // ── Profile card ──
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48, height: 48,
-                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2E2E2E)),
-                    child: Center(child: Text(letter, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(email, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 13)),
-                      ],
+            GestureDetector(
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen(initialTab: 0)),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171717),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48, height: 48,
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2E2E2E)),
+                      child: Center(child: Text(letter, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 2),
+                          Text(email, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.4)),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
 
             // ── Settings options ──
+            _SettingsOption(
+              icon: Icons.school_outlined,
+              label: 'Student Learning Profile',
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen(initialTab: 0)),
+                );
+              },
+            ),
+
+            _SettingsOption(
+              icon: Icons.psychology_outlined,
+              label: 'AI Memory & Preferences',
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen(initialTab: 1)),
+                );
+              },
+            ),
+
             _SettingsOption(
               icon: Icons.notifications_outlined,
               label: 'Notifications',
@@ -1269,36 +1301,44 @@ class _ProfileRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final letter = email.isNotEmpty ? email[0].toUpperCase() : 'J';
     final name = email.split('@').first;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF2E2E2E),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ProfileSettingsScreen(initialTab: 0)),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF171717),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF2E2E2E),
+              ),
+              child: Center(
+                child: Text(letter, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
             ),
-            child: Center(
-              child: Text(letter, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), // Larger text size
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), // Larger text size
-            ),
-          ),
-          const Icon(Icons.more_horiz, size: 14, color: Color(0xFFA1A1AA)),
-        ],
+            const Icon(Icons.settings_outlined, size: 14, color: Color(0xFFA1A1AA)),
+          ],
+        ),
       ),
     );
   }

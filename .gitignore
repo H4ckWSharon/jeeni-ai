@@ -7,6 +7,7 @@ flutter/.flutter-plugins-dependencies
 # Server
 server/node_modules/
 server/.env
+server/data/
 
 # IDE
 .idea/

@@ -11,6 +11,7 @@ const {
   buildZeroChunkResponse,
   getPredefinedMessage,
 } = require('./src/zeroChunksHandler');
+const studentStore = require('./src/studentStore');
 
 const app = express();
 app.use(cors());
@@ -669,11 +670,91 @@ app.post('/api/route', async (req, res) => {
   }
 });
 
+// ── Student Profile & Memory Endpoints (Phase 3 & 8) ────────
+app.get('/api/profile', (req, res) => {
+  const studentId = req.query.student_id || req.headers['x-student-id'];
+  if (!studentId) return res.status(400).json({ error: 'student_id query param or x-student-id header required' });
+  const profile = studentStore.getProfile(studentId);
+  res.json({ profile });
+});
+
+app.post('/api/profile', (req, res) => {
+  const studentId = req.body.student_id || req.headers['x-student-id'];
+  if (!studentId) return res.status(400).json({ error: 'student_id is required' });
+  try {
+    const profile = studentStore.saveProfile(studentId, req.body);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/profile/personalization', (req, res) => {
+  const studentId = req.body.student_id || req.headers['x-student-id'];
+  const enabled = req.body.enabled !== undefined ? req.body.enabled : req.body.personalization_enabled;
+  if (!studentId) return res.status(400).json({ error: 'student_id is required' });
+  try {
+    const profile = studentStore.updatePersonalization(studentId, enabled);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.get('/api/memories', (req, res) => {
+  const studentId = req.query.student_id || req.headers['x-student-id'];
+  if (!studentId) return res.status(400).json({ error: 'student_id is required' });
+  const memories = studentStore.getMemories(studentId);
+  res.json({ memories });
+});
+
+app.post('/api/memories', (req, res) => {
+  const studentId = req.body.student_id || req.headers['x-student-id'];
+  if (!studentId) return res.status(400).json({ error: 'student_id is required' });
+  try {
+    const memory = studentStore.addMemory(studentId, req.body);
+    res.json({ success: true, memory });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/memories/:id', (req, res) => {
+  const studentId = req.query.student_id || req.body.student_id || req.headers['x-student-id'];
+  const memoryId = req.params.id;
+  if (!studentId || !memoryId) return res.status(400).json({ error: 'student_id and memoryId required' });
+  const deleted = studentStore.deleteMemory(studentId, memoryId);
+  res.json({ success: deleted });
+});
+
+app.delete('/api/memories', (req, res) => {
+  const studentId = req.query.student_id || req.body.student_id || req.headers['x-student-id'];
+  if (!studentId) return res.status(400).json({ error: 'student_id is required' });
+  const cleared = studentStore.clearMemories(studentId);
+  res.json({ success: cleared });
+});
+
 // ── Chat API with Router AI v8.2 + Vision + RAG Pipeline ────
 app.post('/api/chat', async (req, res) => {
   const startTime = Date.now();
   try {
-    const { messages, model, mode, webSearch = false, enableWebSearch = false, collection = 'textbooks' } = req.body;
+    const {
+      messages,
+      model,
+      mode,
+      webSearch = false,
+      enableWebSearch = false,
+      collection = 'textbooks',
+      student_id,
+      profile: clientProfile,
+    } = req.body;
+
+    const studentId = student_id || req.headers['x-student-id'] || 'default_student';
+    let studentProfile = studentStore.getProfile(studentId);
+    if (clientProfile && typeof clientProfile === 'object') {
+      studentProfile = studentStore.saveProfile(studentId, { ...studentProfile, ...clientProfile });
+    }
+
     // RAG is ALWAYS enabled server-side — never allow client to bypass it.
     // Disabling RAG when action=rag_search would allow Gemini to hallucinate textbook answers from training data.
     const enableRag = true;
@@ -697,6 +778,15 @@ app.post('/api/chat', async (req, res) => {
           ? lastUserMsg.content
           : lastUserMsg.content.map(p => (p.type === 'text' ? p.text : '')).join(' ').trim())
       : '';
+
+    // Check for explicit memory statements ("Remember that...")
+    let newMemorySaved = null;
+    if (userQuery && studentId) {
+      newMemorySaved = studentStore.detectAndSaveExplicitMemory(studentId, userQuery);
+      if (newMemorySaved) {
+        console.log(`[Memory Engine] Explicit memory saved for ${studentId}: "${newMemorySaved.content}"`);
+      }
+    }
 
     // ── STAGE 1: Router AI v8.2 Decision ──────────────────
     let routingDecision = null;
@@ -725,8 +815,21 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    // ── STAGE 1.15: Student Profile & Identity Query Detection ──
+    const isProfileOrIdentityQuery = /(which|what|tell me|do you know).*?(class|grade|standard|name|board|syllabus|subject|goal|profile|about me|know about me|remember)/i.test(userQuery) ||
+      /(who am i|my class|my grade|my name|my profile|my goal|what i am studying|why u collect|data from me)/i.test(userQuery);
+
+    const disclaimsKnowledge = routingDecision?.direct_response_text &&
+      /(do not have access|don't have access|personal information|school records|identity)/i.test(routingDecision.direct_response_text);
+
+    // If Router asked for clarification because class/board was missing, but we have studentProfile:
+    if (action === 'ask_clarification' && studentProfile && (!meta.class || !meta.board)) {
+      console.log(`[Router AI] Auto-resolving missing curriculum from Student Profile: Class ${studentProfile.class} (${studentProfile.board})`);
+      action = 'rag_search';
+    }
+
     // ── STAGE 1.2: Pathway C — Ask Clarification ──────────
-    if (action === 'ask_clarification' && routingDecision?.direct_response_text) {
+    if (action === 'ask_clarification' && routingDecision?.direct_response_text && !isProfileOrIdentityQuery) {
       console.log('[Router AI] Pathway C: Clarification requested');
       return res.json({
         content: routingDecision.direct_response_text,
@@ -736,14 +839,32 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
+
+    // ── STAGE 1.25: Memory & Personalization Relevance Analysis ──
+    const relevantMemories = (studentProfile && studentProfile.personalization_enabled !== false)
+      ? studentStore.getRelevantMemories(studentId, userQuery, meta?.subject || '')
+      : [];
+
+    const hasPersonalizationAdaptation = studentProfile && studentProfile.personalization_enabled !== false && (
+      (studentProfile.preferred_language && studentProfile.preferred_language.toLowerCase() !== 'english') ||
+      relevantMemories.length > 0 ||
+      (studentProfile.knowledge_level && studentProfile.knowledge_level.toLowerCase() !== 'intermediate')
+    );
+
     // ── STAGE 1.3: Pathway A — Direct Answer (Zero Downstream LLM Latency)
-    if (action === 'direct_answer' && !hasImages && routingDecision?.direct_response_text) {
+    // Only short-circuit if NOT a question asking about student profile / identity / memory,
+    // NOT a response disclaiming access when we have the student profile,
+    // and NOT requiring personalized language adaptation (e.g. Malayalam) or active learning memories!
+    if (action === 'direct_answer' && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
       console.log('[Router AI] Pathway A: Direct Answer served with 0 downstream LLM latency');
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
         pipeline: 'DIRECT_ANSWER',
         routing: routingDecision,
+        memories_applied: [],
+        new_memory_saved: newMemorySaved ? newMemorySaved.content : null,
       });
     }
 
@@ -756,7 +877,6 @@ app.post('/api/chat', async (req, res) => {
     if (useRag && userQuery && !useVision) {
       let searchError = null;
       let searchRes = null;
-      const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
       const searchQuery = routingDecision?.search_query || routingDecision?.original_question || userQuery;
 
       try {
@@ -770,7 +890,16 @@ app.post('/api/chat', async (req, res) => {
         if (meta.class)   whereFilter.class   = normalizeClass(meta.class);
         if (meta.board)   whereFilter.board   = normalizeBoard(meta.board);
 
-        // Determine whether the router pinned curriculum context
+        // Phase 4 & 9: Curriculum Fallback from Student Profile
+        // If the query did not explicitly specify class or board, apply the student profile defaults
+        if (!whereFilter.class && studentProfile?.class) {
+          whereFilter.class = normalizeClass(studentProfile.class);
+        }
+        if (!whereFilter.board && studentProfile?.board) {
+          whereFilter.board = normalizeBoard(studentProfile.board);
+        }
+
+        // Determine whether curriculum context is active
         const hasCurriculumPin = !!(whereFilter.class || whereFilter.board);
 
         console.log(`[RAG Filter] whereFilter=${JSON.stringify(whereFilter)} | hasCurriculumPin=${hasCurriculumPin}`);
@@ -915,6 +1044,56 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + ragContext;
     }
 
+    // ── STAGE 3.5: Adaptive Personalization & Relevant Memory (Phase 5, 6, 7) ──
+    if (studentProfile && studentProfile.personalization_enabled !== false) {
+      const pLines = [];
+      pLines.push(`- Student Name / Nickname: ${studentProfile.display_name || 'Student'}`);
+      pLines.push(`- Target Student Context: Class ${studentProfile.class || '10'} (${studentProfile.board || 'CBSE'}, ${studentProfile.syllabus || 'NCERT'})`);
+      if (studentProfile.medium) {
+        pLines.push(`- Medium of Instruction: ${studentProfile.medium}`);
+      }
+      if (studentProfile.subjects && studentProfile.subjects.length > 0) {
+        pLines.push(`- Enrolled Subjects: ${studentProfile.subjects.join(', ')}`);
+      }
+      if (studentProfile.exam_prep_goal) {
+        pLines.push(`- Target Exam Goal: ${studentProfile.exam_prep_goal}`);
+      }
+      if (studentProfile.knowledge_level) {
+        pLines.push(`- Student Knowledge Level: ${studentProfile.knowledge_level}`);
+        if (studentProfile.knowledge_level.toLowerCase() === 'beginner') {
+          pLines.push(`- Instruction: Start with intuitive definitions, real-world analogies, and step-by-step breakdowns before formal terms.`);
+        } else if (studentProfile.knowledge_level.toLowerCase() === 'advanced') {
+          pLines.push(`- Instruction: Skip introductory trivialities; provide deep conceptual rigor, advanced edge cases, and competitive-exam relevance.`);
+        }
+      }
+      if (studentProfile.preferred_examples) {
+        pLines.push(`- Preferred Examples: ${studentProfile.preferred_examples}`);
+      }
+      if (studentProfile.revision_preference) {
+        pLines.push(`- Revision Style: ${studentProfile.revision_preference}`);
+      }
+      pLines.push(`- Instruction on Student Profile: If the student asks what class they are in, who they are, what you know about them, or why data was collected, answer warmly and directly using these verified profile details. Explain that this data is used solely to personalize explanations and textbook curriculum.`);
+      if (studentProfile.preferred_language && studentProfile.preferred_language.toLowerCase() !== 'english') {
+        pLines.push(`- Preferred Teaching Language: Explain predominantly in ${studentProfile.preferred_language} (or natural Manglish if Malayalam), but strictly keep technical scientific terms, formulas, code, and textbook keywords in standard English.`);
+      }
+      if (studentProfile.explanation_style) {
+        pLines.push(`- Teaching Style Preference: ${studentProfile.explanation_style}`);
+      }
+      if (studentProfile.learning_goal) {
+        pLines.push(`- Academic Goal: ${studentProfile.learning_goal}`);
+      }
+      if (studentProfile.response_format) {
+        pLines.push(`- Preferred Format: ${studentProfile.response_format}`);
+      }
+      if (relevantMemories.length > 0) {
+        pLines.push(`- Active Learning Memories (Dynamically Selected for this topic):\n` + relevantMemories.map(m => `  * ${m.content}`).join('\n'));
+      }
+
+      const adaptiveBlock = `\n\n--- STUDENT ADAPTIVE PROFILE & LEARNING MEMORY ---\n${pLines.join('\n')}\n--- END ADAPTIVE PROFILE ---\nTailor your teaching tone, depth, and examples accordingly while strictly adhering to factual textbook and safety rules.`;
+      systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + adaptiveBlock;
+      console.log(`[Adaptive Learning] Injected profile (Class ${studentProfile.class} ${studentProfile.board}) + ${relevantMemories.length} relevant memory item(s)`);
+    }
+
     // ── STAGE 4: Build Gemini-format contents ─────────────
     const contents = messages
       .filter(m => m.role !== 'system')
@@ -994,6 +1173,8 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       pipeline: pipelineLabel,
       grounding: groundingMetadata,
       routing: routingDecision,
+      memories_applied: relevantMemories.map(m => m.content),
+      new_memory_saved: newMemorySaved ? newMemorySaved.content : null,
     });
   } catch (err) {
     console.error('[Gemini Error]', err.message);

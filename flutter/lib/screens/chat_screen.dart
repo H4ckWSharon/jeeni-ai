@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/chat_message.dart';
+import '../models/student_profile.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/typing_indicator.dart';
 import '../widgets/chat_input_bar.dart';
@@ -10,6 +11,7 @@ import '../widgets/empty_chat_state.dart';
 import '../widgets/chat_sidebar.dart';
 import '../services/database_service.dart';
 import '../services/ai_service.dart';
+import 'profile_settings_screen.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -28,6 +30,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isTyping = false;
   bool _isLoadingChat = false;
   String _selectedModel = 'Guided Learning';
+  StudentProfile? _studentProfile;
 
   StreamSubscription<List<ChatMessage>>? _messagesSubscription;
   String? _currentChatId;
@@ -42,6 +45,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     super.initState();
     _currentChatId = widget.chatId;
     _setupMessagesSubscription();
+    _loadStudentProfile();
+  }
+
+  Future<void> _loadStudentProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final p = await DatabaseService.getStudentProfile(user.uid);
+      if (mounted) setState(() => _studentProfile = p);
+    }
   }
 
   @override
@@ -175,11 +187,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     final promptForAI = t.isNotEmpty ? t : 'Carefully examine and explain exactly what is shown in this image in detail. Describe every element, diagram, chart, or text you can see.';
 
+    var currentProfile = _studentProfile;
+    if (currentProfile == null) {
+      currentProfile = await DatabaseService.getStudentProfile(user.uid);
+      if (mounted && currentProfile != null) {
+        _studentProfile = currentProfile;
+      }
+    }
+
     final aiText = await AIService.generateResponse(
       prompt: promptForAI,
       mode: _selectedModel,
       history: historyForAI,
       attachments: attachments,
+      studentId: user.uid,
+      profile: currentProfile,
     );
     if (!mounted) return;
 
@@ -342,6 +364,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 _scaffoldKey.currentState?.openDrawer();
               },
               onNewChat: _newChat,
+              onProfileTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                );
+                _loadStudentProfile();
+              },
             ),
 
             // ── Content ──
@@ -485,7 +513,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 class _TopBar extends StatelessWidget {
   final VoidCallback onMenu;
   final VoidCallback onNewChat;
-  const _TopBar({required this.onMenu, required this.onNewChat});
+  final VoidCallback? onProfileTap;
+  const _TopBar({required this.onMenu, required this.onNewChat, this.onProfileTap});
 
   @override
   Widget build(BuildContext context) {
@@ -530,8 +559,21 @@ class _TopBar extends StatelessWidget {
 
           const Spacer(),
 
-          // ── Spacer to balance layout ──
-          const SizedBox(width: 36),
+          // ── Profile / Settings Action ──
+          GestureDetector(
+            onTap: onProfileTap,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF1E1B4B),
+                border: Border.all(color: const Color(0xFF818CF8).withOpacity(0.5)),
+              ),
+              child: const Icon(Icons.school_outlined, color: Color(0xFF818CF8), size: 18),
+            ),
+          ),
         ],
       ),
     );

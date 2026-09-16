@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/chat_message.dart';
+import '../models/student_profile.dart';
+import '../models/student_memory.dart';
 
 class DatabaseService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -317,4 +319,68 @@ class DatabaseService {
     
     return 'General';
   }
+
+  // ═══════════════════════════════════════════════════
+  // STUDENT PROFILE & ONBOARDING (Phase 2 & 3)
+  // ═══════════════════════════════════════════════════
+
+  /// Fetches the student profile document from Firestore
+  static Future<StudentProfile?> getStudentProfile(String userId) async {
+    try {
+      final doc = await _db.collection('users').doc(userId).collection('profile').doc('current').get();
+      if (!doc.exists || doc.data() == null) return null;
+      return StudentProfile.fromMap(doc.data()!, studentId: userId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Saves or updates the student profile document in Firestore
+  static Future<void> saveStudentProfile(String userId, StudentProfile profile) async {
+    final docRef = _db.collection('users').doc(userId).collection('profile').doc('current');
+    await docRef.set(profile.toMap(), SetOptions(merge: true));
+  }
+
+  /// Toggles personalization enabled/disabled
+  static Future<void> togglePersonalization(String userId, bool enabled) async {
+    final docRef = _db.collection('users').doc(userId).collection('profile').doc('current');
+    await docRef.set({'personalization_enabled': enabled}, SetOptions(merge: true));
+  }
+
+  // ═══════════════════════════════════════════════════
+  // STUDENT PERSISTENT MEMORY (Phase 5 & 8)
+  // ═══════════════════════════════════════════════════
+
+  /// Stream of all non-sensitive memories for the student
+  static Stream<List<StudentMemory>> getMemoriesStream(String userId) {
+    return _db
+        .collection('users')
+        .doc(userId)
+        .collection('memories')
+        .orderBy('created_at', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => StudentMemory.fromMap(doc.data())).toList());
+  }
+
+  /// Saves a new memory to Firestore
+  static Future<void> saveMemory(String userId, StudentMemory memory) async {
+    final docRef = _db.collection('users').doc(userId).collection('memories').doc(memory.memoryId);
+    await docRef.set(memory.toMap());
+  }
+
+  /// Deletes a specific memory from Firestore
+  static Future<void> deleteMemory(String userId, String memoryId) async {
+    await _db.collection('users').doc(userId).collection('memories').doc(memoryId).delete();
+  }
+
+  /// Clears all memories for the student
+  static Future<void> clearAllMemories(String userId) async {
+    final snap = await _db.collection('users').doc(userId).collection('memories').get();
+    final batch = _db.batch();
+    for (var doc in snap.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
 }
+

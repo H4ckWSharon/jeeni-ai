@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../models/chat_message.dart';
+import '../models/student_profile.dart';
 
 class AIService {
   /// The URL of your Jeeni backend server.
@@ -29,6 +30,89 @@ class AIService {
     }
 
     return null;
+  }
+
+  // ═══════════════════════════════════════════════════
+  // STUDENT PROFILE & MEMORY BACKEND SYNC (Phase 3, 5, 8)
+  // ═══════════════════════════════════════════════════
+
+  /// Synchronizes student profile to the backend server
+  static Future<bool> syncStudentProfile(String studentId, StudentProfile profile) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$_serverUrl/api/profile'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'student_id': studentId,
+          ...profile.toMap(),
+        }),
+      ).timeout(const Duration(seconds: 15));
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('[AIService] Profile backend sync warning: $e');
+      return false;
+    }
+  }
+
+  /// Adds an explicit memory to the backend server
+  static Future<bool> syncMemory(String studentId, {required String content, String category = 'Learning Preference'}) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$_serverUrl/api/memories'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'student_id': studentId,
+          'category': category,
+          'content': content,
+          'source': 'explicit_app',
+        }),
+      ).timeout(const Duration(seconds: 15));
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('[AIService] Memory sync warning: $e');
+      return false;
+    }
+  }
+
+  /// Deletes a memory on the backend server
+  static Future<bool> deleteBackendMemory(String studentId, String memoryId) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$_serverUrl/api/memories/$memoryId?student_id=$studentId'),
+      ).timeout(const Duration(seconds: 15));
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Clears all memories on the backend server
+  static Future<bool> clearBackendMemories(String studentId) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$_serverUrl/api/memories?student_id=$studentId'),
+      ).timeout(const Duration(seconds: 15));
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Toggles personalization setting on the backend server
+  static Future<bool> toggleBackendPersonalization(String studentId, bool enabled) async {
+    try {
+      final res = await http.patch(
+        Uri.parse('$_serverUrl/api/profile/personalization'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'student_id': studentId,
+          'enabled': enabled,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
   static (String model, String systemPrompt) _getModelAndPrompt(String mode) {
@@ -177,6 +261,8 @@ Rules:
     required String mode,
     required List<ChatMessage> history,
     List<XFile> attachments = const [],
+    String? studentId,
+    StudentProfile? profile,
   }) async {
     try {
       // Intercept local system-related responses first
@@ -287,6 +373,8 @@ Rules:
               'webSearch': mode == 'Web Search',
               'enableRag': true, // Always enforce RAG — never allow Gemini to hallucinate textbook answers
               'messages': messages,
+              if (studentId != null) 'student_id': studentId,
+              if (profile != null) 'profile': profile.toMap(),
             }),
           )
           .timeout(const Duration(seconds: 120));

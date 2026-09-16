@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import '../chat_screen.dart';
+import '../student_onboarding_screen.dart';
+import '../../services/database_service.dart';
+import '../../models/student_profile.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -36,13 +39,36 @@ class _AuthGateState extends State<AuthGate> {
 
         // If authenticated user found
         if (snapshot.hasData && snapshot.data != null) {
-          return const ChatScreen();
+          final user = snapshot.data!;
+          return FutureBuilder<StudentProfile?>(
+            future: DatabaseService.getStudentProfile(user.uid).timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => null,
+            ),
+            builder: (context, profileSnap) {
+              if (profileSnap.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  backgroundColor: Color(0xFF0A0E17),
+                  body: Center(
+                    child: CircularProgressIndicator(color: Color(0xFF818CF8), strokeWidth: 2),
+                  ),
+                );
+              }
+
+              final profile = profileSnap.data;
+              if (profile == null || !profile.onboardingCompleted) {
+                return const StudentOnboardingScreen();
+              }
+
+              return const ChatScreen();
+            },
+          );
         }
 
         // If stream is still waiting AND has not timed out, show splash loader
         if (snapshot.connectionState == ConnectionState.waiting && !_timedOut) {
           return const Scaffold(
-            backgroundColor: Colors.black,
+            backgroundColor: Color(0xFF0A0E17),
             body: Center(
               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
             ),
@@ -55,4 +81,3 @@ class _AuthGateState extends State<AuthGate> {
     );
   }
 }
-
