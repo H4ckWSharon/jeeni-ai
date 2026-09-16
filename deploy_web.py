@@ -1,6 +1,7 @@
 import paramiko
 import sys
 import time
+import os
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
@@ -17,8 +18,17 @@ print("Connected!")
 
 sftp = ssh.open_sftp()
 
-print("\n2. Uploading web.tar.gz to /tmp/web.tar.gz...")
-sftp.put('web.tar.gz', '/tmp/web.tar.gz')
+file_size = os.path.getsize('web.tar.gz')
+print(f"\n2. Uploading web.tar.gz to /tmp/web.tar.gz... ({file_size/1024/1024:.1f} MB)")
+
+uploaded = [0]
+def progress(transferred, total):
+    pct = transferred * 100 // total
+    if pct % 20 == 0 and transferred != uploaded[0]:
+        uploaded[0] = transferred
+        print(f"   {pct}% ({transferred//1024}KB / {total//1024}KB)")
+
+sftp.put('web.tar.gz', '/tmp/web.tar.gz', callback=progress)
 print("Uploaded web.tar.gz!")
 sftp.close()
 
