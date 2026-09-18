@@ -62,10 +62,134 @@ function sanitizeMemoryContent(text) {
 
 // ── Student Profiles ────────────────────────────────────────
 
+function getAllProfiles() {
+  return readJSON(PROFILES_FILE, {});
+}
+
 function getProfile(studentId) {
   if (!studentId) return null;
   const profiles = readJSON(PROFILES_FILE, {});
-  return profiles[studentId] || null;
+  if (profiles[studentId]) return profiles[studentId];
+  // Secondary lookup by internal student_id or provider_user_id
+  return Object.values(profiles).find(p => p.student_id === studentId || p.provider_user_id === studentId) || null;
+}
+
+function isGoogleOAuthId(id) {
+  if (!id || typeof id !== 'string') return false;
+  // Firebase Auth UID is 28 alphanumeric characters
+  if (/^[A-Za-z0-9]{28}$/.test(id)) return true;
+  // Google numeric sub ID (21 digits)
+  if (/^\d{21}$/.test(id)) return true;
+  return false;
+}
+
+function isTestAccount(id) {
+  if (!id || typeof id !== 'string') return false;
+  const lower = id.toLowerCase();
+  return lower.startsWith('student_live_test') || 
+         lower.startsWith('test_student') || 
+         lower.startsWith('qa_student') ||
+         lower === 'default_student';
+}
+
+/**
+ * Centralized Student Display Identity Resolver
+ * Strictly follows identity priority order without fabricating names:
+ * 1. Jeeni student profile display_name (rejecting technical IDs and generic placeholders)
+ * 2. Jeeni student profile full_name
+ * 3. Explicit Jeeni profile name
+ * 4. Google OAuth profile name (google_name / oauth_name / displayName)
+ * 5. Safe email fallback if appropriate
+ * 6. Test account preservation (e.g. student_live_test)
+ * 7. "Name not provided"
+ */
+function resolveStudentDisplayIdentity(idOrUser) {
+  if (!idOrUser) {
+    return {
+      student_id: '',
+      display_name: 'Name not provided',
+      email: null,
+      provider: 'internal',
+      provider_user_id: null,
+      photo_url: null,
+    };
+  }
+
+  const rawId = typeof idOrUser === 'string' ? idOrUser : (idOrUser.student_id || idOrUser.user_id || '');
+  const userObj = typeof idOrUser === 'object' ? idOrUser : {};
+  const profile = getProfile(rawId) || {};
+
+  // Merge profile data with user object
+  const merged = { ...profile, ...userObj };
+
+  // Detect provider & provider_user_id
+  let provider = merged.provider || null;
+  let providerUserId = merged.provider_user_id || null;
+
+  if (!provider && isGoogleOAuthId(rawId)) {
+    provider = 'google';
+    providerUserId = rawId;
+  } else if (!provider) {
+    provider = isTestAccount(rawId) ? 'test' : 'internal';
+  }
+
+  if (!providerUserId && isGoogleOAuthId(rawId)) {
+    providerUserId = rawId;
+  }
+
+  // Student ID
+  const studentId = merged.student_id || rawId;
+
+  // Resolve Display Name following exact priority
+  let resolvedName = null;
+
+  const isValidName = (name) => {
+    if (!name || typeof name !== 'string') return false;
+    const trimmed = name.trim();
+    if (!trimmed) return false;
+    if (trimmed === 'Student') return false; // Generic placeholder
+    if (trimmed === rawId) return false;    // Technical ID passed as name
+    if (isGoogleOAuthId(trimmed)) return false; // Technical OAuth ID
+    return true;
+  };
+
+  // 1. Jeeni student profile display_name
+  if (isValidName(merged.display_name)) {
+    resolvedName = merged.display_name.trim();
+  }
+  // 2. Jeeni student profile full_name
+  else if (isValidName(merged.full_name)) {
+    resolvedName = merged.full_name.trim();
+  }
+  // 3. Explicit Jeeni profile name
+  else if (isValidName(merged.name)) {
+    resolvedName = merged.name.trim();
+  }
+  // 4. Google OAuth profile name
+  else if (isValidName(merged.google_name || merged.oauth_name || merged.displayName)) {
+    resolvedName = (merged.google_name || merged.oauth_name || merged.displayName).trim();
+  }
+  // 5. Safe email fallback if appropriate
+  else if (merged.email && typeof merged.email === 'string' && merged.email.includes('@')) {
+    resolvedName = merged.email.trim();
+  }
+  // 6. Test accounts: keep technical test ID (e.g. student_live_test)
+  else if (isTestAccount(rawId)) {
+    resolvedName = rawId;
+  }
+  // 7. Default: Name not provided
+  else {
+    resolvedName = 'Name not provided';
+  }
+
+  return {
+    student_id: studentId,
+    display_name: resolvedName,
+    email: merged.email || null,
+    provider: provider,
+    provider_user_id: providerUserId,
+    photo_url: merged.photo_url || null,
+  };
 }
 
 function saveProfile(studentId, profileData) {
@@ -78,7 +202,11 @@ function saveProfile(studentId, profileData) {
     ...existing,
     ...profileData,
     student_id: studentId,
-    display_name: profileData.display_name || existing.display_name || 'Student',
+    display_name: profileData.display_name || existing.display_name || null,
+    email: profileData.email || existing.email || null,
+    provider: profileData.provider || existing.provider || (isGoogleOAuthId(studentId) ? 'google' : 'internal'),
+    provider_user_id: profileData.provider_user_id || existing.provider_user_id || (isGoogleOAuthId(studentId) ? studentId : null),
+    photo_url: profileData.photo_url || existing.photo_url || null,
     class: profileData.class || existing.class || '10',
     board: profileData.board || existing.board || 'CBSE',
     syllabus: profileData.syllabus || existing.syllabus || 'NCERT',
@@ -276,6 +404,7 @@ function detectAndSaveExplicitMemory(studentId, userQuery) {
 
 module.exports = {
   getProfile,
+  getAllProfiles,
   saveProfile,
   updatePersonalization,
   getMemories,
@@ -285,4 +414,6 @@ module.exports = {
   getRelevantMemories,
   detectAndSaveExplicitMemory,
   sanitizeMemoryContent,
+  resolveStudentDisplayIdentity,
+  isGoogleOAuthId,
 };

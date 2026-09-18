@@ -12,6 +12,9 @@ const {
   getPredefinedMessage,
 } = require('./src/zeroChunksHandler');
 const studentStore = require('./src/studentStore');
+const usageStore = require('./src/usageStore');
+const { loginAdmin, logoutAdmin, validateSession, requireAdminAuth } = require('./src/adminAuth');
+const aiGateway = require('./src/aiGateway');
 
 const app = express();
 app.use(cors());
@@ -44,10 +47,203 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const CHROMODB_URL = process.env.CHROMODB_URL || 'http://localhost:4000';
 const CHROMODB_API_KEY = process.env.CHROMODB_API_KEY || 'jeeni_secret_vector_key_2026';
 
-// Admin Credentials
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Sonalcjoseph@2005';
-const ADMIN_TOKEN = 'jeeni_admin_secret_token_2026';
+// ══════════════════════════════════════════════════════════════
+// ── PROTECTED ADMIN AI USAGE & MONITORING API ENDPOINTS ────────
+// ══════════════════════════════════════════════════════════════
+
+// 1. Admin Login (Rate-limited, issues cryptographic session token)
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body || {};
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const result = loginAdmin(username, password, ip);
+  if (!result.success) {
+    const status = result.rateLimited ? 429 : 401;
+    return res.status(status).json({ error: result.error });
+  }
+  res.json(result);
+});
+
+// 2. Admin Logout
+app.post('/api/admin/logout', requireAdminAuth, (req, res) => {
+  const token = req.headers['authorization']?.replace('Bearer ', '').trim() || req.headers['x-admin-token'];
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const result = logoutAdmin(token, ip);
+  res.json(result);
+});
+
+// 3. Admin Identity Verification
+app.get('/api/admin/me', requireAdminAuth, (req, res) => {
+  res.json({
+    authenticated: true,
+    user: req.adminUser,
+    sessionExpiresAt: req.adminSession?.expiresAt,
+  });
+});
+
+// 4. Live Telemetry Stream (Server-Sent Events)
+app.get('/api/admin/live-stream', requireAdminAuth, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+  aiGateway.addSSEClient(res);
+
+  // Send initial handshake
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'Admin telemetry stream connected' })}\n\n`);
+});
+
+// 5. Dashboard Metrics & KPIs (Supports Global Multidimensional Filters)
+app.get('/api/admin/dashboard', requireAdminAuth, (req, res) => {
+  const { timeframe = 'today' } = req.query;
+  const metrics = usageStore.getDashboardMetrics(timeframe, req.query);
+  res.json(metrics);
+});
+
+// 5.1 Real-time System & Provider Health
+app.get('/api/admin/health', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getSystemHealth());
+});
+
+// 5.2 Budget & Quota Intelligence
+app.get('/api/admin/budget', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getBudgetStatus());
+});
+
+app.post('/api/admin/budget', requireAdminAuth, (req, res) => {
+  const updated = usageStore.updateBudgetConfig(req.body, req.adminUser);
+  res.json({ success: true, budget: updated });
+});
+
+// 5.3 Multidimensional Token Economics
+app.get('/api/admin/token-economics', requireAdminAuth, (req, res) => {
+  const { window = '24h' } = req.query;
+  const economics = usageStore.getTokenEconomics(window, req.query);
+  res.json(economics);
+});
+
+// 5.4 Feature Cost Intelligence
+app.get('/api/admin/features', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getFeatureAnalytics());
+});
+
+// 5.5 Model Intelligence & Latency Percentiles
+app.get('/api/admin/models', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getModelAnalytics());
+});
+
+// 5.6 Anomaly Detection
+app.get('/api/admin/anomalies', requireAdminAuth, (req, res) => {
+  res.json(usageStore.detectAnomalies());
+});
+
+// 5.7 "Why Was This Request Expensive?" Cost Explanation
+app.get('/api/admin/requests/:requestId/explanation', requireAdminAuth, (req, res) => {
+  const explanation = usageStore.getRequestCostExplanation(req.params.requestId);
+  if (!explanation) return res.status(404).json({ error: 'Request not found' });
+  res.json(explanation);
+});
+
+// 5.8 Data Retention Controls
+app.get('/api/admin/retention', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getRetentionPolicy());
+});
+
+app.post('/api/admin/retention', requireAdminAuth, (req, res) => {
+  const { retention_days } = req.body || {};
+  const updated = usageStore.updateRetentionPolicy(retention_days, req.adminUser);
+  res.json({ success: true, retention: updated });
+});
+
+// 6. User AI Usage Summary Table
+app.get('/api/admin/users', requireAdminAuth, (req, res) => {
+  const { search, sort_by } = req.query;
+  const users = usageStore.getUsersUsage({ search, sort_by });
+  res.json(users);
+});
+
+// 7. User Usage Details & Deep-dive
+app.get('/api/admin/users/:userId', requireAdminAuth, (req, res) => {
+  const details = usageStore.getUserDetails(req.params.userId);
+  if (!details) {
+    return res.status(404).json({ error: 'User usage records not found' });
+  }
+  res.json(details);
+});
+
+// 8. Recent API Request Logs
+app.get('/api/admin/requests', requireAdminAuth, (req, res) => {
+  const { limit = 100, model, feature, status, user_id } = req.query;
+  const requests = usageStore.getRecentRequests(parseInt(limit, 10), { model, feature, status, user_id });
+  res.json(requests);
+});
+
+// 9. Individual API Call Inspection
+app.get('/api/admin/requests/:requestId', requireAdminAuth, (req, res) => {
+  const request = usageStore.getRequestById(req.params.requestId);
+  if (!request) {
+    return res.status(404).json({ error: 'Request record not found' });
+  }
+  // Audit log if debug inspection requested
+  if (req.query.audit_debug) {
+    usageStore.recordAuditLog(req.adminUser, 'INSPECT_DEBUG_REQUEST', { requestId: req.params.requestId });
+  }
+  res.json(request);
+});
+
+// 10. Waste & Token Efficiency Monitor
+app.get('/api/admin/waste', requireAdminAuth, (req, res) => {
+  const waste = usageStore.getWasteMetrics();
+  res.json(waste);
+});
+
+// 11. Cache Performance Analytics
+app.get('/api/admin/cache', requireAdminAuth, (req, res) => {
+  const cache = usageStore.getCacheMetrics();
+  res.json(cache);
+});
+
+// 12. Configurable Pricing Table
+app.get('/api/admin/pricing', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getPricingConfig());
+});
+
+app.post('/api/admin/pricing', requireAdminAuth, (req, res) => {
+  const updated = usageStore.updatePricingConfig(req.body, req.adminUser);
+  res.json({ success: true, pricing: updated });
+});
+
+// 13. Configurable Alerts & Thresholds
+app.get('/api/admin/alerts', requireAdminAuth, (req, res) => {
+  res.json(usageStore.getAlertsConfig());
+});
+
+app.post('/api/admin/alerts', requireAdminAuth, (req, res) => {
+  const updated = usageStore.updateAlertsConfig(req.body, req.adminUser);
+  res.json({ success: true, alerts: updated });
+});
+
+app.post('/api/admin/alerts/clear', requireAdminAuth, (req, res) => {
+  const result = usageStore.clearAlerts(req.adminUser);
+  res.json(result);
+});
+
+// 14. Admin Activity & Audit Logs
+app.get('/api/admin/audit-log', requireAdminAuth, (req, res) => {
+  const logs = usageStore.getAuditLogs(parseInt(req.query.limit || 100, 10));
+  res.json(logs);
+});
+
+// 15. Export Reports (CSV / JSON)
+app.get('/api/admin/export', requireAdminAuth, (req, res) => {
+  const { type = 'events', format = 'csv' } = req.query;
+  const exported = usageStore.exportData(type, format);
+  usageStore.recordAuditLog(req.adminUser, 'EXPORT_REPORT', { type, format });
+
+  res.setHeader('Content-Type', exported.mime);
+  res.setHeader('Content-Disposition', `attachment; filename="jeeni_ai_${type}_${Date.now()}.${format}"`);
+  res.send(exported.content);
+});
 
 // ── Router AI System Prompt (v8.2 Enterprise Edition) ──────
 const ROUTER_SYSTEM_PROMPT = `You are Jeeni AI Smart Query Router & Primary Execution Engine (v8.2 Enterprise Edition), serving Indian K-12 students, State Boards, CBSE, NCERT, JEE and NEET aspirants.
@@ -508,7 +704,11 @@ Evaluate the student query and return EXACTLY ONE execution pathway as a JSON ar
   const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
 
   const parsed = JSON.parse(cleaned);
-  return Array.isArray(parsed) ? parsed[0] : parsed;
+  const decision = Array.isArray(parsed) ? parsed[0] : parsed;
+  if (decision && typeof decision === 'object') {
+    decision._usage = routerResponse.usageMetadata;
+  }
+  return decision;
 }
 
 // Helper: Call ChromoDB API
@@ -573,8 +773,8 @@ function normalizeChunkMetadata(raw = {}) {
   return meta;
 }
 
-// ── Upload PDF → ChromoDB ──────────────────────────────────
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+// ── Upload PDF → ChromoDB (Protected Admin Endpoint) ─────────
+app.post('/api/upload', requireAdminAuth, upload.single('file'), async (req, res) => {
   try {
     const { title, subject, class: cls, board, collection = 'textbooks',
             chapter, chapter_number, language = 'English' } = req.body;
@@ -737,6 +937,12 @@ app.delete('/api/memories', (req, res) => {
 // ── Chat API with Router AI v8.2 + Vision + RAG Pipeline ────
 app.post('/api/chat', async (req, res) => {
   const startTime = Date.now();
+  const requestId = aiGateway.generateRequestId();
+  let ragSearchElapsed = 0;
+  let chunks = [];
+  let routerElapsed = 0;
+  let modelElapsed = 0;
+
   try {
     const {
       messages,
@@ -792,7 +998,9 @@ app.post('/api/chat', async (req, res) => {
     let routingDecision = null;
     if (!isWebSearch) {
       try {
+        const routerStart = Date.now();
         routingDecision = await callRouterAI(userQuery, hasImages, messages);
+        routerElapsed = Date.now() - routerStart;
         console.log(`[Router AI v8.2] Action: ${routingDecision.action} | LLM Required: ${routingDecision.llm_required} | ContentType: ${routingDecision.metadata?.content_type || 'N/A'}`);
       } catch (routerErr) {
         console.warn('[Router AI] Failed, falling back to heuristic routing:', routerErr.message);
@@ -802,11 +1010,25 @@ app.post('/api/chat', async (req, res) => {
       console.log('[Router AI] Web Search mode requested — skipping textbook router, enabling Google Search Grounding');
     }
 
-    const action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer'));
+    const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
+    let action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer'));
 
     // ── STAGE 1.1: Pathway D — Safety Block ───────────────
     if (action === 'safety_block' && routingDecision?.direct_response_text) {
       console.log('[Router AI] Pathway D: Safety Block triggered');
+      aiGateway.recordChatInteraction({
+        requestId,
+        userId: studentId,
+        userQuery,
+        feature: 'Safety Guard',
+        model: 'gemini-3.1-flash-lite',
+        messages,
+        routerResult: routingDecision,
+        routerUsage: routingDecision?._usage,
+        totalLatencyMs: Date.now() - startTime,
+        status: 'BLOCKED',
+        responseText: routingDecision.direct_response_text,
+      });
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
@@ -831,6 +1053,19 @@ app.post('/api/chat', async (req, res) => {
     // ── STAGE 1.2: Pathway C — Ask Clarification ──────────
     if (action === 'ask_clarification' && routingDecision?.direct_response_text && !isProfileOrIdentityQuery) {
       console.log('[Router AI] Pathway C: Clarification requested');
+      aiGateway.recordChatInteraction({
+        requestId,
+        userId: studentId,
+        userQuery,
+        feature: 'Router Clarification',
+        model: 'gemini-3.1-flash-lite',
+        messages,
+        routerResult: routingDecision,
+        routerUsage: routingDecision?._usage,
+        totalLatencyMs: Date.now() - startTime,
+        status: 'SUCCESS',
+        responseText: routingDecision.direct_response_text,
+      });
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
@@ -838,8 +1073,6 @@ app.post('/api/chat', async (req, res) => {
         routing: routingDecision,
       });
     }
-
-    const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
 
     // ── STAGE 1.25: Memory & Personalization Relevance Analysis ──
     const relevantMemories = (studentProfile && studentProfile.personalization_enabled !== false)
@@ -858,6 +1091,19 @@ app.post('/api/chat', async (req, res) => {
     // and NOT requiring personalized language adaptation (e.g. Malayalam) or active learning memories!
     if (action === 'direct_answer' && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
       console.log('[Router AI] Pathway A: Direct Answer served with 0 downstream LLM latency');
+      aiGateway.recordChatInteraction({
+        requestId,
+        userId: studentId,
+        userQuery,
+        feature: 'Router Direct Answer',
+        model: 'gemini-3.1-flash-lite',
+        messages,
+        routerResult: routingDecision,
+        routerUsage: routingDecision?._usage,
+        totalLatencyMs: Date.now() - startTime,
+        status: 'SUCCESS',
+        responseText: routingDecision.direct_response_text,
+      });
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
@@ -878,6 +1124,7 @@ app.post('/api/chat', async (req, res) => {
       let searchError = null;
       let searchRes = null;
       const searchQuery = routingDecision?.search_query || routingDecision?.original_question || userQuery;
+      const ragStartTime = Date.now();
 
       try {
         // ── Build normalized metadata filters ────────────────
@@ -956,7 +1203,8 @@ app.post('/api/chat', async (req, res) => {
         searchError = ragErr;
       }
 
-      const chunks = (searchRes && Array.isArray(searchRes.results)) ? searchRes.results : [];
+      ragSearchElapsed = Date.now() - ragStartTime;
+      chunks = (searchRes && Array.isArray(searchRes.results)) ? searchRes.results : [];
 
       // ── ZERO CHUNKS HANDLING (No Second API Call • Direct Backend Response) ──
       if (action === 'rag_search' && chunks.length === 0) {
@@ -970,6 +1218,26 @@ app.post('/api/chat', async (req, res) => {
         const zeroChunkResponse = buildZeroChunkResponse({
           type: reasonType,
           routingDecision,
+        });
+
+        aiGateway.recordChatInteraction({
+          requestId,
+          userId: studentId,
+          userQuery,
+          feature: 'RAG Search (Zero Chunks)',
+          model: 'gemini-3.1-flash-lite',
+          messages,
+          routerResult: routingDecision,
+          routerUsage: routingDecision?._usage,
+          retrievedChunksCount: 0,
+          passedChunksCount: 0,
+          ragSubject: meta?.subject,
+          ragBoard: meta?.board,
+          ragClass: meta?.class,
+          ragLatencyMs: ragSearchElapsed,
+          totalLatencyMs: Date.now() - startTime,
+          status: 'SUCCESS',
+          responseText: zeroChunkResponse.content,
         });
 
         return res.json(zeroChunkResponse);
@@ -1003,10 +1271,27 @@ app.post('/api/chat', async (req, res) => {
     // was not triggered (e.g. useRag was true but ChromoDB was down and searchError was thrown
     // before chunks were assigned), or any future code path that reaches here with empty context.
     if (action === 'rag_search' && !ragContext && !useVision && !isWebSearch) {
-      const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
       const reasonType = determineZeroChunkReason({ metadata: meta, searchError: null });
       console.log(`[Safety Net] action=rag_search but ragContext is empty — blocking Gemini fallback | Reason: ${reasonType}`);
       const zeroChunkResponse = buildZeroChunkResponse({ type: reasonType, routingDecision });
+      aiGateway.recordChatInteraction({
+        requestId,
+        userId: studentId,
+        userQuery,
+        feature: 'RAG Search (Zero Chunks)',
+        model: 'gemini-3.1-flash-lite',
+        messages,
+        routerResult: routingDecision,
+        routerUsage: routingDecision?._usage,
+        retrievedChunksCount: 0,
+        passedChunksCount: 0,
+        ragSubject: meta?.subject,
+        ragBoard: meta?.board,
+        ragClass: meta?.class,
+        totalLatencyMs: Date.now() - startTime,
+        status: 'SUCCESS',
+        responseText: zeroChunkResponse.content,
+      });
       return res.json(zeroChunkResponse);
     }
 
@@ -1134,11 +1419,13 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       config.tools = [{ googleSearch: {} }];
     }
 
+    const modelStart = Date.now();
     const response = await ai.models.generateContent({
       model: geminiModel,
       contents,
       config,
     });
+    modelElapsed = Date.now() - modelStart;
 
     const elapsed = Date.now() - startTime;
     console.log(`[Gemini] Response received in ${elapsed}ms | Pipeline: ${pipelineLabel}`);
@@ -1167,6 +1454,30 @@ Your role is to provide up-to-date, real-time factual information retrieved from
     const finalSources = (retrievedSources && retrievedSources.length > 0) ? retrievedSources : webSources;
 
     // ── STAGE 6: Return response with routing & grounding metadata ─────
+    aiGateway.recordChatInteraction({
+      requestId,
+      userId: studentId,
+      userQuery,
+      feature: isWebSearch ? 'Web Search Grounding' : (useVision ? 'Vision Analysis' : (ragContext ? 'RAG Textbook' : 'AI Tutor')),
+      model: geminiModel,
+      messages,
+      systemInstruction,
+      ragContext,
+      memoryBlock: relevantMemories.length > 0 ? relevantMemories.map(m => m.content).join('\n') : '',
+      retrievedChunksCount: chunks ? chunks.length : 0,
+      passedChunksCount: chunks ? chunks.length : 0,
+      ragSubject: meta?.subject,
+      ragBoard: meta?.board,
+      ragClass: meta?.class,
+      routerResult: routingDecision,
+      routerUsage: routingDecision?._usage,
+      geminiUsage: response.usageMetadata,
+      ragLatencyMs: ragSearchElapsed,
+      totalLatencyMs: Date.now() - startTime,
+      status: 'SUCCESS',
+      responseText: response.text,
+    });
+
     res.json({
       content: response.text,
       sources: finalSources,
@@ -1178,9 +1489,22 @@ Your role is to provide up-to-date, real-time factual information retrieved from
     });
   } catch (err) {
     console.error('[Gemini Error]', err.message);
+    aiGateway.recordChatInteraction({
+      requestId,
+      userId: req.body?.student_id || 'default_student',
+      userQuery: req.body?.messages?.find(m => m.role === 'user')?.content || '',
+      feature: 'AI Tutor',
+      model: req.body?.model || 'gemini-3.1-flash-lite',
+      messages: req.body?.messages || [],
+      totalLatencyMs: Date.now() - startTime,
+      status: 'FAILED',
+      error: err,
+    });
     res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Jeeni Gemini Server running on port ' + PORT + ' (Admin Portal at /admin)'));
+const server = app.listen(PORT, () => console.log('Jeeni Gemini Server running on port ' + PORT + ' (Admin Portal at /admin)'));
+
+module.exports = { app, server };
