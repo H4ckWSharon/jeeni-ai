@@ -39,7 +39,6 @@ class _ChatBubbleState extends State<ChatBubble>
   late AnimationController _ctrl;
   bool _isEditing = false;
   late TextEditingController _editController;
-  bool _isHovered = false;
   bool? _isLiked; // null = no response, true = liked, false = disliked
 
   // TTS state
@@ -337,10 +336,7 @@ class _ChatBubbleState extends State<ChatBubble>
           child: Transform.translate(offset: Offset(0, slide), child: child),
         );
       },
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: Container(
+      child: Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: Column(
@@ -502,7 +498,6 @@ class _ChatBubbleState extends State<ChatBubble>
             ],
           ),
         ),
-      ),
     );
   }
 }

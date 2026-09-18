@@ -86,10 +86,6 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     'Mathematical derivations'
   ];
 
-  static const _allInterests = [
-    'Space & Astronomy', 'Robotics & AI', 'Coding', 'Nature & Wildlife', 'Sports & Fitness', 'Art & Design'
-  ];
-
   @override
   void initState() {
     super.initState();

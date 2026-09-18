@@ -136,7 +136,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: selectedCategory,
+                initialValue: selectedCategory,
                 dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
@@ -202,7 +202,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
                 await AIService.syncMemory(user.uid, content: text, category: selectedCategory);
 
                 if (ctx.mounted) Navigator.of(ctx).pop();
-                if (mounted) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Memory saved! Jeeni will use this to adapt future responses.'),

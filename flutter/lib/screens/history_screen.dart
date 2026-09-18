@@ -488,7 +488,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (choice == null) return;
       switch (choice) {
         case 'open':
-          if (mounted) Navigator.of(context).pop(chatId);
+          if (context.mounted) Navigator.of(context).pop(chatId);
           break;
         case 'pin':
           await DatabaseService.togglePinChat(userId, chatId, !isPinned);

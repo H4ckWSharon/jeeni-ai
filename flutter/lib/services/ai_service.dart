@@ -517,19 +517,6 @@ Rules:
     return aiResponse;
   }
 
-  /// Derives a clean concept slug identifier from any user prompt
-  static String _deriveTopicSlug(String prompt) {
-    final clean = prompt
-        .replaceAll(RegExp(r'\b(explain|simulate|simulation|animation|interactive|model|visual|visually|diagram|practice|sandbox|experiment|deep|deeply|understand|concept|show|me|how|does|what|is|are|the|a|an|of|in|to|for|with|about|can|you|please|help|i|dont|dont|didnt)\b'), '')
-        .replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), '')
-        .trim();
-
-    if (clean.isEmpty) return 'general_concept';
-    final words = clean.split(RegExp(r'\s+')).where((w) => w.length > 1).take(3).toList();
-    if (words.isEmpty) return 'general_concept';
-    return words.join('_');
-  }
-
   static String _getMockFallbackResponse(String prompt) {
     final query = prompt.toLowerCase();
 

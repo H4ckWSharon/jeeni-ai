@@ -1224,7 +1224,11 @@ class _ChatSidebarState extends State<ChatSidebar> {
               Navigator.of(context).pop();
               final u = FirebaseAuth.instance.currentUser;
               if (u != null) {
-                Future.microtask(() => _showSettingsSheet(context, u));
+                Future.microtask(() {
+                  if (context.mounted) {
+                    _showSettingsSheet(context, u);
+                  }
+                });
               }
             },
           ),

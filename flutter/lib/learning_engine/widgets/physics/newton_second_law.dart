@@ -296,7 +296,6 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
   Widget _buildLevel3(double acceleration) {
     // Determine maximum values for chart axes
     const maxTime = 3.0;
-    const maxVelocity = (100.0 / 1.0) * maxTime; // max possible velocity in sim context
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
