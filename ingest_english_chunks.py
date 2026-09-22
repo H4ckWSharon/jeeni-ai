@@ -24,9 +24,15 @@ documents = []
 for c in chunks_raw:
     searchable_text = f"Title: {c['chapter']}\nTopic: {c['topic']}\nSubject: {c['subject']} (Class {c['class']})\nContent: {c['content']}\nKeywords: {', '.join(c['keywords'])}"
     
+    import re
+    ch_match = re.search(r'_CH(\d{1,2})', c.get("chunk_id", "") or c.get("chapter_id", ""))
+    chapter_num = int(ch_match.group(1)) if ch_match else c.get("chapter_number", 1)
+    
     metadata = {
         "chunk_id": c["chunk_id"],
         "chapter_id": c["chapter_id"],
+        "chapter_number": chapter_num,
+        "chapter_name": c["chapter"],
         "title": c["chapter"],
         "chapter": c["chapter"],
         "board": c["board"],

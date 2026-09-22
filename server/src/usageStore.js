@@ -288,11 +288,22 @@ class UsageStore {
       rag_metadata: {
         used: Boolean(event.rag_used),
         retrieved_chunks: parseInt(event.retrieved_chunks || 0, 10),
-        passed_chunks: parseInt(event.passed_chunks || 0, 10),
+        passed_chunks: parseInt(event.passed_chunks || event.validated_chunks || 0, 10),
+        validated_chunks: parseInt(event.validated_chunks || event.passed_chunks || 0, 10),
+        validation_status: event.validation_status || (event.rag_used ? 'PASSED' : 'NOT_APPLICABLE'),
+        matched_chapters: event.matched_chapters || [],
         subject: event.rag_subject || null,
         board: event.rag_board || null,
         class: event.rag_class || null,
       },
+
+      // Grounding & Provenance
+      answer_source: event.answer_source || (event.rag_used ? 'RAG' : 'MODEL_KNOWLEDGE'),
+      validation_status: event.validation_status || (event.rag_used ? 'PASSED' : 'NOT_APPLICABLE'),
+      matched_chapters: event.matched_chapters || [],
+      fallback_used: Boolean(event.fallback_used),
+      fallback_reason: event.fallback_reason || null,
+      gemini_called: event.gemini_called !== undefined ? Boolean(event.gemini_called) : (event.status === 'SUCCESS' && !event.feature?.includes('Zero Chunks')),
 
       // Memory metadata
       memory_metadata: {
@@ -1202,6 +1213,17 @@ class UsageStore {
         memory_used: event.memory_metadata?.used,
         status: event.status,
         latency_ms: event.latency_ms,
+        answer_source: event.answer_source || (event.rag_metadata?.used ? 'RAG' : 'MODEL_KNOWLEDGE'),
+        gemini_called: event.gemini_called !== undefined ? event.gemini_called : true,
+        validation_status: event.validation_status || (event.rag_metadata?.used ? 'VALID' : 'N/A'),
+        matched_chapters: event.matched_chapters || [],
+        fallback_reason: event.fallback_reason || null,
+        router_action: event.router_result?.action || 'N/A',
+        retrieved_chunks: event.retrieved_chunks_count || 0,
+        passed_chunks: event.passed_chunks_count || 0,
+        curriculum_class: event.rag_metadata?.class || 'N/A',
+        curriculum_board: event.rag_metadata?.board || 'N/A',
+        curriculum_subject: event.rag_metadata?.subject || 'N/A',
       }
     };
   }

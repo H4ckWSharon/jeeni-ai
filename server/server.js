@@ -11,6 +11,9 @@ const {
   buildZeroChunkResponse,
   getPredefinedMessage,
   isSyllabusAvailable,
+  normalizeCurriculumIntent,
+  validateRetrievedChunks,
+  buildClarificationForSubject,
 } = require('./src/zeroChunksHandler');
 const studentStore = require('./src/studentStore');
 const usageStore = require('./src/usageStore');
@@ -519,7 +522,7 @@ Schema:
   }
 ]
 
-Example:
+Example 1:
 Input: "Solve exercise 4.2 question 3."
 Output:
 [
@@ -527,6 +530,17 @@ Output:
     "action": "ask_clarification",
     "llm_required": false,
     "direct_response_text": "To solve this accurately, please specify the Class, Subject, and Board/Textbook."
+  }
+]
+
+Example 2 (Ambiguous Chapter):
+Input: "Explain Chapter 2"
+Output:
+[
+  {
+    "action": "ask_clarification",
+    "llm_required": false,
+    "direct_response_text": "To help you with Chapter 2, could you please specify the subject (e.g. Science, Mathematics, English) and your Class/Board?"
   }
 ]
 
@@ -1066,12 +1080,17 @@ app.post('/api/chat', async (req, res) => {
     const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
     let action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer'));
 
-    // Extract explicit curriculum stated in the user's query
-    const explicitCurriculum = extractCurriculumFromQuery(userQuery);
-    if (explicitCurriculum.class && !meta.class) meta.class = explicitCurriculum.class;
-    if (explicitCurriculum.board && !meta.board) meta.board = explicitCurriculum.board;
-    if (explicitCurriculum.subject && !meta.subject) meta.subject = explicitCurriculum.subject;
+    // ── STAGE 1.05: Structured Curriculum Intent Normalization ──────
+    const curriculumIntent = normalizeCurriculumIntent(userQuery, routingDecision, studentProfile);
+    console.log(`[JEENI_INTENT] isCurriculum=${curriculumIntent.isCurriculumQuery} | class=${curriculumIntent.class} | board=${curriculumIntent.board} | subject=${curriculumIntent.subject} | chapter=${curriculumIntent.chapterNumber} | source=${curriculumIntent.source}`);
 
+    // Merge normalized curriculum fields into meta
+    if (curriculumIntent.class && !meta.class) meta.class = curriculumIntent.class;
+    if (curriculumIntent.board && !meta.board) meta.board = curriculumIntent.board;
+    if (curriculumIntent.subject && !meta.subject) meta.subject = curriculumIntent.subject;
+    if (curriculumIntent.chapterNumber !== null && meta.chapter_number === undefined) meta.chapter_number = curriculumIntent.chapterNumber;
+
+    const explicitCurriculum = extractCurriculumFromQuery(userQuery);
     const hasExplicitQueryClass = !!explicitCurriculum.class;
     const hasExplicitQueryBoard = !!explicitCurriculum.board;
 
@@ -1086,6 +1105,7 @@ app.post('/api/chat', async (req, res) => {
       const zeroChunkResponse = buildZeroChunkResponse({
         type: 'SYLLABUS_NOT_AVAILABLE',
         routingDecision,
+        curriculumIntent,
       });
       aiGateway.recordChatInteraction({
         requestId,
@@ -1098,6 +1118,10 @@ app.post('/api/chat', async (req, res) => {
         routerUsage: routingDecision?._usage,
         retrievedChunksCount: 0,
         passedChunksCount: 0,
+        validatedChunksCount: 0,
+        validationStatus: 'FAILED',
+        answerSource: 'ZERO_CHUNKS',
+        geminiCalled: false,
         ragSubject: meta?.subject,
         ragBoard: meta?.board,
         ragClass: meta?.class,
@@ -1124,27 +1148,64 @@ app.post('/api/chat', async (req, res) => {
         totalLatencyMs: Date.now() - startTime,
         status: 'BLOCKED',
         responseText: routingDecision.direct_response_text,
+        answerSource: 'ZERO_CHUNKS',
+        geminiCalled: false,
       });
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
         pipeline: 'SAFETY_BLOCK',
         routing: routingDecision,
+        answer_source: 'ZERO_CHUNKS',
+        gemini_called: false,
       });
     }
 
-    // ── STAGE 1.15: Student Profile & Identity Query Detection ──
+    // ── STAGE 1.15: Student Profile & Curriculum Auto-Resolver ──
     const isProfileOrIdentityQuery = /(which|what|tell me|do you know).*?(class|grade|standard|name|board|syllabus|subject|goal|profile|about me|know about me|remember)/i.test(userQuery) ||
       /(who am i|my class|my grade|my name|my profile|my goal|what i am studying|why u collect|data from me)/i.test(userQuery);
 
     const disclaimsKnowledge = routingDecision?.direct_response_text &&
       /(do not have access|don't have access|personal information|school records|identity)/i.test(routingDecision.direct_response_text);
 
-    // If Router asked for clarification because class/board was missing, but we have studentProfile:
-    // CRITICAL: Only auto-resolve if user query did NOT explicitly mention another class/board
-    if (action === 'ask_clarification' && studentProfile && (!meta.class && !hasExplicitQueryClass || !meta.board && !hasExplicitQueryBoard)) {
-      console.log(`[Router AI] Auto-resolving missing curriculum from Student Profile: Class ${studentProfile.class} (${studentProfile.board})`);
-      action = 'rag_search';
+    // CRITICAL PRODUCTION RULE:
+    // If the student asked an ambiguous curriculum query (e.g. "Explain Chapter 2") without specifying a subject:
+    // Do NOT guess or randomly pick a subject!
+    // Do NOT auto-resolve to rag_search across all subjects!
+    // PRESERVE ask_clarification and ask the student specifically which enrolled subject they want explained.
+    if (action === 'ask_clarification' && curriculumIntent.isCurriculumQuery) {
+      if (curriculumIntent.requiresSubject || !curriculumIntent.subject) {
+        console.log(`[JEENI_RESOLVER] Ambiguous curriculum request requires subject (Chapter ${curriculumIntent.chapterNumber || 'N/A'}). Generating targeted subject clarification.`);
+        const subjectClarification = buildClarificationForSubject(curriculumIntent.chapterNumber, studentProfile);
+        routingDecision = {
+          ...(routingDecision || {}),
+          ...subjectClarification,
+        };
+        action = 'ask_clarification';
+      } else if (studentProfile && (!meta.class && !hasExplicitQueryClass || !meta.board && !hasExplicitQueryBoard)) {
+        console.log(`[JEENI_RESOLVER] Auto-resolving missing curriculum from Student Profile for known subject ${curriculumIntent.subject}: Class ${studentProfile.class} (${studentProfile.board})`);
+        action = 'rag_search';
+      }
+    }
+
+    // ── HARD GROUNDING BOUNDARY: Prevent Personalization & Direct-Answer Bypass ──
+    // If the request is an explicit curriculum query (e.g. "Explain Class 10 Chapter 2", "CBSE Chapter 1"),
+    // Router AI must NEVER be allowed to serve an ungrounded answer from model pretraining!
+    if (curriculumIntent.isCurriculumQuery && !isProfileOrIdentityQuery && !isWebSearch && !hasImages) {
+      if (!curriculumIntent.subject) {
+        // Missing subject -> Clarify immediately
+        console.log(`[JEENI_ROUTER] Curriculum query missing subject intercepted from direct_answer -> forcing ask_clarification`);
+        const subjectClarification = buildClarificationForSubject(curriculumIntent.chapterNumber, studentProfile);
+        routingDecision = {
+          ...(routingDecision || {}),
+          ...subjectClarification,
+        };
+        action = 'ask_clarification';
+      } else {
+        // Subject is present -> Force curriculum RAG retrieval
+        console.log(`[JEENI_ROUTER] Explicit curriculum query intercepted from direct_answer -> enforcing rag_search`);
+        action = 'rag_search';
+      }
     }
 
     // ── STAGE 1.2: Pathway C — Ask Clarification ──────────
@@ -1162,12 +1223,17 @@ app.post('/api/chat', async (req, res) => {
         totalLatencyMs: Date.now() - startTime,
         status: 'SUCCESS',
         responseText: routingDecision.direct_response_text,
+        answerSource: 'CLARIFICATION',
+        geminiCalled: false,
       });
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
         pipeline: 'CLARIFICATION',
         routing: routingDecision,
+        curriculum_intent: curriculumIntent,
+        answer_source: 'CLARIFICATION',
+        gemini_called: false,
       });
     }
 
@@ -1183,9 +1249,8 @@ app.post('/api/chat', async (req, res) => {
     );
 
     // ── STAGE 1.3: Pathway A — Direct Answer (Zero Downstream LLM Latency)
-    // Only short-circuit if NOT a question asking about student profile / identity / memory,
-    // NOT a response disclaiming access when we have the student profile,
-    // and NOT requiring personalized language adaptation (e.g. Malayalam) or active learning memories!
+    // Only short-circuit if NOT a curriculum query, NOT asking about student profile,
+    // NOT a response disclaiming access, and NOT requiring personalized language adaptation
     if (action === 'direct_answer' && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
       console.log('[Router AI] Pathway A: Direct Answer served with 0 downstream LLM latency');
       aiGateway.recordChatInteraction({
@@ -1200,12 +1265,17 @@ app.post('/api/chat', async (req, res) => {
         totalLatencyMs: Date.now() - startTime,
         status: 'SUCCESS',
         responseText: routingDecision.direct_response_text,
+        answerSource: 'MODEL_KNOWLEDGE',
+        geminiCalled: false,
       });
       return res.json({
         content: routingDecision.direct_response_text,
         sources: [],
         pipeline: 'DIRECT_ANSWER',
         routing: routingDecision,
+        curriculum_intent: curriculumIntent,
+        answer_source: 'MODEL_KNOWLEDGE',
+        gemini_called: false,
         memories_applied: [],
         new_memory_saved: newMemorySaved ? newMemorySaved.content : null,
       });
@@ -1237,11 +1307,13 @@ app.post('/api/chat', async (req, res) => {
         if (meta.class)   whereFilter.class   = normalizeClass(meta.class);
         if (meta.board)   whereFilter.board   = normalizeBoard(meta.board);
 
+        // Strengthen with normalized curriculumIntent
+        if (!whereFilter.class && curriculumIntent?.class) whereFilter.class = normalizeClass(curriculumIntent.class);
+        if (!whereFilter.board && curriculumIntent?.board) whereFilter.board = normalizeBoard(curriculumIntent.board);
+        if (!whereFilter.subject && curriculumIntent?.subject) whereFilter.subject = normalizeSubject(curriculumIntent.subject);
+
         // Phase 4 & 9: Curriculum Fallback from Student Profile
         // If the query did not explicitly specify class or board, apply the student profile defaults.
-        // Track whether class/board came from the Query or Router AI (explicit) or from the student profile (implicit)
-        // so that we can safely relax the search tier for profile-injected pins without risking
-        // cross-curriculum contamination from explicitly-specified class/board.
         const routerSpecifiedClass = !!whereFilter.class || hasExplicitQueryClass;
         const routerSpecifiedBoard = !!whereFilter.board || hasExplicitQueryBoard;
 
@@ -1261,18 +1333,12 @@ app.post('/api/chat', async (req, res) => {
         // Expose enriched filter to outer scope for zero-chunks handlers
         effectiveWhereFilter = { ...whereFilter };
 
-        console.log(`[RAG Filter] whereFilter=${JSON.stringify(whereFilter)} | hasCurriculumPin=${hasCurriculumPin} | routerExplicit=${hasExplicitRouterCurriculumPin} | profileOnly=${hasProfileOnlyCurriculumPin}`);
+        console.log(`[JEENI_RAG] whereFilter=${JSON.stringify(whereFilter)} | chapter=${curriculumIntent?.chapterNumber || 'N/A'} | hasCurriculumPin=${hasCurriculumPin} | routerExplicit=${hasExplicitRouterCurriculumPin}`);
 
         // ── Search Strategy ───────────────────────────────────
-        // STRICT RULE: If class OR board was explicitly specified BY THE ROUTER, NEVER relax those filters.
+        // STRICT RULE: If class OR board was explicitly specified BY THE ROUTER or query, NEVER relax those filters.
+        // For curriculum queries (e.g. Chapter 2), NEVER relax class or board to avoid cross-curriculum bleed.
         // Cross-curriculum contamination (wrong class/board result) is worse than zero chunks.
-        //
-        // Allowed fallback tiers:
-        //   Tier 1 (always):    Full filter {subject, class, board}
-        //   Tier 2a (profile-pin only): Subject+class or subject-only — safe fallback when profile
-        //                               injected the curriculum but content isn't tagged for that exact combo
-        //   Tier 2b (no class & no board from router): Subject-only filter — safe within a subject
-        //   Tier 3 (only if no curriculum at all): Unconstrained semantic search
 
         if (Object.keys(whereFilter).length > 0) {
           // Tier 1: Strict curriculum-aware search
@@ -1286,13 +1352,11 @@ app.post('/api/chat', async (req, res) => {
         }
 
         // Tier 2a: Profile-injected curriculum pin, but Tier 1 returned nothing.
-        // This happens when a student has a profile (Class 10, SCERT_KERALA) but that specific
-        // class/board combination hasn't been uploaded to ChromoDB yet (e.g. only Class 9 content exists).
-        // SAFE: fall back to subject-only to avoid silent zero-chunk responses for genuine queries.
-        // ONLY applies when the router did NOT explicitly specify class or board.
+        // ONLY applies when the router did NOT explicitly specify class or board, AND this is NOT an explicit curriculum query.
         if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
             && hasProfileOnlyCurriculumPin
-            && whereFilter.subject) {
+            && whereFilter.subject
+            && !curriculumIntent?.isCurriculumQuery) {
           searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
             query: searchQuery,
             n_results: 5,
@@ -1302,10 +1366,11 @@ app.post('/api/chat', async (req, res) => {
           console.log(`[RAG Tier 2a] Profile-pin fallback (subject-only) → ${searchRes?.results?.length ?? 0} results`);
         }
 
-        // Tier 2b: Subject-only (ONLY if no class and no board were specified BY THE ROUTER)
+        // Tier 2b: Subject-only (ONLY if no class and no board were specified BY THE ROUTER and NOT curriculum query)
         if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
             && whereFilter.subject
-            && !hasCurriculumPin) {
+            && !hasCurriculumPin
+            && !curriculumIntent?.isCurriculumQuery) {
           searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
             query: searchQuery,
             n_results: 5,
@@ -1315,9 +1380,10 @@ app.post('/api/chat', async (req, res) => {
           console.log(`[RAG Tier 2b] Subject-only filter → ${searchRes?.results?.length ?? 0} results`);
         }
 
-        // Tier 3: Unconstrained (ONLY if router provided absolutely no curriculum metadata)
+        // Tier 3: Unconstrained (ONLY if router provided absolutely no curriculum metadata and NOT curriculum query)
         if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
-            && Object.keys(whereFilter).length === 0) {
+            && Object.keys(whereFilter).length === 0
+            && !curriculumIntent?.isCurriculumQuery) {
           searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
             query: searchQuery,
             n_results: 5,
@@ -1335,27 +1401,44 @@ app.post('/api/chat', async (req, res) => {
       }
 
       ragSearchElapsed = Date.now() - ragStartTime;
-      chunks = (searchRes && Array.isArray(searchRes.results)) ? searchRes.results : [];
+      const rawChunks = (searchRes && Array.isArray(searchRes.results)) ? searchRes.results : [];
 
-      // ── ZERO CHUNKS HANDLING (No Second API Call • Direct Backend Response) ──
+      console.log(`[JEENI_RAG_RESULT] retrieved=${rawChunks.length} for query="${searchQuery.slice(0, 60)}"`);
+
+      // ── DETERMINISTIC RETRIEVAL VALIDATION (SINGLE LLM GATE) ──
+      // Deterministically validate retrieved chunks against curriculum intent (class, board, subject, chapter)
+      // Vector similarity score is semantic similarity, NOT proof of curriculum identity!
+      const validation = validateRetrievedChunks(rawChunks, curriculumIntent);
+      chunks = validation.validChunks;
+      const validationStatus = validation.valid ? 'VALID' : 'FAILED';
+      const validationReason = validation.reason;
+      const matchedChapters = validation.matchedChapters;
+
+      console.log(`[JEENI_GROUNDING] requested_chapter=${curriculumIntent.chapterNumber || 'N/A'} | matched_chapters=${JSON.stringify(matchedChapters)} | validation=${validationStatus} | reason=${validationReason} | valid_chunks=${chunks.length}/${rawChunks.length}`);
+
+      // ── ZERO CHUNKS & INVALID RETRIEVAL HANDLING (No Second API Call • Hard Grounding Stop) ──
       if (action === 'rag_search' && chunks.length === 0) {
-        // Pass enriched effective metadata (includes student profile class/board) so isSyllabusAvailable
-        // can accurately classify the reason — especially when profile pins a class/board not in ChromoDB.
         const effectiveMeta = {
-          board: effectiveWhereFilter.board || meta.board,
-          class: effectiveWhereFilter.class || meta.class,
-          subject: effectiveWhereFilter.subject || meta.subject,
+          board: effectiveWhereFilter.board || meta.board || curriculumIntent?.board,
+          class: effectiveWhereFilter.class || meta.class || curriculumIntent?.class,
+          subject: effectiveWhereFilter.subject || meta.subject || curriculumIntent?.subject,
         };
-        const reasonType = determineZeroChunkReason({
-          metadata: effectiveMeta,
-          searchError: searchError,
-        });
 
-        console.log(`[Zero Chunks Handling] action=rag_search | chunks=0 | Reason: ${reasonType} | Skipping second LLM call (Tokens Saved)`);
+        // If ChromoDB returned chunks but all were rejected during validation (e.g. wrong chapter/class/board)
+        // use the specific validation rejection reason!
+        let reasonType = (validationReason !== 'VALID' && validationReason !== 'CONTENT_NOT_FOUND')
+          ? validationReason
+          : determineZeroChunkReason({
+              metadata: effectiveMeta,
+              searchError: searchError,
+            });
+
+        console.log(`[JEENI_LLM_GATE] gemini_called=false | Zero/Invalid Chunks: ${reasonType} | Skipping LLM call (Tokens Saved)`);
 
         const zeroChunkResponse = buildZeroChunkResponse({
           type: reasonType,
           routingDecision,
+          curriculumIntent,
         });
 
         aiGateway.recordChatInteraction({
@@ -1367,21 +1450,27 @@ app.post('/api/chat', async (req, res) => {
           messages,
           routerResult: routingDecision,
           routerUsage: routingDecision?._usage,
-          retrievedChunksCount: 0,
+          retrievedChunksCount: rawChunks.length,
           passedChunksCount: 0,
-          ragSubject: meta?.subject,
-          ragBoard: meta?.board,
-          ragClass: meta?.class,
+          validatedChunksCount: 0,
+          ragSubject: effectiveMeta.subject,
+          ragBoard: effectiveMeta.board,
+          ragClass: effectiveMeta.class,
           ragLatencyMs: ragSearchElapsed,
           totalLatencyMs: Date.now() - startTime,
           status: 'SUCCESS',
           responseText: zeroChunkResponse.content,
+          answerSource: (reasonType === 'SYLLABUS_NOT_AVAILABLE' ? 'ZERO_CHUNKS' : 'CONTENT_NOT_FOUND'),
+          geminiCalled: false,
+          validationStatus: 'FAILED',
+          matchedChapters: matchedChapters,
+          fallbackReason: reasonType,
         });
 
         return res.json(zeroChunkResponse);
       }
 
-      // If chunks found, format context blocks for downstream LLM
+      // If validated chunks found, format context blocks for downstream LLM
       if (chunks.length > 0) {
         retrievedSources = chunks.map(r => ({
           title: r.metadata.title || r.metadata.chapter || 'Textbook',
@@ -1398,25 +1487,23 @@ app.post('/api/chat', async (req, res) => {
           (r, i) => `[Source ${i + 1}: ${r.metadata.title || r.metadata.chapter || 'Textbook'} | Board: ${r.metadata.board || 'N/A'} | Class: ${r.metadata.class || 'N/A'} | Subject: ${r.metadata.subject || meta.subject || 'General'}]\n${r.text}`
         );
         ragContext = `\n\n--- RELEVANT TEXTBOOK CONTEXT ---\n${contextBlocks.join('\n\n')}\n--- END CONTEXT ---\nUse the textbook context above to provide factual, accurate explanations.`;
-        console.log(`[RAG] Retrieved ${chunks.length} chunks from ChromoDB for: "${searchQuery.slice(0, 60)}"`);
+        console.log(`[RAG] Retrieved ${chunks.length} validated chunks from ChromoDB for: "${searchQuery.slice(0, 60)}"`);
       }
     } else if (useVision) {
       console.log('[RAG] Skipped — vision analysis active');
     }
 
     // ── SAFETY NET: Block Gemini hallucination when action=rag_search but RAG produced no chunks ──
-    // This catches edge cases where RAG ran but returned 0 chunks AND the early return at line 779
-    // was not triggered (e.g. useRag was true but ChromoDB was down and searchError was thrown
-    // before chunks were assigned), or any future code path that reaches here with empty context.
+    // This catches edge cases where RAG ran but returned 0 chunks AND the early return was not triggered
     if (action === 'rag_search' && !ragContext && !useVision && !isWebSearch) {
       const effectiveMeta = {
-        board: effectiveWhereFilter.board || meta.board,
-        class: effectiveWhereFilter.class || meta.class,
-        subject: effectiveWhereFilter.subject || meta.subject,
+        board: effectiveWhereFilter.board || meta.board || curriculumIntent?.board,
+        class: effectiveWhereFilter.class || meta.class || curriculumIntent?.class,
+        subject: effectiveWhereFilter.subject || meta.subject || curriculumIntent?.subject,
       };
       const reasonType = determineZeroChunkReason({ metadata: effectiveMeta, searchError: null });
-      console.log(`[Safety Net] action=rag_search but ragContext is empty — blocking Gemini fallback | Reason: ${reasonType}`);
-      const zeroChunkResponse = buildZeroChunkResponse({ type: reasonType, routingDecision });
+      console.log(`[JEENI_LLM_GATE] gemini_called=false | Safety Net: action=rag_search but ragContext is empty — blocking Gemini fallback | Reason: ${reasonType}`);
+      const zeroChunkResponse = buildZeroChunkResponse({ type: reasonType, routingDecision, curriculumIntent });
       aiGateway.recordChatInteraction({
         requestId,
         userId: studentId,
@@ -1426,14 +1513,19 @@ app.post('/api/chat', async (req, res) => {
         messages,
         routerResult: routingDecision,
         routerUsage: routingDecision?._usage,
-        retrievedChunksCount: 0,
+        retrievedChunksCount: chunks ? chunks.length : 0,
         passedChunksCount: 0,
-        ragSubject: meta?.subject,
-        ragBoard: meta?.board,
-        ragClass: meta?.class,
+        validatedChunksCount: 0,
+        ragSubject: effectiveMeta.subject,
+        ragBoard: effectiveMeta.board,
+        ragClass: effectiveMeta.class,
         totalLatencyMs: Date.now() - startTime,
         status: 'SUCCESS',
         responseText: zeroChunkResponse.content,
+        answerSource: (reasonType === 'SYLLABUS_NOT_AVAILABLE' ? 'ZERO_CHUNKS' : 'CONTENT_NOT_FOUND'),
+        geminiCalled: false,
+        validationStatus: 'FAILED',
+        fallbackReason: reasonType,
       });
       return res.json(zeroChunkResponse);
     }
@@ -1608,6 +1700,7 @@ Your role is to provide up-to-date, real-time factual information retrieved from
     }
 
     const finalSources = (retrievedSources && retrievedSources.length > 0) ? retrievedSources : webSources;
+    const answerSource = isWebSearch ? 'WEB' : (ragContext ? 'RAG' : (relevantMemories.length > 0 ? 'MEMORY' : 'MODEL_KNOWLEDGE'));
 
     // ── STAGE 6: Return response with routing & grounding metadata ─────
     aiGateway.recordChatInteraction({
@@ -1622,9 +1715,14 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       memoryBlock: relevantMemories.length > 0 ? relevantMemories.map(m => m.content).join('\n') : '',
       retrievedChunksCount: chunks ? chunks.length : 0,
       passedChunksCount: chunks ? chunks.length : 0,
-      ragSubject: meta?.subject,
-      ragBoard: meta?.board,
-      ragClass: meta?.class,
+      validatedChunksCount: chunks ? chunks.length : 0,
+      validationStatus: chunks && chunks.length > 0 ? 'VALID' : 'N/A',
+      matchedChapters: retrievedSources.map(s => s.title),
+      answerSource: answerSource,
+      geminiCalled: true,
+      ragSubject: meta?.subject || curriculumIntent?.subject,
+      ragBoard: meta?.board || curriculumIntent?.board,
+      ragClass: meta?.class || curriculumIntent?.class,
       routerResult: routingDecision,
       routerUsage: routingDecision?._usage,
       geminiUsage: response.usageMetadata,
@@ -1640,6 +1738,10 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       pipeline: pipelineLabel,
       grounding: groundingMetadata,
       routing: routingDecision,
+      curriculum_intent: curriculumIntent,
+      answer_source: answerSource,
+      gemini_called: true,
+      validation_status: chunks && chunks.length > 0 ? 'VALID' : 'N/A',
       memories_applied: relevantMemories.map(m => m.content),
       new_memory_saved: newMemorySaved ? newMemorySaved.content : null,
     });

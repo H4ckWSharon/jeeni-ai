@@ -1770,9 +1770,32 @@
             `).join('')}
           </div>
 
+          <h4 style="font-size:14px; margin:16px 0 8px; color:#818CF8;">Curriculum Grounding & Answer Provenance</h4>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; font-size:12px;">
+            <div style="background:var(--bg-inset); border:1px solid var(--border); padding:8px 12px; border-radius:6px;">
+              <b>Answer Source:</b> <span class="badge ${data.trace.answer_source === 'RAG' ? 'badge-success' : (data.trace.answer_source === 'CONTENT_NOT_FOUND' ? 'badge-warning' : 'badge-info')}">${data.trace.answer_source || 'N/A'}</span>
+            </div>
+            <div style="background:var(--bg-inset); border:1px solid var(--border); padding:8px 12px; border-radius:6px;">
+              <b>Gemini LLM Called:</b> <span class="badge ${data.trace.gemini_called ? 'badge-info' : 'badge-success'}">${data.trace.gemini_called ? 'YES' : 'NO (Tokens Saved)'}</span>
+            </div>
+            <div style="background:var(--bg-inset); border:1px solid var(--border); padding:8px 12px; border-radius:6px;">
+              <b>Retrieval Validation:</b> <span class="badge ${data.trace.validation_status === 'VALID' ? 'badge-success' : (data.trace.validation_status === 'FAILED' ? 'badge-danger' : 'badge-info')}">${data.trace.validation_status || 'N/A'}</span>
+            </div>
+            <div style="background:var(--bg-inset); border:1px solid var(--border); padding:8px 12px; border-radius:6px;">
+              <b>Chunks (Retrieved / Passed):</b> <span class="mono">${data.trace.retrieved_chunks || 0} / ${data.trace.passed_chunks || 0}</span>
+            </div>
+            <div style="background:var(--bg-inset); border:1px solid var(--border); padding:8px 12px; border-radius:6px; grid-column:span 2;">
+              <b>Matched Chapters:</b> <span>${(data.trace.matched_chapters && data.trace.matched_chapters.length > 0) ? escapeHtml(data.trace.matched_chapters.join(', ')) : 'None'}</span>
+            </div>
+            ${data.trace.fallback_reason ? `
+            <div style="background:var(--bg-inset); border:1px solid var(--border); padding:8px 12px; border-radius:6px; grid-column:span 2;">
+              <b>Rejection / Fallback Reason:</b> <span class="mono" style="color:var(--accent-yellow);">${escapeHtml(data.trace.fallback_reason)}</span>
+            </div>` : ''}
+          </div>
+
           <h4 style="font-size:14px; margin:16px 0 8px; color:#818CF8;">End-to-End Request Trace</h4>
           <div class="mono" style="font-size:11px; background:var(--bg-inset); padding:12px; border-radius:8px; border:1px solid var(--border); line-height:1.6;">
-            Request (${data.trace.request_id}) → User (${escapeHtml(data.trace.user_id)}) → Feature (${escapeHtml(data.trace.feature)}) → RAG Used: ${data.trace.rag_used ? 'YES' : 'NO'} → Memory Used: ${data.trace.memory_used ? 'YES' : 'NO'} → Model (${escapeHtml(data.trace.model)}) → Latency: ${data.trace.latency_ms}ms → Status: ${data.trace.status}
+            Request (${data.trace.request_id}) → User (${escapeHtml(data.trace.user_id)}) → Feature (${escapeHtml(data.trace.feature)}) → RAG Used: ${data.trace.rag_used ? 'YES' : 'NO'} → Validation: ${data.trace.validation_status || 'N/A'} → Gemini Called: ${data.trace.gemini_called ? 'YES' : 'NO'} → Answer Source: ${data.trace.answer_source || 'N/A'} → Latency: ${data.trace.latency_ms}ms → Status: ${data.trace.status}
           </div>
         `;
       } catch (err) {

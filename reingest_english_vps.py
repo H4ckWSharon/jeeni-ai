@@ -75,9 +75,14 @@ console.log(`Loaded ${chunksRaw.length} chunks`);
 
 // Format documents with canonical metadata
 const documents = chunksRaw.map(c => {
+  const chMatch = (c.chunk_id || c.chapter_id || '').match(/_CH(\d{1,2})/);
+  const chapterNum = chMatch ? parseInt(chMatch[1], 10) : (c.chapter_number || 1);
+
   const metadata = {
     chunk_id: c.chunk_id,
     chapter_id: c.chapter_id,
+    chapter_number: chapterNum,
+    chapter_name: c.chapter,
     title: c.chapter,
     chapter: c.chapter,
     board: c.board,                          // Already "CBSE"

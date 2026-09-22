@@ -137,6 +137,13 @@ class AIGateway {
     status = 'SUCCESS',
     error = null,
     responseText = '',
+    answerSource = null,
+    validationStatus = null,
+    validatedChunksCount = null,
+    matchedChapters = [],
+    fallbackUsed = false,
+    fallbackReason = null,
+    geminiCalled = undefined,
   }) {
     try {
       // Record timestamp for velocity tracking
@@ -224,7 +231,14 @@ class AIGateway {
 
         rag_used: Boolean(ragContext || retrievedChunksCount > 0),
         retrieved_chunks: retrievedChunksCount,
-        passed_chunks: passedChunksCount,
+        passed_chunks: validatedChunksCount !== null ? validatedChunksCount : passedChunksCount,
+        validated_chunks: validatedChunksCount !== null ? validatedChunksCount : passedChunksCount,
+        validation_status: validationStatus || (ragContext ? 'PASSED' : 'NOT_APPLICABLE'),
+        matched_chapters: matchedChapters || [],
+        answer_source: answerSource || (ragContext ? 'RAG' : (retrievedChunksCount === 0 && feature.includes('Zero Chunks') ? 'ZERO_CHUNKS' : 'MODEL_KNOWLEDGE')),
+        fallback_used: fallbackUsed,
+        fallback_reason: fallbackReason,
+        gemini_called: geminiCalled !== undefined ? geminiCalled : (status === 'SUCCESS' && !feature.includes('Zero Chunks') && !feature.includes('Clarification')),
         rag_subject: ragSubject,
         rag_board: ragBoard,
         rag_class: ragClass,
