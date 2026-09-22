@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
 import '../learning_engine/services/widget_registry.dart';
 
@@ -608,16 +609,24 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
   Widget build(BuildContext context) {
     if (widget.sources.isEmpty) return const SizedBox.shrink();
 
+    final isWebSearch = widget.sources.any((s) =>
+        s['is_web'] == true ||
+        s['subject'] == 'Web Search' ||
+        (s['url'] != null && (s['url'] as String).isNotEmpty));
+
+    final primaryColor = isWebSearch ? const Color(0xFF38BDF8) : const Color(0xFF818CF8);
+    final borderColor = isWebSearch ? const Color(0xFF0284C7).withOpacity(0.3) : const Color(0xFF6366F1).withOpacity(0.3);
+
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1F26),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3), width: 1),
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.08),
+            color: primaryColor.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -634,10 +643,14 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                    color: primaryColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.menu_book_rounded, color: Color(0xFF818CF8), size: 16),
+                  child: Icon(
+                    isWebSearch ? Icons.travel_explore_rounded : Icons.menu_book_rounded,
+                    color: primaryColor,
+                    size: 16,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -646,10 +659,10 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                     children: [
                       Row(
                         children: [
-                          const Text(
-                            '📚 Textbook Verified',
+                          Text(
+                            isWebSearch ? '🌐 Live Web Sources' : '📚 Textbook Verified',
                             style: TextStyle(
-                              color: Color(0xFF818CF8),
+                              color: primaryColor,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
@@ -658,13 +671,15 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              color: (isWebSearch ? const Color(0xFF0284C7) : const Color(0xFF10B981)).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              '${widget.sources.length} Source${widget.sources.length > 1 ? 's' : ''}',
-                              style: const TextStyle(
-                                color: Color(0xFF34D399),
+                              isWebSearch
+                                  ? '${widget.sources.length} Web Source${widget.sources.length > 1 ? 's' : ''}'
+                                  : '${widget.sources.length} Source${widget.sources.length > 1 ? 's' : ''}',
+                              style: TextStyle(
+                                color: isWebSearch ? const Color(0xFF38BDF8) : const Color(0xFF34D399),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -673,7 +688,9 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                         ],
                       ),
                       Text(
-                        'Cited from your uploaded learning materials',
+                        isWebSearch
+                            ? 'Retrieved in real-time via Google Search Grounding'
+                            : 'Cited from your uploaded learning materials',
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
                       ),
                     ],
@@ -681,7 +698,7 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                 ),
                 Icon(
                   _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                  color: const Color(0xFF818CF8),
+                  color: primaryColor,
                 ),
               ],
             ),
@@ -691,13 +708,16 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
             const Divider(color: Color(0xFF2E313D), height: 1),
             const SizedBox(height: 10),
             ...widget.sources.map((src) {
-              final title   = src['title']   as String? ?? 'Textbook';
+              final title   = src['title']   as String? ?? (isWebSearch ? 'Web Source' : 'Textbook');
               final page    = src['page']    ?? 1;
               final score   = src['score']   ?? 0;
               final snippet = src['snippet'] as String? ?? '';
               final board   = src['board']   as String?;
               final cls     = src['class']   as String?;
               final chunkId = src['chunk_id'] as String?;
+              final url     = src['url']     as String?;
+              final domain  = src['domain']  as String? ?? '';
+              final isItemWeb = src['is_web'] == true || (url != null && url.isNotEmpty);
 
               // Build curriculum context string
               final curriculumParts = <String>[];
@@ -721,7 +741,7 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                       children: [
                         Expanded(
                           child: Text(
-                            '📖 $title (Page $page)',
+                            isItemWeb ? '🌐 $title' : '📖 $title (Page $page)',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -731,16 +751,46 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                           ),
                         ),
                         Text(
-                          '$score% Match',
-                          style: const TextStyle(
-                            color: Color(0xFF60A5FA),
+                          isItemWeb ? 'Live Web Result' : '$score% Match',
+                          style: TextStyle(
+                            color: isItemWeb ? const Color(0xFF38BDF8) : const Color(0xFF60A5FA),
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                    if (curriculumLabel.isNotEmpty) ...[
+                    if (isItemWeb && url != null && url.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () async {
+                          final uri = Uri.tryParse(url);
+                          if (uri != null) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.open_in_new_rounded, size: 12, color: Color(0xFF38BDF8)),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                domain.isNotEmpty ? domain : url,
+                                style: const TextStyle(
+                                  color: Color(0xFF38BDF8),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (!isItemWeb && curriculumLabel.isNotEmpty) ...[
                       const SizedBox(height: 3),
                       Row(
                         children: [

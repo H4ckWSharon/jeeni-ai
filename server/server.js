@@ -1018,8 +1018,6 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'messages array is required' });
     }
 
-    const isWebSearch = mode === 'Web Search' || webSearch === true || enableWebSearch === true;
-
     // ── STAGE 0: Extract message context ──────────────────
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
 
@@ -1034,6 +1032,11 @@ app.post('/api/chat', async (req, res) => {
           ? lastUserMsg.content
           : lastUserMsg.content.map(p => (p.type === 'text' ? p.text : '')).join(' ').trim())
       : '';
+
+    // Auto-detect web search intent from query keywords or explicit mode
+    const hasWebSearchIntent = /(search (the )?web|search online|google (it|this)|browse (the )?web|latest news|current events|today's news|recent updates|who won .*? (yesterday|today|match|cup)|latest release of|is .*? released yet|as of 2026|current affairs|real-time info)/i.test(userQuery);
+
+    const isWebSearch = mode === 'Web Search' || webSearch === true || enableWebSearch === true || hasWebSearchIntent;
 
     // Check for explicit memory statements ("Remember that...")
     let newMemorySaved = null;
@@ -1057,7 +1060,7 @@ app.post('/api/chat', async (req, res) => {
         // Graceful fallback
       }
     } else {
-      console.log('[Router AI] Web Search mode requested — skipping textbook router, enabling Google Search Grounding');
+      console.log(`[Router AI] Web Search active (mode: ${mode}, autoDetected: ${hasWebSearchIntent}) — enabling Google Search Grounding`);
     }
 
     const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
@@ -1072,13 +1075,13 @@ app.post('/api/chat', async (req, res) => {
     const hasExplicitQueryClass = !!explicitCurriculum.class;
     const hasExplicitQueryBoard = !!explicitCurriculum.board;
 
-    // Check if the explicitly requested curriculum is out-of-syllabus in Jeeni (e.g. Class 5):
+    // Check if the explicitly requested curriculum is out-of-syllabus in Jeeni (e.g. Class 5) — only for textbook queries, never web search:
     const explicitSyllabusChecked = {
       class: meta.class || explicitCurriculum.class,
       board: meta.board || explicitCurriculum.board,
       subject: meta.subject || explicitCurriculum.subject,
     };
-    if (hasExplicitQueryClass && !isSyllabusAvailable(explicitSyllabusChecked)) {
+    if (!isWebSearch && hasExplicitQueryClass && !isSyllabusAvailable(explicitSyllabusChecked)) {
       console.log(`[Zero Chunks Pre-Check] Explicit syllabus not supported in Jeeni: ${JSON.stringify(explicitSyllabusChecked)}`);
       const zeroChunkResponse = buildZeroChunkResponse({
         type: 'SYLLABUS_NOT_AVAILABLE',
@@ -1579,14 +1582,27 @@ Your role is to provide up-to-date, real-time factual information retrieved from
 
       webSources = searchChunks
         .filter(c => c.web)
-        .map(c => ({
-          title: c.web.title || 'Web Search Source',
-          subject: 'Web Search',
-          url: c.web.uri || '',
-          snippet: c.web.snippet || (searchQueries.length > 0 ? `Query: ${searchQueries[0]}` : ''),
-          score: 95.0,
-          page: 1,
-        }));
+        .map((c, idx) => {
+          const uri = c.web.uri || '';
+          let domain = '';
+          try {
+            if (uri) {
+              const u = new URL(uri);
+              domain = u.hostname.replace(/^www\./, '');
+            }
+          } catch (_) {}
+
+          return {
+            title: c.web.title || domain || 'Web Source',
+            subject: 'Web Search',
+            url: uri,
+            domain: domain,
+            is_web: true,
+            snippet: (searchQueries.length > 0 ? `Query: "${searchQueries[0]}"` : 'Verified via Google Web Search'),
+            score: 95.0,
+            page: idx + 1,
+          };
+        });
 
       console.log(`[Google Grounding] Executed queries: ${searchQueries.join(', ')} | Extracted ${webSources.length} web sources`);
     }

@@ -215,10 +215,9 @@ Rules:
         break;
       case 'Web Search':
         systemInstruction = '$preamble$interactiveInstruction '
-            'You simulate a smart web search engine. When given a query, respond as '
-            'if you searched the web and are presenting the top aggregated results. '
-            'Show 3-5 summarised results with bullet points, URLs (simulated), and a '
-            'final summary paragraph. Label each result with a numbered source.';
+            'You are Jeeni Web Search Engine powered by live Google Search Grounding. '
+            'Provide accurate, up-to-date, real-time facts and search results retrieved from the web. '
+            'Summarize the findings clearly with bullet points, dates, and explanations.';
         model = 'gemini-3.1-flash-lite';
         break;
       case 'Homework':

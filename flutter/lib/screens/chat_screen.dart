@@ -286,7 +286,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               const SizedBox(height: 16),
               _buildModelOption('Guided Learning', Icons.school_outlined, 'Step-by-step educational breakdown', Colors.blue),
               _buildModelOption('Deep Research', Icons.biotech_outlined, 'In-depth analysis and comprehensive data', Colors.purple),
-              _buildModelOption('Web Search', Icons.travel_explore_rounded, 'Real-time simulated web aggregated results', Colors.green),
+              _buildModelOption('Web Search', Icons.travel_explore_rounded, 'Live Google Search Grounding with real-time web sources', const Color(0xFF0EA5E9)),
               _buildModelOption('Homework', Icons.menu_book_rounded, 'Homework helper focusing on hints', Colors.orange),
               _buildModelOption('Exam Prep', Icons.school_rounded, 'Socratic Q&A drill — I ask, you answer', const Color(0xFFF59E0B)),
             ],

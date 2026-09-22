@@ -27,6 +27,7 @@ dependencies:
   flutter_math_fork: ^0.7.2
   fl_chart: ^0.66.0
   flutter_tts: ^4.1.0
+  url_launcher: ^6.3.2
 
 
 dev_dependencies:
