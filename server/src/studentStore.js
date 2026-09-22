@@ -39,13 +39,33 @@ function writeJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// ── Privacy Filter ──────────────────────────────────────────
+// ── Identifier Sanitization (Prototype Pollution & IDOR Defense) ──
+function sanitizeId(id) {
+  if (!id || typeof id !== 'string') return null;
+  const trimmed = id.trim();
+  if (['__proto__', 'constructor', 'prototype'].includes(trimmed.toLowerCase())) return null;
+  if (!/^[a-zA-Z0-9_\-.]{1,128}$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+// ── Privacy & Memory Integrity Filter ───────────────────────
 // Strictly forbids storing sensitive personal information (health, politics, religion, ethnicity, etc.)
+// Also forbids prompt injection attempts and arbitrary factual curriculum claims (Memory is style, NOT factual textbook ground truth).
 const SENSITIVE_KEYWORDS = [
   'disease', 'illness', 'medical', 'hospital', 'medicine', 'depression', 'anxiety', 'adhd', 'autism',
   'religion', 'hindu', 'muslim', 'christian', 'caste', 'temple', 'mosque', 'church',
   'politics', 'bjp', 'congress', 'cpim', 'election', 'voting',
   'race', 'ethnicity', 'sexual', 'dating'
+];
+
+const INJECTION_KEYWORDS = [
+  'ignore previous', 'ignore instruction', 'ignore all', 'system prompt',
+  'reveal prompt', 'reveal instructions', 'bypass safety', 'jailbreak', 'jailbroken',
+  'developer mode', 'override rules', 'override all', 'override', 'act as', 'you are now'
+];
+
+const CURRICULUM_CLAIM_KEYWORDS = [
+  'the answer to question', 'the answer is', 'formula for'
 ];
 
 function sanitizeMemoryContent(text) {
@@ -54,6 +74,18 @@ function sanitizeMemoryContent(text) {
   for (const kw of SENSITIVE_KEYWORDS) {
     if (lower.includes(kw)) {
       console.warn(`[StudentStore Privacy Guard] Rejected memory containing sensitive keyword: "${kw}"`);
+      return null;
+    }
+  }
+  for (const kw of INJECTION_KEYWORDS) {
+    if (lower.includes(kw)) {
+      console.warn(`[StudentStore Security Guard] Rejected memory containing prompt injection attempt: "${kw}"`);
+      return null;
+    }
+  }
+  for (const kw of CURRICULUM_CLAIM_KEYWORDS) {
+    if (lower.includes(kw)) {
+      console.warn(`[StudentStore Grounding Guard] Rejected memory containing unverified factual curriculum claim: "${kw}"`);
       return null;
     }
   }
@@ -67,11 +99,12 @@ function getAllProfiles() {
 }
 
 function getProfile(studentId) {
-  if (!studentId) return null;
+  const safeId = sanitizeId(studentId);
+  if (!safeId) return null;
   const profiles = readJSON(PROFILES_FILE, {});
-  if (profiles[studentId]) return profiles[studentId];
+  if (profiles[safeId]) return profiles[safeId];
   // Secondary lookup by internal student_id or provider_user_id
-  return Object.values(profiles).find(p => p.student_id === studentId || p.provider_user_id === studentId) || null;
+  return Object.values(profiles).find(p => p.student_id === safeId || p.provider_user_id === safeId) || null;
 }
 
 function isGoogleOAuthId(id) {
@@ -193,19 +226,20 @@ function resolveStudentDisplayIdentity(idOrUser) {
 }
 
 function saveProfile(studentId, profileData) {
-  if (!studentId) throw new Error('studentId is required');
+  const safeId = sanitizeId(studentId);
+  if (!safeId) return null;
   const profiles = readJSON(PROFILES_FILE, {});
-  const existing = profiles[studentId] || {};
+  const existing = profiles[safeId] || {};
 
   const now = Date.now();
   const updated = {
     ...existing,
     ...profileData,
-    student_id: studentId,
+    student_id: safeId,
     display_name: profileData.display_name || existing.display_name || null,
     email: profileData.email || existing.email || null,
-    provider: profileData.provider || existing.provider || (isGoogleOAuthId(studentId) ? 'google' : 'internal'),
-    provider_user_id: profileData.provider_user_id || existing.provider_user_id || (isGoogleOAuthId(studentId) ? studentId : null),
+    provider: profileData.provider || existing.provider || (isGoogleOAuthId(safeId) ? 'google' : 'internal'),
+    provider_user_id: profileData.provider_user_id || existing.provider_user_id || (isGoogleOAuthId(safeId) ? safeId : null),
     photo_url: profileData.photo_url || existing.photo_url || null,
     class: profileData.class || existing.class || '10',
     board: profileData.board || existing.board || 'CBSE',
@@ -227,52 +261,56 @@ function saveProfile(studentId, profileData) {
     updated_at: now,
   };
 
-  profiles[studentId] = updated;
+  profiles[safeId] = updated;
   writeJSON(PROFILES_FILE, profiles);
-  console.log(`[StudentStore] Saved profile for student: ${studentId} (Class ${updated.class} ${updated.board})`);
+  console.log(`[StudentStore] Saved profile for student: ${safeId} (Class ${updated.class} ${updated.board})`);
   return updated;
 }
 
 function updatePersonalization(studentId, enabled) {
-  if (!studentId) throw new Error('studentId is required');
+  const safeId = sanitizeId(studentId);
+  if (!safeId) return null;
   const profiles = readJSON(PROFILES_FILE, {});
-  if (!profiles[studentId]) {
-    profiles[studentId] = { student_id: studentId, created_at: Date.now() };
+  if (!profiles[safeId]) {
+    profiles[safeId] = { student_id: safeId, created_at: Date.now() };
   }
-  profiles[studentId].personalization_enabled = Boolean(enabled);
-  profiles[studentId].updated_at = Date.now();
+  profiles[safeId].personalization_enabled = Boolean(enabled);
+  profiles[safeId].updated_at = Date.now();
   writeJSON(PROFILES_FILE, profiles);
-  return profiles[studentId];
+  return profiles[safeId];
 }
 
 // ── Student Memories ────────────────────────────────────────
 
 function getMemories(studentId) {
-  if (!studentId) return [];
+  const safeId = sanitizeId(studentId);
+  if (!safeId) return [];
   const allMemories = readJSON(MEMORIES_FILE, {});
-  return allMemories[studentId] || [];
+  return allMemories[safeId] || [];
 }
 
 function addMemory(studentId, memoryData) {
-  if (!studentId) throw new Error('studentId is required');
-  const cleanContent = sanitizeMemoryContent(memoryData.content);
+  const safeId = sanitizeId(studentId);
+  if (!safeId) throw new Error('Valid studentId is required');
+  const memObj = typeof memoryData === 'string' ? { content: memoryData } : (memoryData || {});
+  const cleanContent = sanitizeMemoryContent(memObj.content);
   if (!cleanContent) {
-    throw new Error('Memory content rejected: contains invalid or sensitive information');
+    throw new Error('Memory content rejected: contains invalid, sensitive, or unsafe information');
   }
 
   const allMemories = readJSON(MEMORIES_FILE, {});
-  const studentMemories = allMemories[studentId] || [];
+  const studentMemories = allMemories[safeId] || [];
 
   // Avoid exact duplicate memories
   const isDuplicate = studentMemories.some(m => m.content.toLowerCase() === cleanContent.toLowerCase());
   if (isDuplicate) {
-    console.log(`[StudentStore] Memory already exists for ${studentId}, skipping duplicate.`);
+    console.log(`[StudentStore] Memory already exists for ${safeId}, skipping duplicate.`);
     return studentMemories.find(m => m.content.toLowerCase() === cleanContent.toLowerCase());
   }
 
   const newMemory = {
     memory_id: 'mem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-    student_id: studentId,
+    student_id: safeId,
     category: memoryData.category || 'Learning Preference',
     content: cleanContent,
     source: memoryData.source || 'explicit',
@@ -288,29 +326,32 @@ function addMemory(studentId, memoryData) {
   // Keep max 50 memories per student
   if (studentMemories.length > 50) studentMemories.pop();
 
-  allMemories[studentId] = studentMemories;
+  allMemories[safeId] = studentMemories;
   writeJSON(MEMORIES_FILE, allMemories);
-  console.log(`[StudentStore] Added memory for ${studentId}: "${cleanContent.slice(0, 50)}..."`);
+  console.log(`[StudentStore] Added memory for ${safeId}: "${cleanContent.slice(0, 50)}..."`);
   return newMemory;
 }
 
 function deleteMemory(studentId, memoryId) {
-  if (!studentId || !memoryId) return false;
+  const safeId = sanitizeId(studentId);
+  const safeMemId = sanitizeId(memoryId);
+  if (!safeId || !safeMemId) return false;
   const allMemories = readJSON(MEMORIES_FILE, {});
-  const studentMemories = allMemories[studentId] || [];
-  const filtered = studentMemories.filter(m => m.memory_id !== memoryId);
+  const studentMemories = allMemories[safeId] || [];
+  const filtered = studentMemories.filter(m => m.memory_id !== safeMemId);
   const deleted = filtered.length < studentMemories.length;
-  allMemories[studentId] = filtered;
+  allMemories[safeId] = filtered;
   writeJSON(MEMORIES_FILE, allMemories);
   return deleted;
 }
 
 function clearMemories(studentId) {
-  if (!studentId) return false;
+  const safeId = sanitizeId(studentId);
+  if (!safeId) return false;
   const allMemories = readJSON(MEMORIES_FILE, {});
-  allMemories[studentId] = [];
+  allMemories[safeId] = [];
   writeJSON(MEMORIES_FILE, allMemories);
-  console.log(`[StudentStore] Cleared all memories for student: ${studentId}`);
+  console.log(`[StudentStore] Cleared all memories for student: ${safeId}`);
   return true;
 }
 

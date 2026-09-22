@@ -51,6 +51,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
   }
 
   Future<void> _sendMessage(String text, {List<XFile> attachments = const []}) async {
+    if (_isTyping) return;
     final t = text.trim();
     if (t.isEmpty && attachments.isEmpty) return;
     _inputController.clear();

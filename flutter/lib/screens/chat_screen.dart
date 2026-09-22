@@ -153,6 +153,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _sendMessage(String text, {List<XFile> attachments = const []}) async {
+    if (_isTyping) return;
     final t = text.trim();
     if (t.isEmpty && attachments.isEmpty) return;
     _inputController.clear();
@@ -162,6 +163,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     final displayText = t.isNotEmpty ? t : (attachments.isNotEmpty ? '📎 Attached file(s)' : '');
 
+    final sessionChatId = _currentChatId;
     final userMsgId = DateTime.now().millisecondsSinceEpoch.toString();
     final userMessage = ChatMessage(
       id: userMsgId,
@@ -205,6 +207,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
     if (!mounted) return;
 
+    // Cross-Chat Isolation Guard: If user navigated to another chat while generation was active, discard local append
+    if (_currentChatId != sessionChatId && sessionChatId != null) {
+      debugPrint('[Chat] Active chat changed during AI generation. Suppressing local append to prevent cross-chat leakage.');
+      return;
+    }
+
     final aiMsgId = (DateTime.now().millisecondsSinceEpoch + 1).toString();
     final aiMessage = ChatMessage(
       id: aiMsgId,
@@ -245,7 +253,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           final title = text.isNotEmpty ? text : (attachments.isNotEmpty ? 'File/Image conversation' : 'New chat');
           final newChatId = await DatabaseService.createChat(uid, title)
               .timeout(const Duration(seconds: 15));
-          if (mounted) setState(() => _currentChatId = newChatId);
+          if (mounted) {
+            setState(() => _currentChatId = newChatId);
+            _setupMessagesSubscription();
+          }
         }
         // Wait until _currentChatId is available (it will be after createChat)
         if (_currentChatId != null) {
@@ -437,12 +448,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     final historyForAI = _messages.sublist(0, index);
     
+    var currentProfile = _studentProfile;
+    if (currentProfile == null) {
+      currentProfile = await DatabaseService.getStudentProfile(user.uid);
+      if (mounted && currentProfile != null) {
+        _studentProfile = currentProfile;
+      }
+    }
+
     try {
       final aiText = await AIService.generateResponse(
         prompt: newText,
         mode: _selectedModel,
         history: historyForAI,
         attachments: const [],
+        studentId: user.uid,
+        profile: currentProfile,
       );
       if (!mounted) return;
 

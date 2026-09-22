@@ -14,6 +14,12 @@ const {
   normalizeCurriculumIntent,
   validateRetrievedChunks,
   buildClarificationForSubject,
+  normalizeBoard,
+  normalizeSubject,
+  normalizeClass,
+  extractClassNumber,
+  extractCurriculumFromQuery,
+  normalizeChunkMetadata,
 } = require('./src/zeroChunksHandler');
 const studentStore = require('./src/studentStore');
 const usageStore = require('./src/usageStore');
@@ -752,91 +758,6 @@ async function chromoFetch(endpoint, method = 'GET', body = null) {
   try { return JSON.parse(text); } catch { return { raw: text }; }
 }
 
-// ── Metadata Normalization Helpers ────────────────────────
-/**
- * Normalizes a class value to a plain numeric string.
- * Accepts: 10, "10", "Class 10", "Grade 10", "10th" → "10"
- */
-function normalizeClass(val) {
-  if (val === null || val === undefined || val === '') return null;
-  const match = String(val).match(/\d+/);
-  return match ? match[0] : null;
-}
-
-/**
- * Normalizes a board string to a canonical uppercase form.
- * e.g. "Kerala State Board" → "SCERT_KERALA", "cbse" → "CBSE"
- */
-function normalizeBoard(val) {
-  if (!val) return null;
-  const v = String(val).trim().toUpperCase().replace(/\s+/g, ' ');
-  if (v.includes('KERALA') || v.includes('SCERT') || v.includes('STATE BOARD')) return 'SCERT_KERALA';
-  if (v === 'CBSE' || v.includes('CENTRAL BOARD')) return 'CBSE';
-  if (v === 'NCERT') return 'NCERT';
-  if (v === 'ICSE') return 'ICSE';
-  return v; // preserve unknown boards as-is (uppercased)
-}
-
-/**
- * Normalizes a subject string to title-case.
- */
-function normalizeSubject(val) {
-  if (!val) return null;
-  return String(val).trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
-}
-
-/**
- * Returns a fully normalized canonical metadata object.
- * Always uses 'class' (not 'grade'), normalized board, title-case subject.
- */
-function normalizeChunkMetadata(raw = {}) {
-  const meta = { ...raw };
-  // Canonicalize class field — accept 'class', 'grade', 'class_level' as input
-  const rawClass = meta.class ?? meta.grade ?? meta.class_level ?? null;
-  meta.class = normalizeClass(rawClass);
-  delete meta.grade;
-  delete meta.class_level;
-  if (meta.board) meta.board = normalizeBoard(meta.board);
-  if (meta.subject) meta.subject = normalizeSubject(meta.subject);
-  return meta;
-}
-
-/**
- * Extracts curriculum constraints (class, board, subject) directly from user query.
- * Ensures user query explicit constraints take precedence over router omissions
- * and prevents student profile defaults from overwriting explicitly requested classes.
- */
-function extractCurriculumFromQuery(query) {
-  if (!query || typeof query !== 'string') return {};
-  const extracted = {};
-
-  // Class / Grade matching: "class 5", "grade 10", "standard 9", "std 8", "10th class", "5th standard"
-  const classMatch = query.match(/\b(?:class|grade|standard|std)\s*(\d{1,2})\b/i) ||
-                     query.match(/\b(\d{1,2})(?:st|nd|rd|th)\s*(?:class|grade|standard|std)?\b/i);
-  if (classMatch) {
-    extracted.class = classMatch[1];
-  }
-
-  // Board matching:
-  const upper = query.toUpperCase();
-  if (upper.includes('CBSE')) extracted.board = 'CBSE';
-  else if (upper.includes('NCERT')) extracted.board = 'NCERT';
-  else if (upper.includes('ICSE')) extracted.board = 'ICSE';
-  else if (upper.includes('KERALA') || upper.includes('SCERT') || upper.includes('STATE BOARD')) extracted.board = 'SCERT_KERALA';
-
-  // Subject matching:
-  const subjects = ['ENGLISH', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS', 'MATHS', 'SCIENCE', 'SOCIAL SCIENCE', 'HISTORY', 'GEOGRAPHY', 'ECONOMICS', 'POLITICAL SCIENCE', 'COMPUTER SCIENCE', 'MALAYALAM'];
-  for (const s of subjects) {
-    const regex = new RegExp(`\\b${s}\\b`, 'i');
-    if (regex.test(query)) {
-      extracted.subject = normalizeSubject(s);
-      break;
-    }
-  }
-
-  return extracted;
-}
-
 // ── Upload PDF → ChromoDB (Protected Admin Endpoint) ─────────
 app.post('/api/upload', requireAdminAuth, upload.single('file'), async (req, res) => {
   try {
@@ -1071,18 +992,45 @@ app.post('/api/chat', async (req, res) => {
         console.log(`[Router AI v8.2] Action: ${routingDecision.action} | LLM Required: ${routingDecision.llm_required} | ContentType: ${routingDecision.metadata?.content_type || 'N/A'}`);
       } catch (routerErr) {
         console.warn('[Router AI] Failed, falling back to heuristic routing:', routerErr.message);
-        // Graceful fallback
+        routingDecision = null;
       }
     } else {
       console.log(`[Router AI] Web Search active (mode: ${mode}, autoDetected: ${hasWebSearchIntent}) — enabling Google Search Grounding`);
     }
 
-    const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
-    let action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer'));
-
     // ── STAGE 1.05: Structured Curriculum Intent Normalization ──────
     const curriculumIntent = normalizeCurriculumIntent(userQuery, routingDecision, studentProfile);
     console.log(`[JEENI_INTENT] isCurriculum=${curriculumIntent.isCurriculumQuery} | class=${curriculumIntent.class} | board=${curriculumIntent.board} | subject=${curriculumIntent.subject} | chapter=${curriculumIntent.chapterNumber} | source=${curriculumIntent.source}`);
+
+    // If router AI call failed or timed out, apply deterministic heuristic routing
+    if (!routingDecision) {
+      if (curriculumIntent.isCurriculumQuery) {
+        if (curriculumIntent.requiresSubject) {
+          routingDecision = {
+            action: 'ask_clarification',
+            direct_response_text: buildClarificationForSubject(studentProfile, curriculumIntent.class),
+            metadata: {
+              class: curriculumIntent.class,
+              board: curriculumIntent.board,
+              chapter_number: curriculumIntent.chapterNumber,
+            },
+          };
+        } else {
+          routingDecision = {
+            action: 'rag_search',
+            metadata: {
+              class: curriculumIntent.class,
+              board: curriculumIntent.board,
+              subject: curriculumIntent.subject,
+              chapter_number: curriculumIntent.chapterNumber,
+            },
+          };
+        }
+      }
+    }
+
+    const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
+    let action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : (curriculumIntent.isCurriculumQuery ? 'rag_search' : 'direct_answer')));
 
     // Merge normalized curriculum fields into meta
     if (curriculumIntent.class && !meta.class) meta.class = curriculumIntent.class;
@@ -1250,8 +1198,10 @@ app.post('/api/chat', async (req, res) => {
 
     // ── STAGE 1.3: Pathway A — Direct Answer (Zero Downstream LLM Latency)
     // Only short-circuit if NOT a curriculum query, NOT asking about student profile,
-    // NOT a response disclaiming access, and NOT requiring personalized language adaptation
-    if (action === 'direct_answer' && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
+    // NOT a response disclaiming access, NOT requiring personalized language adaptation,
+    // and NOT requesting a specialized pedagogical mode (Deep Research, Homework, Exam Prep)
+    const isDefaultGuidedMode = !mode || mode === 'Guided Learning' || mode === 'Standard';
+    if (action === 'direct_answer' && isDefaultGuidedMode && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
       console.log('[Router AI] Pathway A: Direct Answer served with 0 downstream LLM latency');
       aiGateway.recordChatInteraction({
         requestId,
@@ -1417,7 +1367,7 @@ app.post('/api/chat', async (req, res) => {
       console.log(`[JEENI_GROUNDING] requested_chapter=${curriculumIntent.chapterNumber || 'N/A'} | matched_chapters=${JSON.stringify(matchedChapters)} | validation=${validationStatus} | reason=${validationReason} | valid_chunks=${chunks.length}/${rawChunks.length}`);
 
       // ── ZERO CHUNKS & INVALID RETRIEVAL HANDLING (No Second API Call • Hard Grounding Stop) ──
-      if (action === 'rag_search' && chunks.length === 0) {
+      if ((action === 'rag_search' || useRag || curriculumIntent.isCurriculumQuery) && chunks.length === 0) {
         const effectiveMeta = {
           board: effectiveWhereFilter.board || meta.board || curriculumIntent?.board,
           class: effectiveWhereFilter.class || meta.class || curriculumIntent?.class,
@@ -1495,7 +1445,7 @@ app.post('/api/chat', async (req, res) => {
 
     // ── SAFETY NET: Block Gemini hallucination when action=rag_search but RAG produced no chunks ──
     // This catches edge cases where RAG ran but returned 0 chunks AND the early return was not triggered
-    if (action === 'rag_search' && !ragContext && !useVision && !isWebSearch) {
+    if ((action === 'rag_search' || useRag || curriculumIntent.isCurriculumQuery) && !ragContext && !useVision && !isWebSearch) {
       const effectiveMeta = {
         board: effectiveWhereFilter.board || meta.board || curriculumIntent?.board,
         class: effectiveWhereFilter.class || meta.class || curriculumIntent?.class,
@@ -1562,6 +1512,17 @@ Your role is to provide up-to-date, real-time factual information retrieved from
 - Reference authoritative sources accurately.`;
     } else if (ragContext) {
       systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + ragContext;
+    } else {
+      systemInstruction = systemInstruction || 'You are Jeeni, an educational AI companion.';
+    }
+
+    // Specialized Pedagogical Mode System Instructions (Deep Research, Homework, Exam Prep)
+    if (mode === 'Deep Research') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: DEEP RESEARCH ---\nProvide an exhaustive, in-depth academic analysis covering historical context, core principles, mathematical/scientific derivations, advanced applications, and cross-disciplinary connections.';
+    } else if (mode === 'Homework') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: HOMEWORK HELPER ---\nAct as a Socratic homework tutor. Do NOT give away full answers immediately. Provide guiding hints, step-by-step logic, explain underlying formulas, and encourage the student to complete the steps.';
+    } else if (mode === 'Exam Prep') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: EXAM PREPARATION ---\nRun an active Socratic exam preparation drill. Challenge the student with key exam-style questions, highlight marking schemes and common mistakes, and test their conceptual understanding.';
     }
 
     // ── STAGE 3.5: Adaptive Personalization & Relevant Memory (Phase 5, 6, 7) ──

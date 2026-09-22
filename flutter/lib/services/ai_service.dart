@@ -517,77 +517,15 @@ Rules:
   }
 
   static String _getMockFallbackResponse(String prompt) {
-    final query = prompt.toLowerCase();
-
-    if (query.contains('code') || query.contains('program') || query.contains('write a') || query.contains('flutter') || query.contains('dart')) {
-      return r"""Here is a custom Flutter widget demonstrating our premium styling concepts.
-
-### Flutter Custom Container Example
-
-We can create a clean, modern container with custom borders and background colors:
-
-```dart
-class PremiumContainer extends StatelessWidget {
-  final Widget child;
-
-  const PremiumContainer({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2B2B2B), width: 1.2),
-      ),
-      child: child,
-    );
-  }
-}
-```
-
-This widget uses:
-* **Matte background** (`Color(0xFF171717)`)
-* **Solid border** (`Color(0xFF2B2B2B)`)
-* **Smooth rounded corners** (`12px`)""";
-    }
-
-    if (query.contains('math') || query.contains('solve') || query.contains('equation')) {
-      return r"""Let's solve the quadratic equation $x^2 - 5x + 6 = 0$ step-by-step:
-
-### Quadratic Equation Solution
-
-Given equation:
-$$x^2 - 5x + 6 = 0$$
-
-1. **Identify the coefficients**:
-   * $a = 1$
-   * $b = -5$
-   * $c = 6$
-
-2. **Apply the quadratic formula**:
-   $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$
-
-3. **Calculate the discriminant**:
-   $$D = (-5)^2 - 4(1)(6) = 25 - 24 = 1$$
-
-4. **Find the roots**:
-   * $x_1 = \frac{5 + 1}{2} = 3$
-   * $x_2 = \frac{5 - 1}{2} = 2$
-
-The solution set is **{2, 3}**.""";
-    }
-
-    // Generic connection error — honest and helpful
+    // Honest, user-friendly connection error — never hallucinate mock answers
     return """🔄 **Jeeni couldn't reach the server right now.**
 
 This may be due to:
-- A temporary network issue
-- A slow or large file upload taking too long
-- The server restarting
+- A temporary network interruption
+- The request taking longer than expected
+- The server undergoing a quick update
 
-**Please try again in a moment.** If the issue persists, try refreshing the page.
+**Please tap retry or ask again in a moment.**
 
 > Your question was: *"$prompt"*""";
   }

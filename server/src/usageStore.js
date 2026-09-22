@@ -16,6 +16,13 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+function sanitizeId(id) {
+  if (!id || typeof id !== 'string') return '';
+  const clean = id.trim();
+  if (['__proto__', 'constructor', 'prototype'].includes(clean)) return '';
+  return clean;
+}
+
 // Default pricing config (pricing per 1,000,000 tokens in USD)
 const DEFAULT_PRICING = {
   currency_rate_usd_to_inr: 86.5,
@@ -229,10 +236,13 @@ class UsageStore {
 
     const cost = this.calculateCost(event.model || 'gemini-3.1-flash-lite', inputTokens, outputTokens, cachedTokens);
 
+    const cleanUserId = sanitizeId(event.user_id) || 'default_student';
+    const cleanRequestId = sanitizeId(event.request_id) || `req_${crypto.randomBytes(8).toString('hex')}`;
+
     const fullEvent = {
       id: event.id || `evt_${crypto.randomBytes(8).toString('hex')}`,
-      request_id: event.request_id || `req_${crypto.randomBytes(8).toString('hex')}`,
-      user_id: event.user_id || 'default_student',
+      request_id: cleanRequestId,
+      user_id: cleanUserId,
       session_id: event.session_id || null,
       feature: event.feature || 'AI Tutor',
       provider: event.provider || 'Google Gemini',
@@ -387,9 +397,13 @@ class UsageStore {
       if (d.latencies.length > 500) d.latencies = d.latencies.slice(-500);
     }
 
-    d.models[event.model] = (d.models[event.model] || 0) + 1;
-    d.features[event.feature] = (d.features[event.feature] || 0) + 1;
-    d.users[event.user_id] = (d.users[event.user_id] || 0) + 1;
+    const safeModel = sanitizeId(event.model) || 'Unknown';
+    const safeFeature = sanitizeId(event.feature) || 'General';
+    const safeUserId = sanitizeId(event.user_id) || 'default_student';
+
+    d.models[safeModel] = (d.models[safeModel] || 0) + 1;
+    d.features[safeFeature] = (d.features[safeFeature] || 0) + 1;
+    d.users[safeUserId] = (d.users[safeUserId] || 0) + 1;
 
     this._saveDaily();
   }
@@ -1261,10 +1275,10 @@ class UsageStore {
 
   // ── User-Level AI Usage ─────────────────────────────────────
   getUsersUsage(filter = {}) {
-    const userMap = {};
+    const userMap = Object.create(null);
 
     for (const e of this.events) {
-      const uid = e.user_id || 'default_student';
+      const uid = sanitizeId(e.user_id) || 'default_student';
       if (!userMap[uid]) {
         userMap[uid] = {
           user_id: uid,
@@ -1358,7 +1372,9 @@ class UsageStore {
   }
 
   getUserDetails(userId) {
-    const userEvents = this.events.filter(e => e.user_id === userId);
+    const cleanId = sanitizeId(userId);
+    if (!cleanId) return null;
+    const userEvents = this.events.filter(e => (sanitizeId(e.user_id) || 'default_student') === cleanId);
     if (userEvents.length === 0) return null;
 
     let input = 0, output = 0, cached = 0, total = 0, costInr = 0, errors = 0, hits = 0;
@@ -1384,12 +1400,12 @@ class UsageStore {
     }
 
     const perc = calculatePercentiles(latencies);
-    const identity = studentStore.resolveStudentDisplayIdentity(userId);
-    const profile = studentStore.getProfile(userId);
+    const identity = studentStore.resolveStudentDisplayIdentity(cleanId);
+    const profile = studentStore.getProfile(cleanId);
 
     return {
       student_id: identity.student_id,
-      user_id: userId,
+      user_id: cleanId,
       display_name: identity.display_name,
       email: identity.email,
       provider: identity.provider,
@@ -1416,7 +1432,9 @@ class UsageStore {
   }
 
   getRequestById(requestId) {
-    return this.events.find(e => e.request_id === requestId || e.id === requestId) || null;
+    const cleanReqId = sanitizeId(requestId);
+    if (!cleanReqId) return null;
+    return this.events.find(e => e.request_id === cleanReqId || e.id === cleanReqId) || null;
   }
 
   getRecentRequests(limit = 100, filter = {}) {

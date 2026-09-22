@@ -68,10 +68,16 @@ function normalize(str) {
 }
 
 function extractClassNumber(val) {
-  if (val === null || val === undefined) return '';
+  if (val === null || val === undefined || val === '') return null;
   const str = String(val).trim();
   const match = str.match(/\d+/);
-  return match ? match[0] : str.toUpperCase();
+  return match ? match[0] : (str ? str.toUpperCase() : null);
+}
+
+function normalizeClass(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const match = String(val).match(/\d+/);
+  return match ? match[0] : null;
 }
 
 function normalizeBoard(val) {
@@ -86,7 +92,9 @@ function normalizeBoard(val) {
 
 function normalizeSubject(val) {
   if (!val) return null;
-  return String(val).trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+  const s = String(val).trim();
+  if (/^math(s|ematics)?$/i.test(s)) return 'Mathematics';
+  return s.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 }
 
 /**
@@ -355,7 +363,18 @@ function validateRetrievedChunks(chunks = [], curriculumIntent = {}) {
  * Builds a friendly targeted clarification asking the student which enrolled subject
  * they would like explained for the requested chapter, avoiding arbitrary guessing.
  */
-function buildClarificationForSubject(chapterNumber, studentProfile = null) {
+function buildClarificationForSubject(chapterOrProfile, profileOrChapter = null) {
+  let chapterNumber = null;
+  let studentProfile = null;
+
+  if (chapterOrProfile && typeof chapterOrProfile === 'object' && !Array.isArray(chapterOrProfile)) {
+    studentProfile = chapterOrProfile;
+    chapterNumber = profileOrChapter;
+  } else {
+    chapterNumber = chapterOrProfile;
+    studentProfile = profileOrChapter;
+  }
+
   const subjects = (studentProfile && Array.isArray(studentProfile.subjects) && studentProfile.subjects.length > 0)
     ? studentProfile.subjects
     : ['English', 'Mathematics', 'Science', 'Social Science'];
@@ -371,7 +390,11 @@ function buildClarificationForSubject(chapterNumber, studentProfile = null) {
     action: 'ask_clarification',
     llm_required: false,
     direct_response_text: message,
+    text: message,
+    content: message,
     missing_parameter: 'subject',
+    toString() { return message; },
+    includes(str) { return message.includes(str); },
   };
 }
 
@@ -421,6 +444,52 @@ function buildZeroChunkResponse({
   };
 }
 
+/**
+ * Returns a fully normalized canonical metadata object.
+ * Always uses 'class' (not 'grade'), normalized board, title-case subject.
+ */
+function normalizeChunkMetadata(raw = {}) {
+  const meta = { ...raw };
+  const rawClass = meta.class ?? meta.grade ?? meta.class_level ?? null;
+  meta.class = extractClassNumber(rawClass);
+  delete meta.grade;
+  delete meta.class_level;
+  if (meta.board) meta.board = normalizeBoard(meta.board);
+  if (meta.subject) meta.subject = normalizeSubject(meta.subject);
+  return meta;
+}
+
+/**
+ * Extracts curriculum constraints (class, board, subject) directly from user query.
+ */
+function extractCurriculumFromQuery(query) {
+  if (!query || typeof query !== 'string') return {};
+  const extracted = {};
+
+  const classMatch = query.match(/\b(?:class|grade|standard|std)\s*(\d{1,2})\b/i) ||
+                     query.match(/\b(\d{1,2})(?:st|nd|rd|th)\s*(?:class|grade|standard|std)?\b/i);
+  if (classMatch) {
+    extracted.class = classMatch[1];
+  }
+
+  const upper = query.toUpperCase();
+  if (upper.includes('CBSE')) extracted.board = 'CBSE';
+  else if (upper.includes('NCERT')) extracted.board = 'NCERT';
+  else if (upper.includes('ICSE')) extracted.board = 'ICSE';
+  else if (upper.includes('KERALA') || upper.includes('SCERT') || upper.includes('STATE BOARD')) extracted.board = 'SCERT_KERALA';
+
+  const subjects = ['ENGLISH', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS', 'MATHS', 'SCIENCE', 'SOCIAL SCIENCE', 'HISTORY', 'GEOGRAPHY', 'ECONOMICS', 'POLITICAL SCIENCE', 'COMPUTER SCIENCE', 'MALAYALAM'];
+  for (const s of subjects) {
+    const regex = new RegExp(`\\b${s}\\b`, 'i');
+    if (regex.test(query)) {
+      extracted.subject = normalizeSubject(s);
+      break;
+    }
+  }
+
+  return extracted;
+}
+
 module.exports = {
   PREDEFINED_RESPONSES,
   DEFAULT_SYLLABUS_INDEX,
@@ -434,4 +503,7 @@ module.exports = {
   normalizeBoard,
   normalizeSubject,
   normalizeClass: extractClassNumber,
+  extractClassNumber,
+  extractCurriculumFromQuery,
+  normalizeChunkMetadata,
 };
