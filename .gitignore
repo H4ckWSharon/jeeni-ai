@@ -17,3 +17,7 @@ server/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Large binaries & archives
+*.apk
+web.tar.gz

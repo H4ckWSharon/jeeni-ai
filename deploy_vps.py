@@ -51,13 +51,17 @@ print('Decoding...')
 out, err = run('base64 -d /tmp/web_b64.txt > /tmp/web.tar.gz && echo OK', timeout=60)
 print('Decode:', out, err)
 
-print('Creating target directory...')
-out, err = run(f'mkdir -p {remote_app} && echo OK_MKDIR', timeout=10)
+print('Creating target directories...')
+out, err = run('mkdir -p /var/www/jeeni/public/app /root/jeeni-server/public/app && echo OK_MKDIR', timeout=10)
 print('Mkdir:', out, err)
 
-print('Extracting...')
-out, err = run(f'tar -xzf /tmp/web.tar.gz -C {remote_app} && echo OK', timeout=60)
-print('Extract:', out, err)
+print('Extracting to /var/www/jeeni/public/app...')
+out, err = run('tar -xzf /tmp/web.tar.gz -C /var/www/jeeni/public/app && echo OK', timeout=60)
+print('Extract /var/www/jeeni:', out, err)
+
+print('Extracting to /root/jeeni-server/public/app...')
+out, err = run('tar -xzf /tmp/web.tar.gz -C /root/jeeni-server/public/app && echo OK', timeout=60)
+print('Extract /root/jeeni-server:', out, err)
 
 out, err = run('rm -f /tmp/web_b64.txt /tmp/web.tar.gz && pm2 restart all && echo DONE', timeout=30)
 print('Restart:', out[:300] if out else '', err[:100] if err else '')
