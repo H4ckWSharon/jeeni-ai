@@ -1120,6 +1120,9 @@ app.post('/api/chat', async (req, res) => {
     let ragContext = '';
     let retrievedSources = [];
 
+    // Hoisted so zero-chunks handlers outside the try block can access the enriched metadata
+    let effectiveWhereFilter = {};
+
     if (useRag && userQuery && !useVision) {
       let searchError = null;
       let searchRes = null;
@@ -1138,7 +1141,13 @@ app.post('/api/chat', async (req, res) => {
         if (meta.board)   whereFilter.board   = normalizeBoard(meta.board);
 
         // Phase 4 & 9: Curriculum Fallback from Student Profile
-        // If the query did not explicitly specify class or board, apply the student profile defaults
+        // If the query did not explicitly specify class or board, apply the student profile defaults.
+        // Track whether class/board came from the Router AI (explicit) or from the student profile (implicit)
+        // so that we can safely relax the search tier for profile-injected pins without risking
+        // cross-curriculum contamination from explicitly-specified class/board.
+        const routerSpecifiedClass = !!whereFilter.class;
+        const routerSpecifiedBoard = !!whereFilter.board;
+
         if (!whereFilter.class && studentProfile?.class) {
           whereFilter.class = normalizeClass(studentProfile.class);
         }
@@ -1146,18 +1155,26 @@ app.post('/api/chat', async (req, res) => {
           whereFilter.board = normalizeBoard(studentProfile.board);
         }
 
-        // Determine whether curriculum context is active
+        // Track whether curriculum pinning is FROM THE ROUTER (hard constraint)
+        // vs FROM THE STUDENT PROFILE (soft constraint — can relax if no results)
         const hasCurriculumPin = !!(whereFilter.class || whereFilter.board);
+        const hasExplicitRouterCurriculumPin = !!(routerSpecifiedClass || routerSpecifiedBoard);
+        const hasProfileOnlyCurriculumPin = hasCurriculumPin && !hasExplicitRouterCurriculumPin;
 
-        console.log(`[RAG Filter] whereFilter=${JSON.stringify(whereFilter)} | hasCurriculumPin=${hasCurriculumPin}`);
+        // Expose enriched filter to outer scope for zero-chunks handlers
+        effectiveWhereFilter = { ...whereFilter };
+
+        console.log(`[RAG Filter] whereFilter=${JSON.stringify(whereFilter)} | hasCurriculumPin=${hasCurriculumPin} | routerExplicit=${hasExplicitRouterCurriculumPin} | profileOnly=${hasProfileOnlyCurriculumPin}`);
 
         // ── Search Strategy ───────────────────────────────────
-        // STRICT RULE: If class OR board was specified, NEVER relax those filters.
+        // STRICT RULE: If class OR board was explicitly specified BY THE ROUTER, NEVER relax those filters.
         // Cross-curriculum contamination (wrong class/board result) is worse than zero chunks.
         //
         // Allowed fallback tiers:
         //   Tier 1 (always):    Full filter {subject, class, board}
-        //   Tier 2 (only if no class & no board): Subject-only filter — safe within a subject
+        //   Tier 2a (profile-pin only): Subject+class or subject-only — safe fallback when profile
+        //                               injected the curriculum but content isn't tagged for that exact combo
+        //   Tier 2b (no class & no board from router): Subject-only filter — safe within a subject
         //   Tier 3 (only if no curriculum at all): Unconstrained semantic search
 
         if (Object.keys(whereFilter).length > 0) {
@@ -1171,7 +1188,24 @@ app.post('/api/chat', async (req, res) => {
           console.log(`[RAG Tier 1] Strict filter → ${searchRes?.results?.length ?? 0} results`);
         }
 
-        // Tier 2: Subject-only (ONLY if no class and no board were specified)
+        // Tier 2a: Profile-injected curriculum pin, but Tier 1 returned nothing.
+        // This happens when a student has a profile (Class 10, SCERT_KERALA) but that specific
+        // class/board combination hasn't been uploaded to ChromoDB yet (e.g. only Class 9 content exists).
+        // SAFE: fall back to subject-only to avoid silent zero-chunk responses for genuine queries.
+        // ONLY applies when the router did NOT explicitly specify class or board.
+        if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
+            && hasProfileOnlyCurriculumPin
+            && whereFilter.subject) {
+          searchRes = await chromoFetch(`/api/search/${collection}`, 'POST', {
+            query: searchQuery,
+            n_results: 5,
+            threshold: 0.30,
+            where: { subject: whereFilter.subject },
+          });
+          console.log(`[RAG Tier 2a] Profile-pin fallback (subject-only) → ${searchRes?.results?.length ?? 0} results`);
+        }
+
+        // Tier 2b: Subject-only (ONLY if no class and no board were specified BY THE ROUTER)
         if ((!searchRes || !searchRes.results || searchRes.results.length === 0)
             && whereFilter.subject
             && !hasCurriculumPin) {
@@ -1181,7 +1215,7 @@ app.post('/api/chat', async (req, res) => {
             threshold: 0.30,
             where: { subject: whereFilter.subject },
           });
-          console.log(`[RAG Tier 2] Subject-only filter → ${searchRes?.results?.length ?? 0} results`);
+          console.log(`[RAG Tier 2b] Subject-only filter → ${searchRes?.results?.length ?? 0} results`);
         }
 
         // Tier 3: Unconstrained (ONLY if router provided absolutely no curriculum metadata)
@@ -1208,8 +1242,15 @@ app.post('/api/chat', async (req, res) => {
 
       // ── ZERO CHUNKS HANDLING (No Second API Call • Direct Backend Response) ──
       if (action === 'rag_search' && chunks.length === 0) {
+        // Pass enriched effective metadata (includes student profile class/board) so isSyllabusAvailable
+        // can accurately classify the reason — especially when profile pins a class/board not in ChromoDB.
+        const effectiveMeta = {
+          board: effectiveWhereFilter.board || meta.board,
+          class: effectiveWhereFilter.class || meta.class,
+          subject: effectiveWhereFilter.subject || meta.subject,
+        };
         const reasonType = determineZeroChunkReason({
-          metadata: meta,
+          metadata: effectiveMeta,
           searchError: searchError,
         });
 
@@ -1271,7 +1312,12 @@ app.post('/api/chat', async (req, res) => {
     // was not triggered (e.g. useRag was true but ChromoDB was down and searchError was thrown
     // before chunks were assigned), or any future code path that reaches here with empty context.
     if (action === 'rag_search' && !ragContext && !useVision && !isWebSearch) {
-      const reasonType = determineZeroChunkReason({ metadata: meta, searchError: null });
+      const effectiveMeta = {
+        board: effectiveWhereFilter.board || meta.board,
+        class: effectiveWhereFilter.class || meta.class,
+        subject: effectiveWhereFilter.subject || meta.subject,
+      };
+      const reasonType = determineZeroChunkReason({ metadata: effectiveMeta, searchError: null });
       console.log(`[Safety Net] action=rag_search but ragContext is empty — blocking Gemini fallback | Reason: ${reasonType}`);
       const zeroChunkResponse = buildZeroChunkResponse({ type: reasonType, routingDecision });
       aiGateway.recordChatInteraction({
