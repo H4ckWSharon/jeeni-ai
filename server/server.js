@@ -10,6 +10,7 @@ const {
   determineZeroChunkReason,
   buildZeroChunkResponse,
   getPredefinedMessage,
+  isSyllabusAvailable,
 } = require('./src/zeroChunksHandler');
 const studentStore = require('./src/studentStore');
 const usageStore = require('./src/usageStore');
@@ -773,6 +774,42 @@ function normalizeChunkMetadata(raw = {}) {
   return meta;
 }
 
+/**
+ * Extracts curriculum constraints (class, board, subject) directly from user query.
+ * Ensures user query explicit constraints take precedence over router omissions
+ * and prevents student profile defaults from overwriting explicitly requested classes.
+ */
+function extractCurriculumFromQuery(query) {
+  if (!query || typeof query !== 'string') return {};
+  const extracted = {};
+
+  // Class / Grade matching: "class 5", "grade 10", "standard 9", "std 8", "10th class", "5th standard"
+  const classMatch = query.match(/\b(?:class|grade|standard|std)\s*(\d{1,2})\b/i) ||
+                     query.match(/\b(\d{1,2})(?:st|nd|rd|th)\s*(?:class|grade|standard|std)?\b/i);
+  if (classMatch) {
+    extracted.class = classMatch[1];
+  }
+
+  // Board matching:
+  const upper = query.toUpperCase();
+  if (upper.includes('CBSE')) extracted.board = 'CBSE';
+  else if (upper.includes('NCERT')) extracted.board = 'NCERT';
+  else if (upper.includes('ICSE')) extracted.board = 'ICSE';
+  else if (upper.includes('KERALA') || upper.includes('SCERT') || upper.includes('STATE BOARD')) extracted.board = 'SCERT_KERALA';
+
+  // Subject matching:
+  const subjects = ['ENGLISH', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'MATHEMATICS', 'MATHS', 'SCIENCE', 'SOCIAL SCIENCE', 'HISTORY', 'GEOGRAPHY', 'ECONOMICS', 'POLITICAL SCIENCE', 'COMPUTER SCIENCE', 'MALAYALAM'];
+  for (const s of subjects) {
+    const regex = new RegExp(`\\b${s}\\b`, 'i');
+    if (regex.test(query)) {
+      extracted.subject = normalizeSubject(s);
+      break;
+    }
+  }
+
+  return extracted;
+}
+
 // ── Upload PDF → ChromoDB (Protected Admin Endpoint) ─────────
 app.post('/api/upload', requireAdminAuth, upload.single('file'), async (req, res) => {
   try {
@@ -1013,6 +1050,49 @@ app.post('/api/chat', async (req, res) => {
     const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
     let action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : 'direct_answer'));
 
+    // Extract explicit curriculum stated in the user's query
+    const explicitCurriculum = extractCurriculumFromQuery(userQuery);
+    if (explicitCurriculum.class && !meta.class) meta.class = explicitCurriculum.class;
+    if (explicitCurriculum.board && !meta.board) meta.board = explicitCurriculum.board;
+    if (explicitCurriculum.subject && !meta.subject) meta.subject = explicitCurriculum.subject;
+
+    const hasExplicitQueryClass = !!explicitCurriculum.class;
+    const hasExplicitQueryBoard = !!explicitCurriculum.board;
+
+    // Check if the explicitly requested curriculum is out-of-syllabus in Jeeni (e.g. Class 5):
+    const explicitSyllabusChecked = {
+      class: meta.class || explicitCurriculum.class,
+      board: meta.board || explicitCurriculum.board,
+      subject: meta.subject || explicitCurriculum.subject,
+    };
+    if (hasExplicitQueryClass && !isSyllabusAvailable(explicitSyllabusChecked)) {
+      console.log(`[Zero Chunks Pre-Check] Explicit syllabus not supported in Jeeni: ${JSON.stringify(explicitSyllabusChecked)}`);
+      const zeroChunkResponse = buildZeroChunkResponse({
+        type: 'SYLLABUS_NOT_AVAILABLE',
+        routingDecision,
+      });
+      aiGateway.recordChatInteraction({
+        requestId,
+        userId: studentId,
+        userQuery,
+        feature: 'RAG Search (Zero Chunks)',
+        model: 'gemini-3.1-flash-lite',
+        messages,
+        routerResult: routingDecision,
+        routerUsage: routingDecision?._usage,
+        retrievedChunksCount: 0,
+        passedChunksCount: 0,
+        ragSubject: meta?.subject,
+        ragBoard: meta?.board,
+        ragClass: meta?.class,
+        ragLatencyMs: 0,
+        totalLatencyMs: Date.now() - startTime,
+        status: 'SUCCESS',
+        responseText: zeroChunkResponse.content,
+      });
+      return res.json(zeroChunkResponse);
+    }
+
     // ── STAGE 1.1: Pathway D — Safety Block ───────────────
     if (action === 'safety_block' && routingDecision?.direct_response_text) {
       console.log('[Router AI] Pathway D: Safety Block triggered');
@@ -1045,7 +1125,8 @@ app.post('/api/chat', async (req, res) => {
       /(do not have access|don't have access|personal information|school records|identity)/i.test(routingDecision.direct_response_text);
 
     // If Router asked for clarification because class/board was missing, but we have studentProfile:
-    if (action === 'ask_clarification' && studentProfile && (!meta.class || !meta.board)) {
+    // CRITICAL: Only auto-resolve if user query did NOT explicitly mention another class/board
+    if (action === 'ask_clarification' && studentProfile && (!meta.class && !hasExplicitQueryClass || !meta.board && !hasExplicitQueryBoard)) {
       console.log(`[Router AI] Auto-resolving missing curriculum from Student Profile: Class ${studentProfile.class} (${studentProfile.board})`);
       action = 'rag_search';
     }
@@ -1142,16 +1223,16 @@ app.post('/api/chat', async (req, res) => {
 
         // Phase 4 & 9: Curriculum Fallback from Student Profile
         // If the query did not explicitly specify class or board, apply the student profile defaults.
-        // Track whether class/board came from the Router AI (explicit) or from the student profile (implicit)
+        // Track whether class/board came from the Query or Router AI (explicit) or from the student profile (implicit)
         // so that we can safely relax the search tier for profile-injected pins without risking
         // cross-curriculum contamination from explicitly-specified class/board.
-        const routerSpecifiedClass = !!whereFilter.class;
-        const routerSpecifiedBoard = !!whereFilter.board;
+        const routerSpecifiedClass = !!whereFilter.class || hasExplicitQueryClass;
+        const routerSpecifiedBoard = !!whereFilter.board || hasExplicitQueryBoard;
 
-        if (!whereFilter.class && studentProfile?.class) {
+        if (!whereFilter.class && !hasExplicitQueryClass && studentProfile?.class) {
           whereFilter.class = normalizeClass(studentProfile.class);
         }
-        if (!whereFilter.board && studentProfile?.board) {
+        if (!whereFilter.board && !hasExplicitQueryBoard && studentProfile?.board) {
           whereFilter.board = normalizeBoard(studentProfile.board);
         }
 

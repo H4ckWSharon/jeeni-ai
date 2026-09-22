@@ -1,4 +1,6 @@
-import paramiko, os
+import paramiko, os, sys
+
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -8,13 +10,18 @@ with open('server/server.js', 'r', encoding='utf-8') as f:
     server_js = f.read()
 
 sftp = ssh.open_sftp()
-with sftp.file('/var/www/jeeni/server.js', 'w') as f:
-    f.write(server_js)
+for p in ['/root/jeeni-server/server.js', '/var/www/jeeni/server.js']:
+    try:
+        with sftp.file(p, 'w') as f:
+            f.write(server_js)
+        print(f"Updated {p} ({len(server_js)} bytes)")
+    except Exception as e:
+        print(f"Failed {p}: {e}")
 sftp.close()
 
 stdin, stdout, stderr = ssh.exec_command('pm2 restart all && echo PM2_RESTARTED')
-print("STDOUT:", stdout.read().decode())
-print("STDERR:", stderr.read().decode())
+print("STDOUT:", stdout.read().decode('utf-8', errors='replace'))
+print("STDERR:", stderr.read().decode('utf-8', errors='replace'))
 
 ssh.close()
 print("UPDATED SERVER.JS ON VPS!")
