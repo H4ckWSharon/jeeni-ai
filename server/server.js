@@ -1206,7 +1206,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // ── STAGE 1.25: Memory & Personalization Relevance Analysis ──
-    const relevantMemories = (studentProfile && studentProfile.personalization_enabled !== false)
+    relevantMemories = (studentProfile && studentProfile.personalization_enabled !== false)
       ? studentStore.getRelevantMemories(studentId, userQuery, meta?.subject || '')
       : [];
 
@@ -1718,7 +1718,7 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       curriculumIntent: curriculumIntent,
       ragUsed: Boolean(ragContext),
       isWebSearch: isWebSearch,
-      attachments: attachments || [],
+      attachments: req.body?.attachments || (hasImages ? [{ name: 'image.png' }] : []),
       mode: mode,
       hasMemories: relevantMemories.length > 0,
     });
