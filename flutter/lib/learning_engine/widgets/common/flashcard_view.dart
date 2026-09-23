@@ -92,7 +92,7 @@ class _FlashcardViewState extends State<FlashcardView> with SingleTickerProvider
         Text(
           'Card ${_currentIndex + 1} of ${widget.flashcards.length}',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -133,13 +133,13 @@ class _FlashcardViewState extends State<FlashcardView> with SingleTickerProvider
             IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
               onPressed: _currentIndex > 0 ? _prevCard : null,
-              disabledColor: Colors.white.withOpacity(0.15),
+              disabledColor: Colors.white.withValues(alpha: 0.15),
             ),
             const SizedBox(width: 24),
             Text(
               'Tap card to flip',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
               ),
@@ -148,7 +148,7 @@ class _FlashcardViewState extends State<FlashcardView> with SingleTickerProvider
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
               onPressed: _currentIndex < widget.flashcards.length - 1 ? _nextCard : null,
-              disabledColor: Colors.white.withOpacity(0.15),
+              disabledColor: Colors.white.withValues(alpha: 0.15),
             ),
           ],
         ),
@@ -164,7 +164,7 @@ class _FlashcardViewState extends State<FlashcardView> with SingleTickerProvider
       decoration: BoxDecoration(
         color: const Color(0xFF161616),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -174,7 +174,7 @@ class _FlashcardViewState extends State<FlashcardView> with SingleTickerProvider
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
+                  color: accentColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(

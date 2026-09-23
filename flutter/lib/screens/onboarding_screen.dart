@@ -104,7 +104,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     right: -40 + v * 20,
                     child: Container(width: 280, height: 280,
                       decoration: BoxDecoration(shape: BoxShape.circle,
-                        gradient: RadialGradient(colors: [accent.withOpacity(0.12), Colors.transparent]),
+                        gradient: RadialGradient(colors: [accent.withValues(alpha: 0.12), Colors.transparent]),
                       ),
                     ),
                   ),
@@ -113,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     left: -60 + v * 15,
                     child: Container(width: 220, height: 220,
                       decoration: BoxDecoration(shape: BoxShape.circle,
-                        gradient: RadialGradient(colors: [const Color(0xFF8B5CF6).withOpacity(0.08), Colors.transparent]),
+                        gradient: RadialGradient(colors: [const Color(0xFF8B5CF6).withValues(alpha: 0.08), Colors.transparent]),
                       ),
                     ),
                   ),
@@ -140,8 +140,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF070D1A).withOpacity(0.0),
-                    const Color(0xFF070D1A).withOpacity(0.85),
+                    const Color(0xFF070D1A).withValues(alpha: 0.0),
+                    const Color(0xFF070D1A).withValues(alpha: 0.85),
                     const Color(0xFF070D1A),
                   ],
                   stops: const [0.0, 0.3, 0.6],
@@ -168,9 +168,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: accent.withOpacity(0.12),
+                            color: accent.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: accent.withOpacity(0.3)),
+                            border: Border.all(color: accent.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -197,7 +197,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                         // Subtitle
                         Text(_subs[_page], style: TextStyle(
-                          fontSize: 15, color: Colors.white.withOpacity(0.55),
+                          fontSize: 15, color: Colors.white.withValues(alpha: 0.55),
                           height: 1.6, fontWeight: FontWeight.w400,
                         )),
 
@@ -215,8 +215,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 width: active ? 32 : 8, height: 8,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(4),
-                                  color: active ? accent : Colors.white.withOpacity(0.18),
-                                  boxShadow: active ? [BoxShadow(color: accent.withOpacity(0.5), blurRadius: 10)] : null,
+                                  color: active ? accent : Colors.white.withValues(alpha: 0.18),
+                                  boxShadow: active ? [BoxShadow(color: accent.withValues(alpha: 0.5), blurRadius: 10)] : null,
                                 ),
                               );
                             }),
@@ -245,12 +245,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
+                    color: Colors.white.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.10)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
                   ),
                   child: Text('Skip', style: TextStyle(
-                    color: Colors.white.withOpacity(0.5), fontSize: 13, fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontWeight: FontWeight.w500,
                   )),
                 ),
               ),
@@ -307,7 +307,7 @@ class _IllustrationPage extends StatelessWidget {
                 width: 280, height: 280,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: accent.withOpacity(0.08 + v * 0.06), width: 1),
+                  border: Border.all(color: accent.withValues(alpha: 0.08 + v * 0.06), width: 1),
                 ),
               ),
             ),
@@ -318,7 +318,7 @@ class _IllustrationPage extends StatelessWidget {
                 width: 240, height: 240,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: accent.withOpacity(0.12 + v * 0.08), width: 1.5),
+                  border: Border.all(color: accent.withValues(alpha: 0.12 + v * 0.08), width: 1.5),
                 ),
               ),
             ),
@@ -328,8 +328,8 @@ class _IllustrationPage extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: accent.withOpacity(0.25 + v * 0.15), blurRadius: 70, spreadRadius: 20),
-                  BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.1 + v * 0.05), blurRadius: 100, spreadRadius: 30),
+                  BoxShadow(color: accent.withValues(alpha: 0.25 + v * 0.15), blurRadius: 70, spreadRadius: 20),
+                  BoxShadow(color: const Color(0xFF8B5CF6).withValues(alpha: 0.1 + v * 0.05), blurRadius: 100, spreadRadius: 30),
                 ],
               ),
             ),
@@ -339,7 +339,7 @@ class _IllustrationPage extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: const DecorationImage(image: AssetImage('assets/images/logo.png'), fit: BoxFit.cover),
-                boxShadow: [BoxShadow(color: accent.withOpacity(0.3), blurRadius: 40, spreadRadius: 5)],
+                boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.3), blurRadius: 40, spreadRadius: 5)],
               ),
             ),
             // Floating sparkle dots
@@ -413,7 +413,7 @@ class _IllustrationPage extends StatelessWidget {
                     painter: _ProgressRingPainter(
                       progress: 0.78,
                       color: accent,
-                      bgColor: Colors.white.withOpacity(0.06),
+                      bgColor: Colors.white.withValues(alpha: 0.06),
                     ),
                   ),
                 ),
@@ -427,7 +427,7 @@ class _IllustrationPage extends StatelessWidget {
                   )),
                   const SizedBox(height: 4),
                   Text('Progress', style: TextStyle(
-                    fontSize: 14, color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.w500,
+                    fontSize: 14, color: Colors.white.withValues(alpha: 0.5), fontWeight: FontWeight.w500,
                   )),
                 ],
               ),
@@ -463,7 +463,7 @@ class _IllustrationPage extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 220),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isUser ? accent.withOpacity(0.2) : Colors.white.withOpacity(0.06),
+          color: isUser ? accent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
@@ -471,11 +471,11 @@ class _IllustrationPage extends StatelessWidget {
             bottomRight: Radius.circular(isUser ? 4 : 18),
           ),
           border: Border.all(
-            color: isUser ? accent.withOpacity(0.35) : Colors.white.withOpacity(0.08),
+            color: isUser ? accent.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.08),
           ),
         ),
         child: Text(text, style: TextStyle(
-          color: isUser ? accent : Colors.white.withOpacity(0.8),
+          color: isUser ? accent : Colors.white.withValues(alpha: 0.8),
           fontSize: 14, fontWeight: FontWeight.w500, height: 1.4,
         )),
       ),
@@ -486,9 +486,9 @@ class _IllustrationPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -499,7 +499,7 @@ class _IllustrationPage extends StatelessWidget {
             width: 8, height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: accent.withOpacity(0.3 + dotV * 0.5),
+              color: accent.withValues(alpha: 0.3 + dotV * 0.5),
             ),
           );
         }),
@@ -513,9 +513,9 @@ class _IllustrationPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.25)),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
       ),
@@ -528,10 +528,10 @@ class _IllustrationPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.10),
+          color: color.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.25)),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 12)],
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 12)],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -561,8 +561,8 @@ class _IllustrationPage extends StatelessWidget {
           width: size, height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color.withOpacity(opac * 0.7),
-            boxShadow: [BoxShadow(color: color.withOpacity(opac * 0.4), blurRadius: 6)],
+            color: color.withValues(alpha: opac * 0.7),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: opac * 0.4), blurRadius: 6)],
           ),
         ),
       );
@@ -595,7 +595,7 @@ class _ProgressRingPainter extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: -pi / 2,
         endAngle: 3 * pi / 2,
-        colors: [color.withOpacity(0.3), color],
+        colors: [color.withValues(alpha: 0.3), color],
       ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeW
@@ -613,7 +613,7 @@ class _ProgressRingPainter extends CustomPainter {
     final endAngle = -pi / 2 + 2 * pi * progress;
     final dotPos = Offset(center.dx + radius * cos(endAngle), center.dy + radius * sin(endAngle));
     canvas.drawCircle(dotPos, 6, Paint()..color = color);
-    canvas.drawCircle(dotPos, 12, Paint()..color = color.withOpacity(0.2));
+    canvas.drawCircle(dotPos, 12, Paint()..color = color.withValues(alpha: 0.2));
   }
 
   @override
@@ -660,9 +660,9 @@ class _CTAButtonState extends State<_CTAButton> with SingleTickerProviderStateMi
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [widget.color, widget.color.withOpacity(0.8)]),
+            gradient: LinearGradient(colors: [widget.color, widget.color.withValues(alpha: 0.8)]),
             borderRadius: BorderRadius.circular(50),
-            boxShadow: [BoxShadow(color: widget.color.withOpacity(0.45), blurRadius: 24, offset: const Offset(0, 8))],
+            boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.45), blurRadius: 24, offset: const Offset(0, 8))],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

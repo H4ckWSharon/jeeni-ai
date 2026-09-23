@@ -283,12 +283,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             color: const Color(0xFF0F172A),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(2))),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
               const Align(
                 alignment: Alignment.centerLeft,
@@ -318,16 +318,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? color.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? color.withOpacity(0.5) : Colors.white.withOpacity(0.05)),
+          border: Border.all(color: isSelected ? color.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: isSelected ? color.withOpacity(0.2) : Colors.white.withOpacity(0.05), shape: BoxShape.circle),
-              child: Icon(icon, color: isSelected ? color : Colors.white.withOpacity(0.5), size: 24),
+              decoration: BoxDecoration(color: isSelected ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+              child: Icon(icon, color: isSelected ? color : Colors.white.withValues(alpha: 0.5), size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -336,7 +336,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   Text(title, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
                   const SizedBox(height: 4),
-                  Text(description, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                  Text(description, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
                 ],
               ),
             ),
@@ -557,11 +557,11 @@ class _TopBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(width: 22, height: 1.5, color: Colors.white.withOpacity(0.8)),
+                  Container(width: 22, height: 1.5, color: Colors.white.withValues(alpha: 0.8)),
                   const SizedBox(height: 5),
-                  Container(width: 18, height: 1.5, color: Colors.white.withOpacity(0.8)),
+                  Container(width: 18, height: 1.5, color: Colors.white.withValues(alpha: 0.8)),
                   const SizedBox(height: 5),
-                  Container(width: 22, height: 1.5, color: Colors.white.withOpacity(0.8)),
+                  Container(width: 22, height: 1.5, color: Colors.white.withValues(alpha: 0.8)),
                 ],
               ),
             ),
@@ -590,7 +590,7 @@ class _TopBar extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: const Color(0xFF1E1B4B),
-                border: Border.all(color: const Color(0xFF818CF8).withOpacity(0.5)),
+                border: Border.all(color: const Color(0xFF818CF8).withValues(alpha: 0.5)),
               ),
               child: const Icon(Icons.school_outlined, color: Color(0xFF818CF8), size: 18),
             ),

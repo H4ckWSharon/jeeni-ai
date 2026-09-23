@@ -103,7 +103,7 @@ class _QuizViewState extends State<QuizView> {
               Text(
                 'Question ${_currentIndex + 1} of ${widget.questions.length}',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -123,7 +123,7 @@ class _QuizViewState extends State<QuizView> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (_currentIndex + 1) / widget.questions.length,
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
               color: const Color(0xFF10B981),
               minHeight: 6,
             ),
@@ -136,7 +136,7 @@ class _QuizViewState extends State<QuizView> {
             decoration: BoxDecoration(
               color: const Color(0xFF161616),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
             child: Text(
               question.questionText,
@@ -190,23 +190,23 @@ class _QuizViewState extends State<QuizView> {
 
   Widget _buildOptionButton(int index, String option, QuizQuestion question) {
     Color buttonColor = const Color(0xFF161616);
-    Color borderColor = Colors.white.withOpacity(0.05);
+    Color borderColor = Colors.white.withValues(alpha: 0.05);
     Color textColor = Colors.white;
     IconData? icon;
 
     if (_answered) {
       if (index == question.correctAnswerIndex) {
-        buttonColor = const Color(0xFF10B981).withOpacity(0.1);
-        borderColor = const Color(0xFF10B981).withOpacity(0.4);
+        buttonColor = const Color(0xFF10B981).withValues(alpha: 0.1);
+        borderColor = const Color(0xFF10B981).withValues(alpha: 0.4);
         textColor = const Color(0xFF10B981);
         icon = Icons.check_circle_rounded;
       } else if (index == _selectedAnswerIndex) {
-        buttonColor = const Color(0xFFEF4444).withOpacity(0.1);
-        borderColor = const Color(0xFFEF4444).withOpacity(0.4);
+        buttonColor = const Color(0xFFEF4444).withValues(alpha: 0.1);
+        borderColor = const Color(0xFFEF4444).withValues(alpha: 0.4);
         textColor = const Color(0xFFEF4444);
         icon = Icons.cancel_rounded;
       } else {
-        textColor = Colors.white.withOpacity(0.4);
+        textColor = Colors.white.withValues(alpha: 0.4);
       }
     }
 
@@ -246,7 +246,7 @@ class _QuizViewState extends State<QuizView> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1.5,
                     ),
                   ),
@@ -265,13 +265,13 @@ class _QuizViewState extends State<QuizView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isCorrect
-            ? const Color(0xFF10B981).withOpacity(0.05)
-            : const Color(0xFFEF4444).withOpacity(0.05),
+            ? const Color(0xFF10B981).withValues(alpha: 0.05)
+            : const Color(0xFFEF4444).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCorrect
-              ? const Color(0xFF10B981).withOpacity(0.2)
-              : const Color(0xFFEF4444).withOpacity(0.2),
+              ? const Color(0xFF10B981).withValues(alpha: 0.2)
+              : const Color(0xFFEF4444).withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -299,7 +299,7 @@ class _QuizViewState extends State<QuizView> {
           Text(
             question.explanation,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 13.5,
               height: 1.5,
             ),
@@ -325,7 +325,7 @@ class _QuizViewState extends State<QuizView> {
       decoration: BoxDecoration(
         color: const Color(0xFF161616),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -348,7 +348,7 @@ class _QuizViewState extends State<QuizView> {
           Text(
             'You scored $_score out of ${widget.questions.length}',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 15,
             ),
           ),
@@ -356,9 +356,9 @@ class _QuizViewState extends State<QuizView> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.02),
+              color: Colors.white.withValues(alpha: 0.02),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
             child: Text(
               feedbackText,
@@ -377,7 +377,7 @@ class _QuizViewState extends State<QuizView> {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

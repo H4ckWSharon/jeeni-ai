@@ -130,12 +130,12 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
           decoration: BoxDecoration(
             color: const Color(0xFF0F172A),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(2))),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
               const Align(
                 alignment: Alignment.centerLeft,
@@ -165,16 +165,16 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? color.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? color.withOpacity(0.5) : Colors.white.withOpacity(0.05)),
+          border: Border.all(color: isSelected ? color.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: isSelected ? color.withOpacity(0.2) : Colors.white.withOpacity(0.05), shape: BoxShape.circle),
-              child: Icon(icon, color: isSelected ? color : Colors.white.withOpacity(0.5), size: 24),
+              decoration: BoxDecoration(color: isSelected ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+              child: Icon(icon, color: isSelected ? color : Colors.white.withValues(alpha: 0.5), size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -183,7 +183,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
                 children: [
                   Text(title, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
                   const SizedBox(height: 4),
-                  Text(description, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                  Text(description, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
                 ],
               ),
             ),
@@ -198,7 +198,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, anim1, anim2) {
         return BackdropFilter(
@@ -209,7 +209,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
               opacity: anim1,
               child: AlertDialog(
                 backgroundColor: const Color(0xFF0F172A),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: Colors.white.withOpacity(0.1))),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
                 contentPadding: const EdgeInsets.all(24),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF3B82F6)]),
                         shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.3), blurRadius: 15)],
+                        boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.3), blurRadius: 15)],
                       ),
                       child: const Icon(Icons.security_rounded, color: Colors.white, size: 32),
                     ),
@@ -448,8 +448,8 @@ class _TempTopBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: isLoggedIn ? Colors.white.withOpacity(0.1) : Colors.transparent,
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
+                color: isLoggedIn ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
               ),
               child: Text(
                 isLoggedIn ? 'Main Chat' : 'Login',
@@ -477,12 +477,12 @@ class _TempEmptyState extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.lock_person_rounded, size: 42, color: Colors.white.withOpacity(0.2)),
+                Icon(Icons.lock_person_rounded, size: 42, color: Colors.white.withValues(alpha: 0.2)),
                 const SizedBox(height: 16),
                 Text(
                   'PRIVATE SESSION',
                   style: GoogleFonts.inter(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 2,
@@ -492,7 +492,7 @@ class _TempEmptyState extends StatelessWidget {
                 Text(
                   'Temporary chat • No history saved',
                   style: GoogleFonts.inter(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     fontSize: 13,
                   ),
                 ),
@@ -539,19 +539,19 @@ class _FeatureRow extends StatelessWidget {
             width: 32, height: 32,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.05),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              color: Colors.white.withValues(alpha: 0.05),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
-            child: Icon(icon, color: Colors.white.withOpacity(0.45), size: 15),
+            child: Icon(icon, color: Colors.white.withValues(alpha: 0.45), size: 15),
           ),
           const SizedBox(width: 6),
           Flexible(
-            child: Text(label, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12, fontWeight: FontWeight.w400)),
+            child: Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w400)),
           ),
         ],
       ),
     );
   }
 
-  Widget _divider() => Container(width: 1, height: 28, color: Colors.white.withOpacity(0.06), margin: const EdgeInsets.symmetric(horizontal: 4));
+  Widget _divider() => Container(width: 1, height: 28, color: Colors.white.withValues(alpha: 0.06), margin: const EdgeInsets.symmetric(horizontal: 4));
 }

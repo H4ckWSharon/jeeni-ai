@@ -70,7 +70,7 @@ class _GetStartedScreenState extends State<GetStartedScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.12),
+                      AppColors.primary.withValues(alpha: 0.12),
                       Colors.transparent,
                     ],
                   ),
@@ -106,7 +106,7 @@ class _GetStartedScreenState extends State<GetStartedScreen>
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
+                            color: AppColors.primary.withValues(alpha: 0.4),
                             blurRadius: 30,
                             offset: const Offset(0, 10),
                           ),
@@ -235,9 +235,9 @@ class _FeatureChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.25), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -309,7 +309,7 @@ class _GetStartedButtonState extends State<_GetStartedButton>
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.45),
+                color: AppColors.primary.withValues(alpha: 0.45),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),

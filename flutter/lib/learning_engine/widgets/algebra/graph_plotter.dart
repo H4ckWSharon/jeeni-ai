@@ -70,12 +70,12 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
         const SizedBox(height: 10),
         Text(
           'A linear equation represents a straight line. Every point on the line satisfies the equation.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(12)),
           child: Column(
             children: [
               Math.tex(r'y = m \cdot x + c', textStyle: const TextStyle(color: Color(0xFF10B981), fontSize: 24)),
@@ -119,14 +119,14 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
         Container(
           height: 160,
           padding: const EdgeInsets.only(right: 16, top: 12, bottom: 4, left: 8),
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
           child: LineChart(
             LineChartData(
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: true,
-                getDrawingHorizontalLine: (val) => FlLine(color: Colors.white.withOpacity(0.05), strokeWidth: 1),
-                getDrawingVerticalLine: (val) => FlLine(color: Colors.white.withOpacity(0.05), strokeWidth: 1),
+                getDrawingHorizontalLine: (val) => FlLine(color: Colors.white.withValues(alpha: 0.05), strokeWidth: 1),
+                getDrawingVerticalLine: (val) => FlLine(color: Colors.white.withValues(alpha: 0.05), strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 show: true,
@@ -140,7 +140,7 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
                     interval: 2.5,
                     getTitlesWidget: (val, meta) => Text(
                       val.toStringAsFixed(0),
-                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9),
                     ),
                   ),
                 ),
@@ -152,7 +152,7 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
                     interval: 2.5,
                     getTitlesWidget: (val, meta) => Text(
                       val.toStringAsFixed(0),
-                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9),
                     ),
                   ),
                 ),
@@ -218,7 +218,7 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.02), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.02), borderRadius: BorderRadius.circular(10)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -249,7 +249,7 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
       children: [
         Math.tex(latex, textStyle: const TextStyle(color: Colors.white, fontSize: 13)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
       ],
     );
   }
@@ -258,16 +258,16 @@ class _GraphPlotterWidgetState extends State<GraphPlotterWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 4),
-          Text(desc, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+          Text(desc, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
         ],
       ),
     );

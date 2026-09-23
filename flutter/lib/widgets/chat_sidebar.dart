@@ -985,7 +985,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
         decoration: BoxDecoration(
           color: const Color(0xFF111111),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -996,7 +996,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
               child: Container(
                 width: 40, height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)),
               ),
             ),
 
@@ -1016,7 +1016,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: Row(
                   children: [
@@ -1036,7 +1036,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.4)),
+                    Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.4)),
                   ],
                 ),
               ),
@@ -1090,7 +1090,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
                     backgroundColor: const Color(0xFF171717),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     title: const Text('Clear All Chats?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     content: const Text(
@@ -1160,7 +1160,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
             Center(
               child: Text(
                 'Jeeni AI  ·  v1.0.0  ·  Built with \u2764\ufe0f',
-                style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 12),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 12),
               ),
             ),
           ],
@@ -1379,7 +1379,7 @@ class _SettingsOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
         child: Row(
           children: [
@@ -1397,7 +1397,7 @@ class _SettingsOption extends StatelessWidget {
             ),
             if (trailing != null) trailing!
             else if (onTap != null)
-              Icon(Icons.chevron_right_rounded, size: 18, color: Colors.white.withOpacity(0.3)),
+              Icon(Icons.chevron_right_rounded, size: 18, color: Colors.white.withValues(alpha: 0.3)),
           ],
         ),
       ),

@@ -80,7 +80,7 @@ class _IntroScreenState extends State<IntroScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.15),
+                    AppColors.primary.withValues(alpha: 0.15),
                     Colors.transparent,
                   ],
                 ),
@@ -97,7 +97,7 @@ class _IntroScreenState extends State<IntroScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.accent.withOpacity(0.1),
+                    AppColors.accent.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                 ),
@@ -210,7 +210,7 @@ class _IntroScreenState extends State<IntroScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.12 * value),
+                    AppColors.primary.withValues(alpha: 0.12 * value),
                     Colors.transparent,
                   ],
                 ),
@@ -223,7 +223,7 @@ class _IntroScreenState extends State<IntroScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -235,17 +235,17 @@ class _IntroScreenState extends State<IntroScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.accent.withOpacity(0.3),
+                  color: AppColors.accent.withValues(alpha: 0.3),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35 * value),
+                    color: AppColors.primary.withValues(alpha: 0.35 * value),
                     blurRadius: 40,
                     spreadRadius: 8,
                   ),
                   BoxShadow(
-                    color: AppColors.accent.withOpacity(0.15 * value),
+                    color: AppColors.accent.withValues(alpha: 0.15 * value),
                     blurRadius: 60,
                     spreadRadius: 15,
                   ),
@@ -260,12 +260,12 @@ class _IntroScreenState extends State<IntroScreen>
                 shape: BoxShape.circle,
                 color: const Color(0xFF1E2640),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.4),
+                  color: AppColors.primary.withValues(alpha: 0.4),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 30,
                     spreadRadius: 2,
                   ),
@@ -351,7 +351,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: AppColors.primary.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),

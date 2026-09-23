@@ -356,7 +356,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF4338CA).withOpacity(0.5)),
+            border: Border.all(color: const Color(0xFF4338CA).withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
@@ -486,7 +486,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
             color: const Color(0xFF131D31),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _personalizationEnabled ? const Color(0xFF4F46E5).withOpacity(0.5) : const Color(0xFF334155),
+              color: _personalizationEnabled ? const Color(0xFF4F46E5).withValues(alpha: 0.5) : const Color(0xFF334155),
             ),
           ),
           child: Row(
@@ -494,7 +494,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _personalizationEnabled ? const Color(0xFF4F46E5).withOpacity(0.2) : const Color(0xFF1E293B),
+                  color: _personalizationEnabled ? const Color(0xFF4F46E5).withValues(alpha: 0.2) : const Color(0xFF1E293B),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -526,7 +526,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
                 value: _personalizationEnabled,
                 onChanged: _togglePersonalization,
                 activeThumbColor: const Color(0xFF818CF8),
-                activeTrackColor: const Color(0xFF4F46E5).withOpacity(0.5),
+                activeTrackColor: const Color(0xFF4F46E5).withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -680,7 +680,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> with Sing
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4F46E5).withOpacity(0.2),
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(

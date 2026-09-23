@@ -155,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Your AI companion for limitless possibilities.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.55),
+                      color: Colors.white.withValues(alpha: 0.55),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -166,9 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5)),
+                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
                       ),
                       child: Row(
                         children: [
@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'Forgot password?',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
                         ),
@@ -248,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         'Don\'t have an account? ',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
                       ),
                       GestureDetector(
                         onTap: () {
@@ -286,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Skip for now',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),

@@ -79,7 +79,7 @@ class _EarthRotationWidgetState extends State<EarthRotationWidget> with SingleTi
         Text(
           'Earth rotates on its central axis, which connects the North and South poles. '
           'This movement explains the daylight cycles, temperature fluctuations, and Coriolis effects.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         _buildDetailRow('Period', '24 hours (1 Solar Day)'),
@@ -98,7 +98,7 @@ class _EarthRotationWidgetState extends State<EarthRotationWidget> with SingleTi
         Text(
           'Imagine standing in front of a campfire on a cold night. When you turn your back, your front cools down, and your back warms up. '
           'Earth does this continuously. The side facing the Sun heats up (Day), while the side facing away cools down (Night).',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
       ],
     );
@@ -110,7 +110,7 @@ class _EarthRotationWidgetState extends State<EarthRotationWidget> with SingleTi
       children: [
         Container(
           height: 150,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
           child: AnimatedBuilder(
             animation: _rotationController,
             builder: (context, child) {
@@ -163,7 +163,7 @@ class _EarthRotationWidgetState extends State<EarthRotationWidget> with SingleTi
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
           Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
         ],
       ),
@@ -194,7 +194,7 @@ class _SpacePainter extends CustomPainter {
 
     // Draw light rays
     final rayPaint = Paint()
-      ..color = Colors.amber.withOpacity(0.3)
+      ..color = Colors.amber.withValues(alpha: 0.3)
       ..strokeWidth = 1.5;
     canvas.drawLine(sunCenter, center, rayPaint);
 
@@ -236,7 +236,7 @@ class _SpacePainter extends CustomPainter {
 
     // 4. Draw continents (simple rotating dots on globe)
     final continentPaint = Paint()
-      ..color = Colors.green.withOpacity(0.6)
+      ..color = Colors.green.withValues(alpha: 0.6)
       ..strokeWidth = 2.0;
     
     final rotationAngle = rotationProgress * 2 * pi;

@@ -68,12 +68,12 @@ class _UnitCircleWidgetState extends State<UnitCircleWidget> {
         Text(
           'A Unit Circle is a circle of radius 1 centered at the coordinate plane origin (0,0). '
           'For any angle \u03b8, the point where the terminal side intersects the circle is (cos \u03b8, sin \u03b8).',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(12)),
           child: Column(
             children: [
               FittedBox(fit: BoxFit.scaleDown, child: Math.tex(r'(x, y) = (\cos \theta, \sin \theta)', textStyle: const TextStyle(color: Color(0xFF10B981), fontSize: 20))),
@@ -96,7 +96,7 @@ class _UnitCircleWidgetState extends State<UnitCircleWidget> {
         Text(
           'Imagine a spotlight shining down vertically: the length of the shadow cast on the floor is the cosine. '
           'Imagine a spotlight shining horizontally: the shadow cast on the wall is the sine.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
       ],
     );
@@ -108,7 +108,7 @@ class _UnitCircleWidgetState extends State<UnitCircleWidget> {
       children: [
         Container(
           height: 150,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
           child: CustomPaint(
             size: Size.infinite,
             painter: _UnitCirclePainter(angleDegrees: _angleDegrees),
@@ -158,10 +158,10 @@ class _UnitCircleWidgetState extends State<UnitCircleWidget> {
   Widget _buildReadoutCard(String label, String val, Color highlight) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(10)),
       child: Column(
         children: [
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
           const SizedBox(height: 4),
           Text(val, style: TextStyle(color: highlight, fontSize: 14, fontWeight: FontWeight.bold)),
         ],
@@ -175,7 +175,7 @@ class _UnitCircleWidgetState extends State<UnitCircleWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+          Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
           Text(val, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
@@ -193,7 +193,7 @@ class _UnitCirclePainter extends CustomPainter {
     final circleRadius = min(size.width, size.height) * 0.4;
 
     final paintStroke = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     

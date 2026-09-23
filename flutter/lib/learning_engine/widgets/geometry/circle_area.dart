@@ -94,15 +94,15 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         Text(
           'The Area of a circle is the total region or space enclosed inside its boundary (circumference). '
           'Unlike shapes with straight edges, a circle’s curved border makes measuring its area unique.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
+            color: Colors.white.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Column(
             children: [
@@ -155,16 +155,16 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         Text(
           'How did mathematicians discover that A = \u03c0r\u00b2? They used a process called "rearrangement method". '
           'Imagine slicing a pizza into 8 or more identical wedges.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         // Slicing animation graphic
         Container(
           height: 140,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: CustomPaint(
             size: Size.infinite,
@@ -174,7 +174,7 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         const SizedBox(height: 16),
         Text(
           'If we arrange these slices side-by-side alternating pointing up and down, they start to look like a parallelogram/rectangle!',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13, height: 1.5),
         ),
         const SizedBox(height: 10),
         _buildBulletPoint('Height of the rectangle', 'Equals the radius (r) of the circle.'),
@@ -183,9 +183,9 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.05),
+            color: const Color(0xFF10B981).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.15)),
+            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.15)),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -212,16 +212,16 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         const SizedBox(height: 4),
         Text(
           'Drag the slider to change the radius and observe how the area scales.',
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
         ),
         const SizedBox(height: 16),
         // Custom Painter Circle Area
         Container(
           height: 160,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: CustomPaint(
             size: Size.infinite,
@@ -247,7 +247,7 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
                 min: 1.0,
                 max: 10.0,
                 activeColor: const Color(0xFF10B981),
-                inactiveColor: Colors.white.withOpacity(0.1),
+                inactiveColor: Colors.white.withValues(alpha: 0.1),
                 onChanged: (val) {
                   setState(() {
                     _radius = val;
@@ -262,9 +262,9 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
+            color: Colors.white.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -338,9 +338,9 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         Container(
           height: 150,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: CustomPaint(
             size: Size.infinite,
@@ -369,7 +369,7 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
                 min: 1.0,
                 max: 10.0,
                 activeColor: const Color(0xFF10B981),
-                inactiveColor: Colors.white.withOpacity(0.1),
+                inactiveColor: Colors.white.withValues(alpha: 0.1),
                 onChanged: (val) => setState(() => _radius = val),
               ),
             ),
@@ -393,9 +393,9 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFEF4444).withOpacity(0.05),
+            color: const Color(0xFFEF4444).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.15)),
+            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.15)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,7 +431,7 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
       children: [
         Math.tex(latex, textStyle: const TextStyle(color: Colors.white, fontSize: 13)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
       ],
     );
   }
@@ -453,7 +453,7 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
                 style: const TextStyle(fontSize: 13, height: 1.4),
                 children: [
                   TextSpan(text: '$title: ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  TextSpan(text: desc, style: TextStyle(color: Colors.white.withOpacity(0.6))),
+                  TextSpan(text: desc, style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
                 ],
               ),
             ),
@@ -467,9 +467,9 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -489,14 +489,14 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+          Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
           const SizedBox(height: 6),
           Text(val, style: TextStyle(color: highlight, fontSize: 16, fontWeight: FontWeight.bold)),
         ],
@@ -511,7 +511,7 @@ class _CircleAreaWidgetState extends State<CircleAreaWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(error, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-          Text(fix, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11, height: 1.4)),
+          Text(fix, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11, height: 1.4)),
         ],
       ),
     );
@@ -527,10 +527,10 @@ class _PizzaRearrangementPainter extends CustomPainter {
     const circleRadius = 40.0;
 
     final paintCircle = Paint()
-      ..color = Colors.amber.withOpacity(0.7)
+      ..color = Colors.amber.withValues(alpha: 0.7)
       ..style = PaintingStyle.fill;
     final paintStroke = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -564,7 +564,7 @@ class _PizzaRearrangementPainter extends CustomPainter {
 
     // Draw connecting arrow
     final arrowPaint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     canvas.drawLine(Offset(size.width * 0.45, size.height * 0.5), Offset(size.width * 0.55, size.height * 0.5), arrowPaint);
@@ -631,7 +631,7 @@ class _CircleSimPainter extends CustomPainter {
     // 1. Grid
     if (drawGrid) {
       final gridPaint = Paint()
-        ..color = Colors.white.withOpacity(0.03)
+        ..color = Colors.white.withValues(alpha: 0.03)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
       
@@ -646,13 +646,13 @@ class _CircleSimPainter extends CustomPainter {
 
     // 2. Area Enclosed (Fills the circle)
     final areaPaint = Paint()
-      ..color = const Color(0xFF10B981).withOpacity(0.12)
+      ..color = const Color(0xFF10B981).withValues(alpha: 0.12)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, pixelRadius, areaPaint);
 
     // 3. Circumference Border
     final borderPaint = Paint()
-      ..color = drawCircumference ? const Color(0xFF10B981) : Colors.white.withOpacity(0.3)
+      ..color = drawCircumference ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = drawCircumference ? 2.5 : 1.2;
     canvas.drawCircle(center, pixelRadius, borderPaint);

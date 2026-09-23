@@ -210,11 +210,11 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08), width: 1),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
@@ -227,7 +227,7 @@ class AppTheme {
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: Colors.white,
-        selectionColor: Colors.white.withOpacity(0.3),
+        selectionColor: Colors.white.withValues(alpha: 0.3),
         selectionHandleColor: Colors.white,
       ),
     );

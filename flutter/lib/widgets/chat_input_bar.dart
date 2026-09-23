@@ -80,13 +80,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(2))),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             const Text('Add Attachment', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
@@ -141,7 +141,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 _AttachOption(
                   icon: Icons.picture_as_pdf_rounded,
                   label: 'PDF Soon',
-                  color: Colors.red.withOpacity(0.5),
+                  color: Colors.red.withValues(alpha: 0.5),
                   onTap: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -268,12 +268,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   width: 22, height: 22,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _isListening ? Colors.red.withOpacity(0.3) : Colors.transparent,
+                    color: _isListening ? Colors.red.withValues(alpha: 0.3) : Colors.transparent,
                   ),
                   child: Icon(
                     _isListening ? Icons.graphic_eq_rounded : Icons.auto_awesome,
                     size: 20,
-                    color: _isListening ? Colors.red : Colors.white.withOpacity(0.5),
+                    color: _isListening ? Colors.red : Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -356,8 +356,8 @@ class _AttachmentPreviewRow extends StatelessWidget {
                   width: 58, height: 58,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.white.withOpacity(0.07),
-                    border: Border.all(color: Colors.white.withOpacity(0.12)),
+                    color: Colors.white.withValues(alpha: 0.07),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: isImage
@@ -410,7 +410,7 @@ class _VoiceBtn extends StatelessWidget {
         width: 42, height: 42,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isListening ? Colors.red.withOpacity(0.2) : Colors.transparent,
+          color: isListening ? Colors.red.withValues(alpha: 0.2) : Colors.transparent,
           border: Border.all(
             color: isListening ? Colors.red : const Color(0xFF2B2B2B),
             width: 1.2,
@@ -445,11 +445,11 @@ class _AttachOption extends StatelessWidget {
         children: [
           Container(
             width: 64, height: 64,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color.withOpacity(0.12), border: Border.all(color: color.withOpacity(0.25))),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: 0.12), border: Border.all(color: color.withValues(alpha: 0.25))),
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
         ],
       ),
     );

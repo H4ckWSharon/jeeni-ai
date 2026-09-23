@@ -207,15 +207,15 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         Text(
           'Newton’s Second Law of Motion describes how the velocity of an object changes when it is subjected to an external force. '
           'It tells us that acceleration is directly proportional to force and inversely proportional to mass.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
+            color: Colors.white.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Column(
             children: [
@@ -267,7 +267,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         const SizedBox(height: 10),
         Text(
           'Think about pushing a shopping cart at the grocery store:',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         _buildAnalogyRow(
@@ -286,7 +286,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         const SizedBox(height: 16),
         Text(
           'This demonstrates the inverse relationship between mass and acceleration. When mass is higher, acceleration is lower for a given force.',
-          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13, height: 1.4),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, height: 1.4),
         ),
       ],
     );
@@ -307,7 +307,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         const SizedBox(height: 4),
         Text(
           'Under constant net force, velocity rises in a straight line. The slope equals acceleration (${acceleration.toStringAsFixed(1)} m/s\u00b2).',
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
         ),
         const SizedBox(height: 16),
         // Line Chart
@@ -315,17 +315,17 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
           height: 160,
           padding: const EdgeInsets.only(right: 16, top: 12, bottom: 4),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: LineChart(
             LineChartData(
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: true,
-                getDrawingHorizontalLine: (val) => FlLine(color: Colors.white.withOpacity(0.03), strokeWidth: 1),
-                getDrawingVerticalLine: (val) => FlLine(color: Colors.white.withOpacity(0.03), strokeWidth: 1),
+                getDrawingHorizontalLine: (val) => FlLine(color: Colors.white.withValues(alpha: 0.03), strokeWidth: 1),
+                getDrawingVerticalLine: (val) => FlLine(color: Colors.white.withValues(alpha: 0.03), strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 show: true,
@@ -339,7 +339,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
                     interval: 1.0,
                     getTitlesWidget: (val, meta) => Text(
                       val.toStringAsFixed(0),
-                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9),
                     ),
                   ),
                 ),
@@ -350,7 +350,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
                     reservedSize: 28,
                     getTitlesWidget: (val, meta) => Text(
                       val.toStringAsFixed(0),
-                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9),
                     ),
                   ),
                 ),
@@ -370,7 +370,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
                   dotData: const FlDotData(show: false),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -382,7 +382,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         Text(
           'Tip: Go to Level 4 (Simulation), adjust sliders, and tap Play to see the graph animate!',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.amber.withOpacity(0.8), fontSize: 11, fontStyle: FontStyle.italic),
+          style: TextStyle(color: Colors.amber.withValues(alpha: 0.8), fontSize: 11, fontStyle: FontStyle.italic),
         ),
       ],
     );
@@ -402,9 +402,9 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         Container(
           height: 140,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: ClipRect(
             child: CustomPaint(
@@ -432,7 +432,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
                 min: 5.0,
                 max: 100.0,
                 activeColor: const Color(0xFF10B981),
-                inactiveColor: Colors.white.withOpacity(0.1),
+                inactiveColor: Colors.white.withValues(alpha: 0.1),
                 onChanged: (val) {
                   setState(() {
                     _force = val;
@@ -456,7 +456,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
                 min: 1.0,
                 max: 20.0,
                 activeColor: const Color(0xFF10B981),
-                inactiveColor: Colors.white.withOpacity(0.1),
+                inactiveColor: Colors.white.withValues(alpha: 0.1),
                 onChanged: (val) {
                   setState(() {
                     _mass = val;
@@ -483,9 +483,9 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFEF4444).withOpacity(0.05),
+            color: const Color(0xFFEF4444).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.15)),
+            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.15)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,7 +521,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
       children: [
         Math.tex(latex, textStyle: const TextStyle(color: Colors.white, fontSize: 13)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
       ],
     );
   }
@@ -543,7 +543,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
                 style: const TextStyle(fontSize: 13, height: 1.4),
                 children: [
                   TextSpan(text: '$title: ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  TextSpan(text: desc, style: TextStyle(color: Colors.white.withOpacity(0.6))),
+                  TextSpan(text: desc, style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
                 ],
               ),
             ),
@@ -557,9 +557,9 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.02),
+        color: Colors.white.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,7 +572,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
               children: [
                 Text(title, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(desc, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, height: 1.4)),
+                Text(desc, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12, height: 1.4)),
               ],
             ),
           ),
@@ -585,14 +585,14 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.02),
+        color: Colors.white.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9)),
+          Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9)),
           const SizedBox(height: 4),
           Text(val, style: TextStyle(color: highlight, fontSize: 13, fontWeight: FontWeight.bold)),
         ],
@@ -607,7 +607,7 @@ class _NewtonSecondLawWidgetState extends State<NewtonSecondLawWidget> with Sing
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(error, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-          Text(fix, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, height: 1.4)),
+          Text(fix, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10, height: 1.4)),
         ],
       ),
     );
@@ -633,13 +633,13 @@ class _NewtonSimPainter extends CustomPainter {
     
     // Draw Ground Track
     final trackPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..strokeWidth = 2.0;
     canvas.drawLine(Offset(0, trackY), Offset(size.width, trackY), trackPaint);
 
     // Track hash lines
     final hashPaint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
+      ..color = Colors.white.withValues(alpha: 0.1)
       ..strokeWidth = 1.0;
     for (double x = 0; x < size.width; x += 30) {
       canvas.drawLine(Offset(x, trackY), Offset(x - 5, trackY + 8), hashPaint);

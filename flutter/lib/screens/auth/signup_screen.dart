@@ -170,7 +170,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     'Join JEENI and accelerate your learning',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -181,9 +181,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5)),
+                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
                       ),
                       child: Row(
                         children: [
@@ -250,7 +250,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: [
                       Text(
                         'Already have an account? ',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
                       ),
                       GestureDetector(
                         onTap: () {

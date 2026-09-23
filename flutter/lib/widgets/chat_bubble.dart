@@ -234,9 +234,9 @@ class _ChatBubbleState extends State<ChatBubble>
               padding: const EdgeInsets.all(12),
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.05),
+                color: Colors.red.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -615,7 +615,7 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
         (s['url'] != null && (s['url'] as String).isNotEmpty));
 
     final primaryColor = isWebSearch ? const Color(0xFF38BDF8) : const Color(0xFF818CF8);
-    final borderColor = isWebSearch ? const Color(0xFF0284C7).withOpacity(0.3) : const Color(0xFF6366F1).withOpacity(0.3);
+    final borderColor = isWebSearch ? const Color(0xFF0284C7).withValues(alpha: 0.3) : const Color(0xFF6366F1).withValues(alpha: 0.3);
 
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 4),
@@ -626,7 +626,7 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
         border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.08),
+            color: primaryColor.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

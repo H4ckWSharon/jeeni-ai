@@ -116,15 +116,15 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         Text(
           'This interactive model demonstrates the core mechanics of $title. '
           'Use the visual controls to explore how variables interact and observe the resulting changes live.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
+            color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Column(
             children: [
@@ -180,15 +180,15 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         const SizedBox(height: 10),
         Text(
           'Observe the flow diagram below representing how $title operates in nature or mathematics.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         Container(
           height: 150,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: CustomPaint(
             size: Size.infinite,
@@ -204,9 +204,9 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.06),
+            color: const Color(0xFF10B981).withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
+            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
           ),
           child: const Row(
             children: [
@@ -239,15 +239,15 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         const SizedBox(height: 4),
         Text(
           'Drag the sliders to adjust $title parameters in real time.',
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
         ),
         const SizedBox(height: 16),
         Container(
           height: 160,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: CustomPaint(
             size: Size.infinite,
@@ -295,7 +295,7 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
+            color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -340,9 +340,9 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
             return Container(
               height: 180,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
               ),
               child: CustomPaint(
                 size: Size.infinite,
@@ -406,7 +406,7 @@ class _UniversalConceptWidgetState extends State<UniversalConceptWidget>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.15),
+            color: const Color(0xFF10B981).withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(symbol, style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 12)),
@@ -466,7 +466,7 @@ class _UniversalModelPainter extends CustomPainter {
 
     // Draw background grid lines
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = Colors.white.withValues(alpha: 0.04)
       ..strokeWidth = 1;
     for (double x = 0; x < size.width; x += 25) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
@@ -480,7 +480,7 @@ class _UniversalModelPainter extends CustomPainter {
     final pulseRadius = baseRadius + sin(progress * 2 * pi) * (inputRate * 1.5);
 
     final outerPaint = Paint()
-      ..color = const Color(0xFF10B981).withOpacity(0.15)
+      ..color = const Color(0xFF10B981).withValues(alpha: 0.15)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, pulseRadius + 15, outerPaint);
 
@@ -503,7 +503,7 @@ class _UniversalModelPainter extends CustomPainter {
     }
 
     final wavePaint = Paint()
-      ..color = const Color(0xFF10B981).withOpacity(0.8)
+      ..color = const Color(0xFF10B981).withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawPath(wavePath, wavePaint);

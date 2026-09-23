@@ -1066,7 +1066,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       if (isStarred)
                         const Icon(Icons.star_rounded, color: Color(0xFFFCD34D), size: 16),
                       const SizedBox(width: 6),
-                      Icon(Icons.more_horiz_rounded, color: const Color(0xFFA1A1AA).withOpacity(0.5), size: 16),
+                      Icon(Icons.more_horiz_rounded, color: const Color(0xFFA1A1AA).withValues(alpha: 0.5), size: 16),
                     ],
                   ),
                 ],
@@ -1123,7 +1123,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off_rounded, size: 40, color: const Color(0xFFA1A1AA).withOpacity(0.3)),
+            Icon(Icons.search_off_rounded, size: 40, color: const Color(0xFFA1A1AA).withValues(alpha: 0.3)),
             const SizedBox(height: 10),
             const Text(
               'No matching conversations found.',

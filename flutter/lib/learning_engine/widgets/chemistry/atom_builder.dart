@@ -76,7 +76,7 @@ class _AtomBuilderWidgetState extends State<AtomBuilderWidget> with SingleTicker
         const SizedBox(height: 10),
         Text(
           'Atoms contain a dense central core called the Nucleus containing Protons and Neutrons, surrounded by a cloud of orbiting Electrons.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 12),
         _buildParticleBadge('Protons', 'Positive Charge (+1). Found in the nucleus.', const Color(0xFFEF4444)),
@@ -94,7 +94,7 @@ class _AtomBuilderWidgetState extends State<AtomBuilderWidget> with SingleTicker
         const SizedBox(height: 10),
         Text(
           'Just as the sun holds the planets in orbit through gravity, the positively-charged nucleus holds the negatively-charged electrons in orbit via electrostatic force.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
       ],
     );
@@ -106,7 +106,7 @@ class _AtomBuilderWidgetState extends State<AtomBuilderWidget> with SingleTicker
       children: [
         Container(
           height: 150,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
           child: AnimatedBuilder(
             animation: _orbitsController,
             builder: (context, child) {
@@ -165,7 +165,7 @@ class _AtomBuilderWidgetState extends State<AtomBuilderWidget> with SingleTicker
                 style: const TextStyle(fontSize: 12),
                 children: [
                   TextSpan(text: '$title: ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  TextSpan(text: desc, style: TextStyle(color: Colors.white.withOpacity(0.5))),
+                  TextSpan(text: desc, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                 ],
               ),
             ),
@@ -199,7 +199,7 @@ class _AtomBuilderWidgetState extends State<AtomBuilderWidget> with SingleTicker
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+          Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
           Text(val, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
@@ -245,7 +245,7 @@ class _AtomPainter extends CustomPainter {
 
     // Orbit Ring paints
     final orbitPaint = Paint()
-      ..color = Colors.white.withOpacity(0.08)
+      ..color = Colors.white.withValues(alpha: 0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     

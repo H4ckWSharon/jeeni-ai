@@ -108,10 +108,10 @@ class _LearningScaffoldState extends State<LearningScaffold> with SingleTickerPr
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -142,7 +142,7 @@ class _LearningScaffoldState extends State<LearningScaffold> with SingleTickerPr
                       Text(
                         'Level $activeLevel - ${_getLevelName(activeLevel)}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 12,
                         ),
                       ),
@@ -153,7 +153,7 @@ class _LearningScaffoldState extends State<LearningScaffold> with SingleTickerPr
                 IconButton(
                   icon: Icon(
                     _isSpeaking ? Icons.volume_up : Icons.volume_mute,
-                    color: _isSpeaking ? const Color(0xFF10B981) : Colors.white.withOpacity(0.6),
+                    color: _isSpeaking ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.6),
                     size: 20,
                   ),
                   onPressed: _speakText,
@@ -162,7 +162,7 @@ class _LearningScaffoldState extends State<LearningScaffold> with SingleTickerPr
                 // Custom simulation controls in Level 4
                 if (showPlayback) ...[
                   IconButton(
-                    icon: Icon(Icons.skip_previous_rounded, color: Colors.white.withOpacity(0.6), size: 20),
+                    icon: Icon(Icons.skip_previous_rounded, color: Colors.white.withValues(alpha: 0.6), size: 20),
                     onPressed: widget.onStepBackward,
                     tooltip: 'Step Back',
                   ),
@@ -176,12 +176,12 @@ class _LearningScaffoldState extends State<LearningScaffold> with SingleTickerPr
                     tooltip: widget.isPlaying ? 'Pause' : 'Play',
                   ),
                   IconButton(
-                    icon: Icon(Icons.skip_next_rounded, color: Colors.white.withOpacity(0.6), size: 20),
+                    icon: Icon(Icons.skip_next_rounded, color: Colors.white.withValues(alpha: 0.6), size: 20),
                     onPressed: widget.onStepForward,
                     tooltip: 'Step Forward',
                   ),
                   IconButton(
-                    icon: Icon(Icons.replay_rounded, color: Colors.white.withOpacity(0.6), size: 20),
+                    icon: Icon(Icons.replay_rounded, color: Colors.white.withValues(alpha: 0.6), size: 20),
                     onPressed: widget.onReset,
                     tooltip: 'Reset',
                   ),
@@ -196,7 +196,7 @@ class _LearningScaffoldState extends State<LearningScaffold> with SingleTickerPr
             controller: _tabController,
             indicatorColor: const Color(0xFF10B981),
             labelColor: const Color(0xFF10B981),
-            unselectedLabelColor: Colors.white.withOpacity(0.4),
+            unselectedLabelColor: Colors.white.withValues(alpha: 0.4),
             indicatorWeight: 2,
             dividerColor: Colors.transparent,
             labelPadding: EdgeInsets.zero,

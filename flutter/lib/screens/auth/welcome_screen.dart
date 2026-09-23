@@ -73,7 +73,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF2563EB).withOpacity(0.2),
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.2),
                         blurRadius: 40,
                         spreadRadius: 5,
                       ),

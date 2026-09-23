@@ -167,8 +167,8 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.white.withOpacity(0.045 * _pulseOpacity.value),
-                            Colors.white.withOpacity(0.012 * _pulseOpacity.value),
+                            Colors.white.withValues(alpha: 0.045 * _pulseOpacity.value),
+                            Colors.white.withValues(alpha: 0.012 * _pulseOpacity.value),
                             Colors.transparent,
                           ],
                           stops: const [0.0, 0.5, 1.0],
@@ -188,7 +188,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CustomPaint(
                       size: const Size(280, 280),
                       painter: _ArcRingPainter(
-                        color: Colors.white.withOpacity(0.18),
+                        color: Colors.white.withValues(alpha: 0.18),
                         strokeWidth: 1.0,
                         sweepFraction: 0.38,
                       ),
@@ -206,7 +206,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CustomPaint(
                       size: const Size(230, 230),
                       painter: _ArcRingPainter(
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withValues(alpha: 0.12),
                         strokeWidth: 0.7,
                         sweepFraction: 0.22,
                       ),
@@ -224,7 +224,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CustomPaint(
                       size: const Size(320, 320),
                       painter: _ArcRingPainter(
-                        color: Colors.white.withOpacity(0.07 * _pulseOpacity.value),
+                        color: Colors.white.withValues(alpha: 0.07 * _pulseOpacity.value),
                         strokeWidth: 0.5,
                         sweepFraction: 0.55,
                       ),
@@ -244,7 +244,7 @@ class _SplashScreenState extends State<SplashScreen>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.white.withOpacity(0.06 * _pulseOpacity.value),
+                          color: Colors.white.withValues(alpha: 0.06 * _pulseOpacity.value),
                           blurRadius: 80,
                           spreadRadius: 20,
                         ),
@@ -302,7 +302,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w400,
-                                  color: Colors.white.withOpacity(0.35),
+                                  color: Colors.white.withValues(alpha: 0.35),
                                   letterSpacing: 4,
                                 ),
                               ),
@@ -399,7 +399,7 @@ class _BouncingDots extends StatelessWidget {
               height: 4,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(opacity * 0.4),
+                color: Colors.white.withValues(alpha: opacity * 0.4),
               ),
             );
           }),

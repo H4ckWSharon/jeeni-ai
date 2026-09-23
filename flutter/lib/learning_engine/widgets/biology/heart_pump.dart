@@ -90,7 +90,7 @@ class _HeartPumpWidgetState extends State<HeartPumpWidget> with SingleTickerProv
         Text(
           'The human heart contains 4 chambers divided into left and right sides. '
           'Atria receive incoming blood; Ventricles pump outgoing blood.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 16),
         _buildChamberPoint('Right Atrium & Ventricle', 'Collect deoxygenated blood from the body and pump it to the lungs.'),
@@ -108,7 +108,7 @@ class _HeartPumpWidgetState extends State<HeartPumpWidget> with SingleTickerProv
         Text(
           'Imagine a busy subway exit with turnstiles. People can pass in only one direction. '
           'Heart valves act as biological turnstiles: they open to let blood pass forward and snap shut to block backward leakage.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14, height: 1.5),
         ),
       ],
     );
@@ -120,7 +120,7 @@ class _HeartPumpWidgetState extends State<HeartPumpWidget> with SingleTickerProv
       children: [
         Container(
           height: 150,
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
           child: AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
@@ -173,7 +173,7 @@ class _HeartPumpWidgetState extends State<HeartPumpWidget> with SingleTickerProv
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-          Text(desc, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12, height: 1.4)),
+          Text(desc, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, height: 1.4)),
         ],
       ),
     );
@@ -185,7 +185,7 @@ class _HeartPumpWidgetState extends State<HeartPumpWidget> with SingleTickerProv
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+          Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
           Text(val, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
@@ -205,11 +205,11 @@ class _HeartPainter extends CustomPainter {
     final activeRadius = baseRadius + (pulseScale * 5.0);
 
     final heartPaint = Paint()
-      ..color = const Color(0xFFEF4444).withOpacity(0.8)
+      ..color = const Color(0xFFEF4444).withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
     
     final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.15)
+      ..color = Colors.white.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -222,7 +222,7 @@ class _HeartPainter extends CustomPainter {
 
     // Draw Atrium circles on top
     final atriumPaint = Paint()
-      ..color = const Color(0xFFDC2626).withOpacity(0.8)
+      ..color = const Color(0xFFDC2626).withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
     
     canvas.drawCircle(Offset(center.dx - 18, center.dy - 30), activeRadius * 0.7, atriumPaint);
