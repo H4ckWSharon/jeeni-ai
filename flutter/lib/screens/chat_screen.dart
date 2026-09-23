@@ -13,6 +13,9 @@ import '../services/database_service.dart';
 import '../services/ai_service.dart';
 import 'profile_settings_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import '../response_visualization/models/response_mode.dart';
+import '../response_visualization/services/adaptive_response_classifier.dart';
+import '../response_visualization/widgets/adaptive_response_view.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? chatId;
@@ -39,6 +42,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // per session, even if the user sends messages rapidly.
   Future<void> _saveQueue = Future.value();
   bool _chatCreationStarted = false;
+
+  AdaptiveAnimationConfig? _activeAnimationConfig;
+  int _currentRequestId = 0;
+
+  void _stopGeneration() {
+    if (!_isTyping) return;
+    setState(() {
+      _isTyping = false;
+      _currentRequestId++;
+      _activeAnimationConfig = null;
+    });
+    HapticFeedback.mediumImpact();
+  }
 
   @override
   void initState() {
@@ -124,11 +140,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _newChat() {
+    _stopGeneration();
     setState(() {
       _currentChatId = null;
       _chatCreationStarted = false;
       _saveQueue = Future.value();
       _messages.clear();
+      _activeAnimationConfig = null;
     });
     _setupMessagesSubscription();
     if (_scaffoldKey.currentState?.isDrawerOpen == true) {
@@ -137,6 +155,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _onChatTap(String chatId) {
+    _stopGeneration();
     // Close drawer first if open
     if (_scaffoldKey.currentState?.isDrawerOpen == true) {
       Navigator.of(context).pop();
@@ -148,6 +167,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _saveQueue = Future.value();
       _messages.clear();
       _isLoadingChat = true; // show spinner while Firestore loads
+      _activeAnimationConfig = null;
     });
     _setupMessagesSubscription();
   }
@@ -164,6 +184,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final displayText = t.isNotEmpty ? t : (attachments.isNotEmpty ? '📎 Attached file(s)' : '');
 
     final sessionChatId = _currentChatId;
+    final thisRequestId = ++_currentRequestId;
     final userMsgId = DateTime.now().millisecondsSinceEpoch.toString();
     final userMessage = ChatMessage(
       id: userMsgId,
@@ -172,10 +193,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       timestamp: DateTime.now(),
     );
 
+    // Instant adaptive classification before network dispatch
+    final animConfig = AdaptiveResponseClassifier.classify(
+      prompt: t,
+      mode: _selectedModel,
+      attachments: attachments,
+    );
+
     // Show user message locally immediately (so screen is never blank)
     setState(() {
       _messages.add(userMessage);
       _isTyping = true;
+      _activeAnimationConfig = animConfig;
     });
     _scrollToBottom();
 
@@ -197,49 +226,71 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
     }
 
-    final aiText = await AIService.generateResponse(
-      prompt: promptForAI,
-      mode: _selectedModel,
-      history: historyForAI,
-      attachments: attachments,
-      studentId: user.uid,
-      profile: currentProfile,
-    );
-    if (!mounted) return;
+    try {
+      final aiText = await AIService.generateResponse(
+        prompt: promptForAI,
+        mode: _selectedModel,
+        history: historyForAI,
+        attachments: attachments,
+        studentId: user.uid,
+        profile: currentProfile,
+      );
+      if (!mounted) return;
 
-    // Cross-Chat Isolation Guard: If user navigated to another chat while generation was active, discard local append
-    if (_currentChatId != sessionChatId && sessionChatId != null) {
-      debugPrint('[Chat] Active chat changed during AI generation. Suppressing local append to prevent cross-chat leakage.');
-      return;
-    }
-
-    final aiMsgId = (DateTime.now().millisecondsSinceEpoch + 1).toString();
-    final aiMessage = ChatMessage(
-      id: aiMsgId,
-      text: aiText,
-      isUser: false,
-      timestamp: DateTime.now(),
-    );
-
-    setState(() {
-      _messages.add(aiMessage);
-      _isTyping = false;
-    });
-    _scrollToBottom();
-    HapticFeedback.lightImpact();
-
-    // Save AI response to Firestore — chain onto the save queue so it waits
-    // for the chat session to be created first.
-    _saveQueue = _saveQueue.then((_) async {
-      try {
-        if (_currentChatId != null) {
-          await DatabaseService.saveMessage(user.uid, _currentChatId!, aiMessage)
-              .timeout(const Duration(seconds: 15));
-        }
-      } catch (e) {
-        debugPrint('Firestore AI save failed (non-critical): $e');
+      // Stop/Cancellation Guard: Discard if request was cancelled or stopped by student
+      if (_currentRequestId != thisRequestId) {
+        debugPrint('[Chat] Request #$thisRequestId was cancelled/stopped. Suppressing local append.');
+        return;
       }
-    });
+
+      // Cross-Chat Isolation Guard: If user navigated to another chat while generation was active, discard local append
+      if (_currentChatId != sessionChatId && sessionChatId != null) {
+        debugPrint('[Chat] Active chat changed during AI generation. Suppressing local append to prevent cross-chat leakage.');
+        return;
+      }
+
+      final aiMsgId = (DateTime.now().millisecondsSinceEpoch + 1).toString();
+      final aiMessage = ChatMessage(
+        id: aiMsgId,
+        text: aiText,
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+
+      setState(() {
+        _messages.add(aiMessage);
+        _isTyping = false;
+        _activeAnimationConfig = null;
+      });
+      _scrollToBottom();
+      HapticFeedback.lightImpact();
+
+      // Save AI response to Firestore — chain onto the save queue so it waits
+      // for the chat session to be created first.
+      _saveQueue = _saveQueue.then((_) async {
+        try {
+          if (_currentChatId != null) {
+            await DatabaseService.saveMessage(user.uid, _currentChatId!, aiMessage)
+                .timeout(const Duration(seconds: 15));
+          }
+        } catch (e) {
+          debugPrint('Firestore AI save failed (non-critical): $e');
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
+      setState(() {
+        _isTyping = false;
+        _activeAnimationConfig = null;
+        _messages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: '⚠️ Jeeni is currently busy.\n\nPlease wait a few seconds and try again. If the issue continues, check your internet connection and try again later.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+    }
   }
 
   /// Saves to Firestore without blocking the UI. Creates chat session if needed.
@@ -428,10 +479,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       attachments: originalMessage.attachments,
     );
 
+    final editAnimConfig = AdaptiveResponseClassifier.classify(
+      prompt: newText,
+      mode: _selectedModel,
+    );
+    final thisRequestId = ++_currentRequestId;
+
     setState(() {
       _messages.removeRange(index + 1, _messages.length);
       _messages[index] = updatedMessage;
       _isTyping = true;
+      _activeAnimationConfig = editAnimConfig;
     });
     _scrollToBottom();
 
@@ -466,6 +524,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         profile: currentProfile,
       );
       if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
 
       final aiMsgId = (DateTime.now().millisecondsSinceEpoch + 1).toString();
       final aiMessage = ChatMessage(
@@ -478,6 +537,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       setState(() {
         _messages.add(aiMessage);
         _isTyping = false;
+        _activeAnimationConfig = null;
       });
       _scrollToBottom();
       HapticFeedback.lightImpact();
@@ -489,8 +549,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
       setState(() {
         _isTyping = false;
+        _activeAnimationConfig = null;
         _messages.add(ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           text: '⚠️ Jeeni is currently busy.\n\nPlease wait a few seconds and try again. If the issue continues, check your internet connection and try again later.',
@@ -515,7 +577,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _messages.length + (_isTyping ? 1 : 0),
       itemBuilder: (ctx, i) {
-        if (i == _messages.length && _isTyping) return const TypingIndicator();
+        if (i == _messages.length && _isTyping) {
+          if (_activeAnimationConfig != null) {
+            return AdaptiveResponseView(
+              config: _activeAnimationConfig!,
+              onStop: _stopGeneration,
+            );
+          }
+          return const TypingIndicator();
+        }
         final message = _messages[i];
         return ChatBubble(
           message: message,

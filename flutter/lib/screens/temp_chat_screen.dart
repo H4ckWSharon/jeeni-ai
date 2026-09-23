@@ -12,6 +12,9 @@ import '../widgets/chat_input_bar.dart';
 import '../services/ai_service.dart';
 import 'auth/login_screen.dart';
 import 'auth/auth_gate.dart';
+import '../response_visualization/models/response_mode.dart';
+import '../response_visualization/services/adaptive_response_classifier.dart';
+import '../response_visualization/widgets/adaptive_response_view.dart';
 
 // ═══════════════════════════════════════════════════
 // TEMPORARY CHAT SCREEN (PRIVATE MODE)
@@ -33,6 +36,19 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
   int _userMessageCount = 0;
   bool _hasPromptedLogin = false;
   String _selectedModel = 'Guided Learning';
+
+  AdaptiveAnimationConfig? _activeAnimationConfig;
+  int _currentRequestId = 0;
+
+  void _stopGeneration() {
+    if (!_isTyping) return;
+    setState(() {
+      _isTyping = false;
+      _currentRequestId++;
+      _activeAnimationConfig = null;
+    });
+    HapticFeedback.mediumImpact();
+  }
 
   @override
   void dispose() {
@@ -57,6 +73,12 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     _inputController.clear();
 
     final displayText = t.isNotEmpty ? t : (attachments.isNotEmpty ? '📎 Attached file(s)' : '');
+    final thisRequestId = ++_currentRequestId;
+    final animConfig = AdaptiveResponseClassifier.classify(
+      prompt: t,
+      mode: _selectedModel,
+      attachments: attachments,
+    );
 
     setState(() {
       _messages.add(ChatMessage(
@@ -66,6 +88,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
           timestamp: DateTime.now()));
       _isTyping = true;
       _userMessageCount++;
+      _activeAnimationConfig = animConfig;
     });
     _scrollToBottom();
 
@@ -76,7 +99,10 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
       _showLoginPrompt();
-      setState(() => _isTyping = false);
+      setState(() {
+        _isTyping = false;
+        _activeAnimationConfig = null;
+      });
       return;
     }
 
@@ -94,9 +120,11 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
         attachments: attachments,
       );
       if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
 
       setState(() {
         _isTyping = false;
+        _activeAnimationConfig = null;
         _messages.add(ChatMessage(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             text: aiText,
@@ -105,8 +133,10 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       });
     } catch (e) {
       if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
       setState(() {
         _isTyping = false;
+        _activeAnimationConfig = null;
         _messages.add(ChatMessage(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             text: '⚠️ Jeeni is currently busy.\n\nPlease wait a few seconds and try again. If the issue continues, check your internet connection and try again later.',
@@ -328,10 +358,17 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       attachments: originalMessage.attachments,
     );
 
+    final editAnimConfig = AdaptiveResponseClassifier.classify(
+      prompt: newText,
+      mode: _selectedModel,
+    );
+    final thisRequestId = ++_currentRequestId;
+
     setState(() {
       _messages.removeRange(index + 1, _messages.length);
       _messages[index] = updatedMessage;
       _isTyping = true;
+      _activeAnimationConfig = editAnimConfig;
     });
     _scrollToBottom();
 
@@ -345,6 +382,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
         attachments: const [],
       );
       if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
 
       final aiMsgId = (DateTime.now().millisecondsSinceEpoch + 1).toString();
       final aiMessage = ChatMessage(
@@ -357,13 +395,16 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       setState(() {
         _messages.add(aiMessage);
         _isTyping = false;
+        _activeAnimationConfig = null;
       });
       _scrollToBottom();
       HapticFeedback.lightImpact();
     } catch (e) {
       if (!mounted) return;
+      if (_currentRequestId != thisRequestId) return;
       setState(() {
         _isTyping = false;
+        _activeAnimationConfig = null;
         _messages.add(ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           text: '⚠️ Jeeni is currently busy.\n\nPlease wait a few seconds and try again. If the issue continues, check your internet connection and try again later.',
@@ -388,7 +429,15 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _messages.length + (_isTyping ? 1 : 0),
       itemBuilder: (ctx, i) {
-        if (i == _messages.length && _isTyping) return const TypingIndicator();
+        if (i == _messages.length && _isTyping) {
+          if (_activeAnimationConfig != null) {
+            return AdaptiveResponseView(
+              config: _activeAnimationConfig!,
+              onStop: _stopGeneration,
+            );
+          }
+          return const TypingIndicator();
+        }
         final message = _messages[i];
         return ChatBubble(
           message: message,

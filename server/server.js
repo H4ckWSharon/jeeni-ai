@@ -25,6 +25,7 @@ const studentStore = require('./src/studentStore');
 const usageStore = require('./src/usageStore');
 const { loginAdmin, logoutAdmin, validateSession, requireAdminAuth } = require('./src/adminAuth');
 const aiGateway = require('./src/aiGateway');
+const { classifyResponseMode } = require('./src/responseModeClassifier');
 
 const app = express();
 app.use(cors());
@@ -927,6 +928,7 @@ app.post('/api/chat', async (req, res) => {
   let chunks = [];
   let routerElapsed = 0;
   let modelElapsed = 0;
+  let relevantMemories = [];
 
   try {
     const {
@@ -1001,6 +1003,24 @@ app.post('/api/chat', async (req, res) => {
     // ── STAGE 1.05: Structured Curriculum Intent Normalization ──────
     const curriculumIntent = normalizeCurriculumIntent(userQuery, routingDecision, studentProfile);
     console.log(`[JEENI_INTENT] isCurriculum=${curriculumIntent.isCurriculumQuery} | class=${curriculumIntent.class} | board=${curriculumIntent.board} | subject=${curriculumIntent.subject} | chapter=${curriculumIntent.chapterNumber} | source=${curriculumIntent.source}`);
+
+    // Universal response_metadata injector across all early returns and final responses
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+      if (body && typeof body === 'object' && !body.error && !body.response_metadata) {
+        body.response_metadata = classifyResponseMode(userQuery, {
+          routerResult: routingDecision,
+          curriculumIntent: curriculumIntent,
+          ragUsed: Boolean(body.pipeline === 'RAG' || body.answer_source === 'RAG' || (body.sources && body.sources.length > 0)),
+          isWebSearch: isWebSearch,
+          attachments: (req.body?.attachments) || (hasImages ? [{ name: 'image.png' }] : []),
+          mode: mode,
+          hasMemories: (relevantMemories && relevantMemories.length > 0) || false,
+        });
+        body.response_metadata.processingState = 'complete';
+      }
+      return originalJson(body);
+    };
 
     // If router AI call failed or timed out, apply deterministic heuristic routing
     if (!routingDecision) {
@@ -1693,6 +1713,17 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       responseText: response.text,
     });
 
+    const responseMeta = classifyResponseMode(userQuery, {
+      routerResult: routingDecision,
+      curriculumIntent: curriculumIntent,
+      ragUsed: Boolean(ragContext),
+      isWebSearch: isWebSearch,
+      attachments: attachments || [],
+      mode: mode,
+      hasMemories: relevantMemories.length > 0,
+    });
+    responseMeta.processingState = 'complete';
+
     res.json({
       content: response.text,
       sources: finalSources,
@@ -1705,6 +1736,7 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       validation_status: chunks && chunks.length > 0 ? 'VALID' : 'N/A',
       memories_applied: relevantMemories.map(m => m.content),
       new_memory_saved: newMemorySaved ? newMemorySaved.content : null,
+      response_metadata: responseMeta,
     });
   } catch (err) {
     console.error('[Gemini Error]', err.message);
