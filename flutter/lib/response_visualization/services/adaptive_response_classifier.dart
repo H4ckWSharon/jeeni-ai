@@ -54,9 +54,27 @@ class AdaptiveResponseClassifier {
       );
     }
 
+    // 2.5 Web Search Mode
+    if (mode == 'Web Search' || mode == 'web_search') {
+      return _buildConfig(
+        mode: ResponseMode.ragRetrieval,
+        complexity: ComplexityLevel.moderate,
+        type: VisualizationType.retrievalFlow,
+        badgeLabel: 'Web Search',
+        badgeIcon: Icons.travel_explore_rounded,
+        primaryColor: const Color(0xFF0EA5E9),
+        accentColor: const Color(0xFF38BDF8),
+        statusLabels: [
+          'Searching the live web...',
+          'Aggregating real-time sources...',
+          'Synthesizing web findings...',
+        ],
+      );
+    }
+
     // 3. Curriculum & Textbook RAG
     if (ragExpected ||
-        mode == 'Deep Research' && (qLower.contains('chapter') || qLower.contains('textbook')) ||
+        (mode == 'Deep Research' || mode == 'Deep Learning' || mode == 'deep_learning') && (qLower.contains('chapter') || qLower.contains('textbook')) ||
         RegExp(r'\b(chapter\s+\d+|class\s+(?:9|10|8|11|12)|ncert|scert|cbse|textbook|syllabus)\b', caseSensitive: false).hasMatch(qLower)) {
       final complexity = _computeComplexity(query, ResponseMode.curriculumLearning);
       return _buildConfig(
@@ -250,32 +268,68 @@ class AdaptiveResponseClassifier {
       );
     }
 
-    // 13. Deep Research / Long Form Mode
-    if (mode == 'Deep Research' || RegExp(r'\b(exhaustive|detailed\s+essay|comprehensive\s+report|in-depth\s+analysis)\b', caseSensitive: false).hasMatch(qLower)) {
+    // 13. Deep Learning / Deep Research Mode
+    if (mode == 'Deep Learning' || mode == 'deep_learning' || mode == 'Deep Research' || RegExp(r'\b(exhaustive|detailed\s+essay|comprehensive\s+report|in-depth\s+analysis)\b', caseSensitive: false).hasMatch(qLower)) {
       return _buildConfig(
         mode: ResponseMode.longForm,
         complexity: ComplexityLevel.complex,
         type: VisualizationType.lessonBuilder,
-        badgeLabel: 'Deep Research',
-        badgeIcon: Icons.biotech_rounded,
+        badgeLabel: 'Deep Learning',
+        badgeIcon: Icons.psychology_rounded,
         primaryColor: const Color(0xFFA855F7), // Purple
         accentColor: const Color(0xFFC084FC),
         statusLabels: [
-          'Conducting in-depth academic inquiry...',
-          'Cross-referencing multiple domains...',
-          'Synthesizing comprehensive findings...',
+          'Conducting in-depth inquiry...',
+          'Unpacking core principles & analogies...',
+          'Synthesizing deep conceptual guide...',
+        ],
+      );
+    }
+
+    // 13.5 Guide Mode (Socratic Step-by-Step)
+    if (mode == 'Guide' || mode == 'guide') {
+      return _buildConfig(
+        mode: ResponseMode.educationalExplanation,
+        complexity: ComplexityLevel.simple,
+        type: VisualizationType.knowledgeFlow,
+        badgeLabel: 'Step-by-Step Guide',
+        badgeIcon: Icons.explore_rounded,
+        primaryColor: const Color(0xFF10B981), // Emerald
+        accentColor: const Color(0xFF34D399),
+        statusLabels: [
+          'Structuring guided breakdown...',
+          'Preparing Socratic checkpoint...',
+          'Guiding step-by-step...',
+        ],
+      );
+    }
+
+    // 13.6 Homework Mode
+    if (mode == 'Homework' || mode == 'homework') {
+      return _buildConfig(
+        mode: ResponseMode.multiStepProblem,
+        complexity: ComplexityLevel.moderate,
+        type: VisualizationType.mathFlow,
+        badgeLabel: 'Homework Helper',
+        badgeIcon: Icons.edit_note_rounded,
+        primaryColor: const Color(0xFFF97316), // Orange
+        accentColor: const Color(0xFFFB923C),
+        statusLabels: [
+          'Understanding homework problem...',
+          'Identifying knowns & hints...',
+          'Guiding solution steps...',
         ],
       );
     }
 
     // 14. Exam Prep / Personalized Learning Mode
-    if (mode == 'Exam Prep' || RegExp(r'\b(quiz\s+me|test\s+my\s+knowledge|my\s+weakness|personalize|help\s+me\s+improve)\b', caseSensitive: false).hasMatch(qLower)) {
+    if (mode == 'Exam Prep' || mode == 'exam_prep' || RegExp(r'\b(quiz\s+me|test\s+my\s+knowledge|my\s+weakness|personalize|help\s+me\s+improve)\b', caseSensitive: false).hasMatch(qLower)) {
       return _buildConfig(
         mode: ResponseMode.personalizedLearning,
         complexity: ComplexityLevel.moderate,
         type: VisualizationType.defaultJeeni,
-        badgeLabel: 'Exam Coach',
-        badgeIcon: Icons.school_rounded,
+        badgeLabel: 'Exam Prep',
+        badgeIcon: Icons.flag_rounded,
         primaryColor: const Color(0xFFF59E0B), // Amber
         accentColor: const Color(0xFFFBBF24),
         statusLabels: [

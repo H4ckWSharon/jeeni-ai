@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/chat_message.dart';
+import '../models/jeeni_mode.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/typing_indicator.dart';
 import '../widgets/chat_input_bar.dart';
@@ -38,7 +39,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
   bool _isTyping = false;
   int _userMessageCount = 0;
   bool _hasPromptedLogin = false;
-  String _selectedModel = 'Guided Learning';
+  JeeniMode _selectedMode = JeeniMode.learning;
 
   AdaptiveAnimationConfig? _activeAnimationConfig;
   int _currentRequestId = 0;
@@ -69,17 +70,18 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     });
   }
 
-  Future<void> _sendMessage(String text, {List<XFile> attachments = const []}) async {
+  Future<void> _sendMessage(String text, {List<XFile> attachments = const [], JeeniMode? mode}) async {
     if (_isTyping) return;
     final t = text.trim();
     if (t.isEmpty && attachments.isEmpty) return;
     _inputController.clear();
 
+    final effectiveMode = mode ?? _selectedMode;
     final displayText = t.isNotEmpty ? t : (attachments.isNotEmpty ? '📎 Attached file(s)' : '');
     final thisRequestId = ++_currentRequestId;
     final animConfig = AdaptiveResponseClassifier.classify(
       prompt: t,
-      mode: _selectedModel,
+      mode: effectiveMode.label,
       attachments: attachments,
     );
 
@@ -118,7 +120,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
 
       final aiText = await AIService.generateResponse(
         prompt: promptForAI,
-        mode: _selectedModel,
+        mode: effectiveMode.id,
         history: historyForAI,
         attachments: attachments,
       );
@@ -161,7 +163,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
         return Container(
           padding: const EdgeInsets.only(top: 12, left: 24, right: 24, bottom: 48),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: const Color(0xFF171717),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
@@ -172,14 +174,10 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
               const SizedBox(height: 24),
               const Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Select AI Model', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                child: Text('Jeeni Modes', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
-              _buildModelOption('Guided Learning', Icons.school_outlined, 'Step-by-step educational breakdown', Colors.blue),
-              _buildModelOption('Deep Research', Icons.biotech_outlined, 'In-depth analysis and comprehensive data', Colors.purple),
-              _buildModelOption('Web Search', Icons.travel_explore_rounded, 'Live Google Search Grounding with real-time web sources', const Color(0xFF0EA5E9)),
-              _buildModelOption('Homework', Icons.menu_book_rounded, 'Homework helper focusing on hints', Colors.orange),
-              _buildModelOption('Exam Prep', Icons.school_rounded, 'Socratic Q&A drill — I ask, you answer', const Color(0xFFF59E0B)),
+              ...JeeniMode.values.map((mode) => _buildModeOption(mode)),
             ],
           ),
         );
@@ -187,40 +185,43 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildModelOption(String title, IconData icon, String description, Color color) {
-    final isSelected = _selectedModel == title;
+  Widget _buildModeOption(JeeniMode mode) {
+    final isSelected = _selectedMode == mode;
     return GestureDetector(
       onTap: () {
-        setState(() => _selectedModel = title);
+        setState(() => _selectedMode = mode);
         Navigator.pop(context);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected ? mode.color.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? color.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: isSelected ? mode.color.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: isSelected ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
-              child: Icon(icon, color: isSelected ? color : Colors.white.withValues(alpha: 0.5), size: 24),
+              decoration: BoxDecoration(
+                color: isSelected ? mode.color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+              child: Text(mode.emoji, style: const TextStyle(fontSize: 20)),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
+                  Text(mode.label, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
                   const SizedBox(height: 4),
-                  Text(description, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+                  Text(mode.description, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
                 ],
               ),
             ),
-            if (isSelected) Icon(Icons.check_circle_rounded, color: color, size: 22),
+            if (isSelected) Icon(Icons.check_circle_rounded, color: mode.color, size: 22),
           ],
         ),
       ),
@@ -308,40 +309,24 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFF0D0D0D),
-      body: Stack(
+      body: Column(
         children: [
-          // ── Background Genie Image ──
-          if (!hasMessages)
-            Center(
-              child: Opacity(
-                opacity: 0.4, // Adjusted opacity for the new black background image
-                child: Image.asset(
-                  'assets/images/dashed_genie.png',
-                  width: MediaQuery.of(context).size.width * 0.75, // 75% of screen width for perfect balance
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
+          _TempTopBar(),
 
-          Column(
-            children: [
-              _TempTopBar(),
+          Expanded(
+            child: hasMessages
+                ? _buildMessages()
+                : _TempEmptyState(onSend: _sendMessage),
+          ),
 
-              Expanded(
-                child: hasMessages
-                    ? _buildMessages()
-                    : _TempEmptyState(onSend: _sendMessage),
-              ),
-
-              // ── Use the exact same Input Panel as main chat ──
-              ChatInputBar(
-                controller: _inputController, 
-                onSend: _sendMessage, 
-                isTyping: _isTyping,
-                selectedModel: _selectedModel,
-                onModelTap: _showModelSelector,
-              ),
-            ],
+          // ── Use the exact same Input Panel as main chat ──
+          ChatInputBar(
+            controller: _inputController, 
+            onSend: _sendMessage, 
+            isTyping: _isTyping,
+            selectedMode: _selectedMode,
+            onModeChanged: (m) => setState(() => _selectedMode = m),
+            onModelTap: _showModelSelector,
           ),
         ],
       ),
@@ -363,7 +348,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
 
     final editAnimConfig = AdaptiveResponseClassifier.classify(
       prompt: newText,
-      mode: _selectedModel,
+      mode: _selectedMode.label,
     );
     final thisRequestId = ++_currentRequestId;
 
@@ -380,7 +365,7 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
     try {
       final aiText = await AIService.generateResponse(
         prompt: newText,
-        mode: _selectedModel,
+        mode: _selectedMode.id,
         history: historyForAI,
         attachments: const [],
       );

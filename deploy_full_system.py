@@ -42,6 +42,14 @@ with sftp.file('/root/jeeni-server/src/studentStore.js', 'w') as f:
     f.write(student_store_code)
 print("   ✔ /root/jeeni-server/src/studentStore.js uploaded successfully!")
 
+# 3.5 Upload responseModeClassifier.js
+print("\n3.5 Uploading src/responseModeClassifier.js...")
+with open('server/src/responseModeClassifier.js', 'r', encoding='utf-8') as f:
+    resp_classifier_code = f.read()
+with sftp.file('/root/jeeni-server/src/responseModeClassifier.js', 'w') as f:
+    f.write(resp_classifier_code)
+print("   ✔ /root/jeeni-server/src/responseModeClassifier.js uploaded successfully!")
+
 # 4. Upload server.js
 print("\n4. Uploading server.js...")
 with open('server/server.js', 'r', encoding='utf-8') as f:

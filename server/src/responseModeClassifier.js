@@ -102,6 +102,11 @@ function classifyResponseMode(userQuery, options = {}) {
     return _buildResult(ResponseMode.SIMPLE_CHAT, ComplexityLevel.VERY_SIMPLE, ragUsed);
   }
 
+  // 2.5 Web Search Mode
+  if (isWebSearch || mode === 'Web Search' || mode === 'web_search') {
+    return _buildResult(ResponseMode.RAG_RETRIEVAL, ComplexityLevel.MODERATE, false);
+  }
+
   // 3. Curriculum / RAG
   if (ragUsed || (curriculumIntent && curriculumIntent.isCurriculumQuery) || (routerResult && routerResult.action === 'rag_search')) {
     const complexity = _computeComplexity(query, ResponseMode.CURRICULUM_LEARNING);
@@ -177,13 +182,23 @@ function classifyResponseMode(userQuery, options = {}) {
     return _buildResult(ResponseMode.MULTI_STEP_PROBLEM, complexity, ragUsed);
   }
 
-  // 13. Deep Research / Long Form Mode
-  if (mode === 'Deep Research' || /\b(exhaustive|detailed\s+essay|comprehensive\s+report|in-depth\s+analysis)\b/i.test(qLower)) {
+  // 12.5 Homework Mode
+  if (mode === 'Homework' || mode === 'homework') {
+    return _buildResult(ResponseMode.MULTI_STEP_PROBLEM, ComplexityLevel.MODERATE, ragUsed);
+  }
+
+  // 13. Deep Learning / Long Form Mode
+  if (mode === 'Deep Learning' || mode === 'deep_learning' || mode === 'Deep Research' || /\b(exhaustive|detailed\s+essay|comprehensive\s+report|in-depth\s+analysis)\b/i.test(qLower)) {
     return _buildResult(ResponseMode.LONG_FORM, ComplexityLevel.COMPLEX, ragUsed);
   }
 
-  // 14. Personalized Learning (if specialized mode or personal request)
-  if (hasMemories || mode === 'Exam Prep' || /\b(quiz\s+me|test\s+my\s+knowledge|my\s+weakness|personalize|help\s+me\s+improve)\b/i.test(qLower)) {
+  // 13.5 Guide Mode
+  if (mode === 'Guide' || mode === 'guide') {
+    return _buildResult(ResponseMode.EDUCATIONAL_EXPLANATION, ComplexityLevel.SIMPLE, ragUsed);
+  }
+
+  // 14. Personalized Learning & Exam Prep
+  if (hasMemories || mode === 'Exam Prep' || mode === 'exam_prep' || /\b(quiz\s+me|test\s+my\s+knowledge|my\s+weakness|personalize|help\s+me\s+improve)\b/i.test(qLower)) {
     const complexity = _computeComplexity(query, ResponseMode.PERSONALIZED_LEARNING);
     return _buildResult(ResponseMode.PERSONALIZED_LEARNING, complexity, ragUsed);
   }

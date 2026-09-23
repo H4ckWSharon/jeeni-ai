@@ -920,6 +920,28 @@ app.delete('/api/memories', (req, res) => {
   res.json({ success: cleared });
 });
 
+// ── JEENI PRODUCT MODES (Allowed & Validated) ────────────────
+const ALLOWED_JEENI_MODES = [
+  'web_search',
+  'deep_learning',
+  'guide',
+  'learning',
+  'homework',
+  'exam_prep',
+];
+
+function normalizeJeeniMode(inputMode) {
+  if (!inputMode) return 'learning';
+  const m = String(inputMode).trim().toLowerCase().replace(/-/g, '_').replace(/ /g, '_');
+  if (ALLOWED_JEENI_MODES.includes(m)) return m;
+  if (m.includes('web')) return 'web_search';
+  if (m.includes('deep') || m.includes('research')) return 'deep_learning';
+  if (m.includes('guide')) return 'guide';
+  if (m.includes('home')) return 'homework';
+  if (m.includes('exam')) return 'exam_prep';
+  return 'learning';
+}
+
 // ── Chat API with Router AI v8.2 + Vision + RAG Pipeline ────
 app.post('/api/chat', async (req, res) => {
   const startTime = Date.now();
@@ -942,6 +964,7 @@ app.post('/api/chat', async (req, res) => {
       profile: clientProfile,
     } = req.body;
 
+    const validatedMode = normalizeJeeniMode(mode);
     const studentId = student_id || req.headers['x-student-id'] || 'default_student';
     let studentProfile = studentStore.getProfile(studentId);
     if (clientProfile && typeof clientProfile === 'object') {
@@ -973,7 +996,7 @@ app.post('/api/chat', async (req, res) => {
     // Auto-detect web search intent from query keywords or explicit mode
     const hasWebSearchIntent = /(search (the )?web|search online|google (it|this)|browse (the )?web|latest news|current events|today's news|recent updates|who won .*? (yesterday|today|match|cup)|latest release of|is .*? released yet|as of 2026|current affairs|real-time info)/i.test(userQuery);
 
-    const isWebSearch = mode === 'Web Search' || webSearch === true || enableWebSearch === true || hasWebSearchIntent;
+    const isWebSearch = validatedMode === 'web_search' || mode === 'Web Search' || webSearch === true || enableWebSearch === true || hasWebSearchIntent;
 
     // Check for explicit memory statements ("Remember that...")
     let newMemorySaved = null;
@@ -1014,7 +1037,7 @@ app.post('/api/chat', async (req, res) => {
           ragUsed: Boolean(body.pipeline === 'RAG' || body.answer_source === 'RAG' || (body.sources && body.sources.length > 0)),
           isWebSearch: isWebSearch,
           attachments: (req.body?.attachments) || (hasImages ? [{ name: 'image.png' }] : []),
-          mode: mode,
+          mode: validatedMode,
           hasMemories: (relevantMemories && relevantMemories.length > 0) || false,
         });
         body.response_metadata.processingState = 'complete';
@@ -1219,8 +1242,8 @@ app.post('/api/chat', async (req, res) => {
     // ── STAGE 1.3: Pathway A — Direct Answer (Zero Downstream LLM Latency)
     // Only short-circuit if NOT a curriculum query, NOT asking about student profile,
     // NOT a response disclaiming access, NOT requiring personalized language adaptation,
-    // and NOT requesting a specialized pedagogical mode (Deep Research, Homework, Exam Prep)
-    const isDefaultGuidedMode = !mode || mode === 'Guided Learning' || mode === 'Standard';
+    // and NOT requesting a specialized pedagogical mode (Deep Learning, Guide, Homework, Exam Prep)
+    const isDefaultGuidedMode = !mode || validatedMode === 'learning' || mode === 'Guided Learning' || mode === 'Standard';
     if (action === 'direct_answer' && isDefaultGuidedMode && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
       console.log('[Router AI] Pathway A: Direct Answer served with 0 downstream LLM latency');
       aiGateway.recordChatInteraction({
@@ -1536,13 +1559,38 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       systemInstruction = systemInstruction || 'You are Jeeni, an educational AI companion.';
     }
 
-    // Specialized Pedagogical Mode System Instructions (Deep Research, Homework, Exam Prep)
-    if (mode === 'Deep Research') {
-      systemInstruction += '\n\n--- PEDAGOGICAL MODE: DEEP RESEARCH ---\nProvide an exhaustive, in-depth academic analysis covering historical context, core principles, mathematical/scientific derivations, advanced applications, and cross-disciplinary connections.';
-    } else if (mode === 'Homework') {
-      systemInstruction += '\n\n--- PEDAGOGICAL MODE: HOMEWORK HELPER ---\nAct as a Socratic homework tutor. Do NOT give away full answers immediately. Provide guiding hints, step-by-step logic, explain underlying formulas, and encourage the student to complete the steps.';
-    } else if (mode === 'Exam Prep') {
-      systemInstruction += '\n\n--- PEDAGOGICAL MODE: EXAM PREPARATION ---\nRun an active Socratic exam preparation drill. Challenge the student with key exam-style questions, highlight marking schemes and common mistakes, and test their conceptual understanding.';
+    // Specialized Pedagogical Mode System Instructions (Web Search, Deep Learning, Guide, Learning, Homework, Exam Prep)
+    if (validatedMode === 'deep_learning' || mode === 'Deep Research') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: DEEP LEARNING ---\n' +
+        'Emphasize deep conceptual understanding and mastery from first principles. Structure your response with:\n' +
+        '1. Intuitive explanation and core mental model.\n' +
+        '2. Layered conceptual breakdown from fundamentals to advanced nuances.\n' +
+        '3. Vivid real-world analogies and concrete examples.\n' +
+        '4. Addressing common student misconceptions and subtleties.\n' +
+        '5. Knowledge checks and thought-provoking follow-up questions to test deep comprehension.';
+    } else if (validatedMode === 'guide') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: GUIDE (SOCRATIC STEP-BY-STEP HELP) ---\n' +
+        'Act as a supportive, step-by-step Socratic guide. Do NOT dump long explanations or give direct answers immediately.\n' +
+        '1. First establish what the student already understands or where they feel stuck.\n' +
+        '2. Explain only one small concept or single logical step at a time.\n' +
+        '3. Ask a targeted, friendly question to check their understanding.\n' +
+        '4. Invite the student to reply before moving to the next step.';
+    } else if (validatedMode === 'learning') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: LEARNING ---\n' +
+        'Provide clear, structured, and interactive learning. Use intuitive explanations, practical examples, visual/mental models, and mini knowledge checks with progressive difficulty. Seamlessly integrate the student\'s known grade level, board, and curriculum.';
+    } else if (validatedMode === 'homework') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: HOMEWORK HELPER ---\n' +
+        'Act as an educational homework mentor. Maintain educational integrity by NOT blindly providing answers without explanation.\n' +
+        '1. Clarify and break down what the problem is asking.\n' +
+        '2. Identify given information and the underlying concept or formula.\n' +
+        '3. Guide the solution step by step, explaining WHY each step is taken.\n' +
+        '4. Provide hints and let the student attempt key steps wherever possible.';
+    } else if (validatedMode === 'exam_prep') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: EXAM PREPARATION ---\n' +
+        'Act as a dedicated exam revision coach.\n' +
+        '1. Break down the topic by high-yield syllabus concepts and exam weighting.\n' +
+        '2. Highlight common exam traps, typical question formats, and marking scheme tips.\n' +
+        '3. Provide practice questions, rapid-fire quiz checks, and flashcard-style summaries for swift revision.';
     }
 
     // ── STAGE 3.5: Adaptive Personalization & Relevant Memory (Phase 5, 6, 7) ──
