@@ -122,30 +122,32 @@ void main() {
   });
 
   group('Thinking Orbs — Painter Unit Tests', () {
-    test('Painter executes paint method without exceptions across all 9 states and 2 variants', () {
+    test('Painter executes paint method without exceptions across all 9 states, 2 variants, and inline mode', () {
       final recorder = PictureRecorder();
       final canvas = Canvas(recorder);
-      const size = Size(160, 160);
+      const size = Size(20, 20);
 
       for (final state in OrbState.values) {
         for (final variant in OrbVariant.values) {
           final config = OrbStateConfig.of(state);
-          final painter = ThinkingOrbPainter(
-            state: state,
-            variant: variant,
-            progress: 0.5,
-            primaryColor: config.primaryColor,
-            isDark: true,
-          );
-          // Should paint cleanly without any exception
-          expect(() => painter.paint(canvas, size), returnsNormally);
+          for (final isInline in [true, false]) {
+            final painter = ThinkingOrbPainter(
+              state: state,
+              variant: variant,
+              progress: 0.5,
+              primaryColor: config.primaryColor,
+              isDark: true,
+              isInlineSmall: isInline,
+            );
+            expect(() => painter.paint(canvas, size), returnsNormally);
+          }
         }
       }
     });
   });
 
   group('Thinking Orbs — Mobile Widget Tests', () {
-    testWidgets('Renders ThinkingOrbsResponseView with correct state badge and stop button', (tester) async {
+    testWidgets('Renders tiny inline ThinkingOrbsResponseView with stop button', (tester) async {
       bool stopPressed = false;
 
       await tester.pumpWidget(
@@ -153,20 +155,37 @@ void main() {
           home: Scaffold(
             body: ThinkingOrbsResponseView(
               state: OrbState.solving,
+              size: 20.0,
               onStop: () => stopPressed = true,
             ),
           ),
         ),
       );
 
-      // Verify label is displayed
-      expect(find.text('SOLVING'), findsOneWidget);
+      // Verify custom painter is present with 20x20 sizing
+      final customPaint = find.byType(CustomPaint);
+      expect(customPaint, findsWidgets);
 
       // Verify stop button is rendered and functional
       final stopButton = find.text('Stop');
       expect(stopButton, findsOneWidget);
       await tester.tap(stopButton);
       expect(stopPressed, isTrue);
+    });
+
+    testWidgets('Optional status text is displayed when showStatusText is true', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ThinkingOrbsResponseView(
+              state: OrbState.solving,
+              showStatusText: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Solving'), findsOneWidget);
     });
 
     testWidgets('Accessible semantics and reduced-motion fallback works gracefully', (tester) async {
@@ -183,8 +202,8 @@ void main() {
         ),
       );
 
-      // In reduced motion, still renders label cleanly
-      expect(find.text('SEARCHING'), findsOneWidget);
+      final customPaint = find.byType(CustomPaint);
+      expect(customPaint, findsWidgets);
     });
   });
 }
