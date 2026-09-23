@@ -13,9 +13,12 @@ import '../services/database_service.dart';
 import '../services/ai_service.dart';
 import 'profile_settings_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 import '../response_visualization/models/response_mode.dart';
 import '../response_visualization/services/adaptive_response_classifier.dart';
 import '../response_visualization/widgets/adaptive_response_view.dart';
+import '../thinking_orbs/services/orb_state_resolver.dart';
+import '../thinking_orbs/widgets/thinking_orbs_response_view.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? chatId;
@@ -579,10 +582,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       itemBuilder: (ctx, i) {
         if (i == _messages.length && _isTyping) {
           if (_activeAnimationConfig != null) {
-            return AdaptiveResponseView(
-              config: _activeAnimationConfig!,
-              onStop: _stopGeneration,
-            );
+            if (kIsWeb) {
+              // WEB APPLICATION: Preserve existing adaptive response visualization untouched
+              return AdaptiveResponseView(
+                config: _activeAnimationConfig!,
+                onStop: _stopGeneration,
+              );
+            } else {
+              // ANDROID APK / MOBILE: Dedicated Thinking Orbs visualization
+              return ThinkingOrbsResponseView(
+                state: OrbStateResolver.resolveFromConfig(_activeAnimationConfig),
+                config: _activeAnimationConfig,
+                onStop: _stopGeneration,
+              );
+            }
           }
           return const TypingIndicator();
         }
