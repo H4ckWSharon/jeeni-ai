@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -191,18 +192,67 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final sessionChatId = _currentChatId;
     final thisRequestId = ++_currentRequestId;
     final userMsgId = DateTime.now().millisecondsSinceEpoch.toString();
-    final userMessage = ChatMessage(
-      id: userMsgId,
-      text: displayText,
-      isUser: true,
-      timestamp: DateTime.now(),
-    );
 
     // Instant adaptive classification before network dispatch
     final animConfig = AdaptiveResponseClassifier.classify(
       prompt: t,
       mode: effectiveMode.label,
       attachments: attachments,
+    );
+
+    // ── Build structured attachment metadata from XFiles ──────────
+    // This is the authoritative mapping point: XFile → MessageAttachment.
+    // Previously userMessage was created WITHOUT attachments — that was the bug.
+    final List<MessageAttachment> msgAttachments = [];
+    for (final xfile in attachments) {
+      final name = xfile.name;
+      final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';
+      const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic'];
+      final isImage = imageExts.contains(ext);
+      String mimeType = 'application/octet-stream';
+      if (ext == 'png') {
+        mimeType = 'image/png';
+      } else if (ext == 'jpg' || ext == 'jpeg') {
+        mimeType = 'image/jpeg';
+      } else if (ext == 'webp') {
+        mimeType = 'image/webp';
+      } else if (ext == 'gif') {
+        mimeType = 'image/gif';
+      } else if (ext == 'bmp') {
+        mimeType = 'image/bmp';
+      } else if (ext == 'heic') {
+        mimeType = 'image/heic';
+      } else if (ext == 'txt' || ext == 'md' || ext == 'csv') {
+        mimeType = 'text/plain';
+      }
+      final attachType = isImage ? 'image' : 'text_file';
+      int sizeBytes = 0;
+      String? b64;
+      try {
+        final bytes = await xfile.readAsBytes();
+        sizeBytes = bytes.length;
+        if (isImage && bytes.isNotEmpty && bytes.length <= 450 * 1024) {
+          b64 = base64Encode(bytes);
+        }
+      } catch (_) {}
+      msgAttachments.add(MessageAttachment(
+        type: attachType,
+        name: name,
+        mimeType: mimeType,
+        sizeBytes: sizeBytes,
+        localPath: kIsWeb ? null : xfile.path,
+        base64Data: b64,
+      ));
+      debugPrint('[Jeeni Attachment] selected: true | type: $attachType | name: $name | mime: $mimeType | size: ${sizeBytes}B | hasB64: ${b64 != null}');
+    }
+    debugPrint('[Jeeni Send] textLength: ${t.length} | attachmentCount: ${attachments.length}');
+
+    final userMessage = ChatMessage(
+      id: userMsgId,
+      text: displayText,
+      isUser: true,
+      timestamp: DateTime.now(),
+      attachments: msgAttachments, // ← FIX: was missing before
     );
 
     // Show user message locally immediately (so screen is never blank)

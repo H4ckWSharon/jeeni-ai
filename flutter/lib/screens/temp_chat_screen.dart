@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,12 +86,57 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       attachments: attachments,
     );
 
+    // ── Build structured attachment metadata from XFiles ──
+    final List<MessageAttachment> msgAttachments = [];
+    for (final xfile in attachments) {
+      final name = xfile.name;
+      final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';
+      const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic'];
+      final isImage = imageExts.contains(ext);
+      String mimeType = 'application/octet-stream';
+      if (ext == 'png') {
+        mimeType = 'image/png';
+      } else if (ext == 'jpg' || ext == 'jpeg') {
+        mimeType = 'image/jpeg';
+      } else if (ext == 'webp') {
+        mimeType = 'image/webp';
+      } else if (ext == 'gif') {
+        mimeType = 'image/gif';
+      } else if (ext == 'bmp') {
+        mimeType = 'image/bmp';
+      } else if (ext == 'heic') {
+        mimeType = 'image/heic';
+      } else if (ext == 'txt' || ext == 'md' || ext == 'csv') {
+        mimeType = 'text/plain';
+      }
+      int sizeBytes = 0;
+      String? b64;
+      try {
+        final bytes = await xfile.readAsBytes();
+        sizeBytes = bytes.length;
+        if (isImage && bytes.isNotEmpty && bytes.length <= 450 * 1024) {
+          b64 = base64Encode(bytes);
+        }
+      } catch (_) {}
+      msgAttachments.add(MessageAttachment(
+        type: isImage ? 'image' : 'text_file',
+        name: name,
+        mimeType: mimeType,
+        sizeBytes: sizeBytes,
+        localPath: kIsWeb ? null : xfile.path,
+        base64Data: b64,
+      ));
+      debugPrint('[Jeeni Attachment] selected: true | type: ${isImage ? 'image' : 'text_file'} | name: $name | mime: $mimeType | size: ${sizeBytes}B | hasB64: ${b64 != null}');
+    }
+    debugPrint('[Jeeni Send] textLength: ${t.length} | attachmentCount: ${attachments.length}');
+
     setState(() {
       _messages.add(ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           text: displayText,
           isUser: true,
-          timestamp: DateTime.now()));
+          timestamp: DateTime.now(),
+          attachments: msgAttachments)); // ← FIX: was missing before
       _isTyping = true;
       _userMessageCount++;
       _activeAnimationConfig = animConfig;

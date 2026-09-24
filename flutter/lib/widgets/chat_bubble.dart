@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -160,13 +162,32 @@ class _ChatBubbleState extends State<ChatBubble>
 
   Widget _buildMessageContent(bool isUser) {
     if (isUser) {
-      return SelectableText(
-        widget.message.text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          height: 1.7,
-        ),
+      final attachments = widget.message.attachments.where((a) => a.isImage).toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Image attachments ──────────────────────────────────
+          if (attachments.isNotEmpty)
+            for (final att in attachments)
+              _buildAttachmentTile(att),
+          // ── Message text ───────────────────────────────────────
+          if (widget.message.text.isNotEmpty &&
+              widget.message.text != '📎 Attached file(s)')
+            Padding(
+              padding: attachments.isNotEmpty
+                  ? const EdgeInsets.only(top: 8)
+                  : EdgeInsets.zero,
+              child: SelectableText(
+                widget.message.text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  height: 1.7,
+                ),
+              ),
+            ),
+        ],
       );
     }
 
@@ -174,6 +195,173 @@ class _ChatBubbleState extends State<ChatBubble>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: _parseMessageText(widget.message.text, context),
+      ),
+    );
+  }
+
+  /// Renders a single image attachment tile with tap-to-fullscreen support.
+  Widget _buildAttachmentTile(MessageAttachment att) {
+    const double maxW = 260;
+    const double maxH = 220;
+
+    final hasLocal = !kIsWeb &&
+        att.localPath != null &&
+        att.localPath!.isNotEmpty &&
+        File(att.localPath!).existsSync();
+    final hasBase64 = att.base64Data != null && att.base64Data!.isNotEmpty;
+
+    Widget imageWidget;
+    VoidCallback? onTapFullscreen;
+
+    if (hasLocal) {
+      imageWidget = Image.file(
+        File(att.localPath!),
+        fit: BoxFit.cover,
+        width: maxW,
+        height: maxH,
+        errorBuilder: (_, __, ___) {
+          if (hasBase64) {
+            try {
+              final b64Bytes = base64Decode(att.base64Data!);
+              return Image.memory(
+                b64Bytes,
+                fit: BoxFit.cover,
+                width: maxW,
+                height: maxH,
+              );
+            } catch (_) {}
+          }
+          return _attachmentBadge(att);
+        },
+      );
+      onTapFullscreen = () => _openFullscreenImage(localPath: att.localPath);
+    } else if (hasBase64) {
+      try {
+        final b64Bytes = base64Decode(att.base64Data!);
+        imageWidget = Image.memory(
+          b64Bytes,
+          fit: BoxFit.cover,
+          width: maxW,
+          height: maxH,
+          errorBuilder: (_, __, ___) => _attachmentBadge(att),
+        );
+        onTapFullscreen = () => _openFullscreenImage(bytes: b64Bytes);
+      } catch (_) {
+        imageWidget = _attachmentBadge(att);
+      }
+    } else {
+      imageWidget = _attachmentBadge(att);
+    }
+
+    return GestureDetector(
+      onTap: onTapFullscreen,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        constraints: const BoxConstraints(maxWidth: maxW, maxHeight: maxH),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF1A1A1A),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            imageWidget,
+            if (hasLocal || hasBase64)
+              Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.fullscreen_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Compact badge used when no image data is accessible.
+  Widget _attachmentBadge(MessageAttachment att) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF334155), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.image_rounded, color: Color(0xFF94A3B8), size: 18),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              att.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Opens a full-screen image preview dialog.
+  void _openFullscreenImage({String? localPath, Uint8List? bytes}) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.94),
+      builder: (_) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  maxScale: 5.0,
+                  minScale: 0.8,
+                  child: localPath != null && File(localPath).existsSync()
+                      ? Image.file(
+                          File(localPath),
+                          fit: BoxFit.contain,
+                        )
+                      : (bytes != null
+                          ? Image.memory(bytes, fit: BoxFit.contain)
+                          : const SizedBox.shrink()),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
