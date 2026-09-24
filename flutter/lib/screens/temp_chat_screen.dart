@@ -516,45 +516,57 @@ class _TempEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Stack(
-        children: [
-          // Central Privacy Title
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.lock_person_rounded, size: 42, color: Colors.white.withValues(alpha: 0.2)),
-                const SizedBox(height: 16),
-                Text(
-                  'PRIVATE SESSION',
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2,
+    return Column(
+      children: [
+        // ── Scrollable center content ──
+        // Using Expanded + SingleChildScrollView so the center content
+        // compresses gracefully when the keyboard opens instead of overflowing.
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height * 0.3,
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_person_rounded, size: 42, color: Colors.white.withValues(alpha: 0.2)),
+                      const SizedBox(height: 16),
+                      Text(
+                        'PRIVATE SESSION',
+                        style: GoogleFonts.inter(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Temporary chat • No history saved',
+                        style: GoogleFonts.inter(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Temporary chat • No history saved',
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 100), // Push up slightly from center
-              ],
+              ),
             ),
           ),
+        ),
 
-          // Bottom Feature Row (Clean like main chat)
-          Positioned(
-            left: 0, right: 0, bottom: 12,
-            child: _FeatureRow(),
-          ),
-        ],
-      ),
+        // ── Bottom Feature Row — naturally anchored, no Positioned ──
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _FeatureRow(),
+        ),
+      ],
     );
   }
 }

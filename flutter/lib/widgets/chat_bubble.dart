@@ -659,12 +659,15 @@ class _RAGSourcesWidgetState extends State<RAGSourcesWidget> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            isWebSearch ? '🌐 Live Web Sources' : '📚 Textbook Verified',
-                            style: TextStyle(
-                              color: primaryColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              isWebSearch ? '🌐 Live Web Sources' : '📚 Textbook Verified',
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
