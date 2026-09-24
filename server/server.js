@@ -25,7 +25,13 @@ const studentStore = require('./src/studentStore');
 const usageStore = require('./src/usageStore');
 const { loginAdmin, logoutAdmin, validateSession, requireAdminAuth } = require('./src/adminAuth');
 const aiGateway = require('./src/aiGateway');
-const { classifyResponseMode } = require('./src/responseModeClassifier');
+const {
+  classifyResponseMode,
+  classifyRequestIntent,
+  determineGreetingPolicy,
+  filterProfileRelevance,
+  RequestIntent,
+} = require('./src/responseModeClassifier');
 
 const app = express();
 app.use(cors());
@@ -322,31 +328,31 @@ Every query MUST be classified into EXACTLY ONE pathway.
 
 ---
 PATHWAY A — DIRECT ANSWER
-Use when the query is general academic knowledge and does NOT require textbook-specific retrieval.
+Use when the query is general academic knowledge, programming, technical, or general educational questions that do NOT require textbook-specific retrieval.
 Examples:
-- General scientific definitions
-- Universal scientific laws
-- Basic mathematics
-- General grammar rules
-- General educational explanations
-- General student engagement
-- Greetings
+- Programming, coding, syntax, debugging, and algorithms (Python, JavaScript, SQL, C++, Java, functions, loops, recursion, data structures)
+- Computer networking concepts (TCP, UDP, IP addresses, DNS, handshakes, OSI model, ports, sockets, protocols)
+- Cybersecurity concepts (SQL injection, XSS, phishing, buffer overflow, encryption, hashing, firewalls)
+- General scientific definitions and universal scientific laws (photosynthesis, Newton's laws, thermodynamics)
+- Mathematics concepts, formulas, and calculations (algebra, calculus, trigonometry, quadratic equations)
+- General grammar rules and language explanations
+- General student greetings and casual conversation
 - General concepts not tied to a particular textbook, chapter, exercise, syllabus or board
 
 Action: "direct_answer"
 llm_required: false
-The final student-ready answer MUST be placed directly inside: "direct_response_text"
+For direct_answer, provide a clean, concise conceptual answer (under 60 words) inside: "direct_response_text"
 
 Schema:
 [
   {
     "action": "direct_answer",
     "llm_required": false,
-    "direct_response_text": "<student-ready answer>"
+    "direct_response_text": "<concise student-ready answer>"
   }
 ]
 
-Example:
+Example 1:
 Input: "What is Newton's third law of motion?"
 Output:
 [
@@ -354,6 +360,17 @@ Output:
     "action": "direct_answer",
     "llm_required": false,
     "direct_response_text": "Newton's Third Law of Motion states that for every action, there is an equal and opposite reaction. Example: when you push the ground backward while walking, the ground pushes you forward."
+  }
+]
+
+Example 2:
+Input: "Explain TCP three-way handshake."
+Output:
+[
+  {
+    "action": "direct_answer",
+    "llm_required": false,
+    "direct_response_text": "The TCP three-way handshake establishes a reliable network connection using SYN, SYN-ACK, and ACK packets between client and server."
   }
 ]
 
@@ -1027,6 +1044,16 @@ app.post('/api/chat', async (req, res) => {
     const curriculumIntent = normalizeCurriculumIntent(userQuery, routingDecision, studentProfile);
     console.log(`[JEENI_INTENT] isCurriculum=${curriculumIntent.isCurriculumQuery} | class=${curriculumIntent.class} | board=${curriculumIntent.board} | subject=${curriculumIntent.subject} | chapter=${curriculumIntent.chapterNumber} | source=${curriculumIntent.source}`);
 
+    // ── STAGE 1.06: Task Intent & Greeting State Machine (Requirements 1, 2, 5, 6, 21) ──
+    const intent = classifyRequestIntent(userQuery, {
+      attachments: req.body?.attachments || (hasImages ? [{ type: 'image_url' }] : []),
+      isWebSearch,
+      mode: validatedMode,
+      curriculumIntent,
+    });
+    const greetingPolicy = determineGreetingPolicy(userQuery, messages);
+    console.log(`[JEENI_TASK] intent=${intent} | greetingPolicy=${greetingPolicy} | mode=${validatedMode}`);
+
     // Universal response_metadata injector across all early returns and final responses
     const originalJson = res.json.bind(res);
     res.json = (body) => {
@@ -1040,6 +1067,8 @@ app.post('/api/chat', async (req, res) => {
           mode: validatedMode,
           hasMemories: (relevantMemories && relevantMemories.length > 0) || false,
         });
+        body.response_metadata.intent = intent;
+        body.response_metadata.greetingPolicy = greetingPolicy;
         body.response_metadata.processingState = 'complete';
       }
       return originalJson(body);
@@ -1074,6 +1103,13 @@ app.post('/api/chat', async (req, res) => {
 
     const meta = routingDecision?.metadata || routingDecision?.rag_metadata || {};
     let action = isWebSearch ? 'web_search' : (routingDecision?.action || (hasImages ? 'vision_analysis' : (curriculumIntent.isCurriculumQuery ? 'rag_search' : 'direct_answer')));
+
+    // HARD GROUNDING & SEPARATION: General knowledge/programming/networking/cybersecurity/math
+    // must NEVER be hijacked into textbook RAG retrieval (Requirement 9)
+    if (!curriculumIntent.isCurriculumQuery && action === 'rag_search') {
+      console.log(`[RAG Gate] Query "${userQuery.slice(0, 50)}" is general task (${intent}) -> routing to direct answer`);
+      action = 'direct_answer';
+    }
 
     // Merge normalized curriculum fields into meta
     if (curriculumIntent.class && !meta.class) meta.class = curriculumIntent.class;
@@ -1228,51 +1264,16 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // ── STAGE 1.25: Memory & Personalization Relevance Analysis ──
+    // ── STAGE 1.25: Memory & Personalization Relevance Analysis (Requirements 3, 4, 10, 16) ──
     relevantMemories = (studentProfile && studentProfile.personalization_enabled !== false)
       ? studentStore.getRelevantMemories(studentId, userQuery, meta?.subject || '')
       : [];
 
-    const hasPersonalizationAdaptation = studentProfile && studentProfile.personalization_enabled !== false && (
-      (studentProfile.preferred_language && studentProfile.preferred_language.toLowerCase() !== 'english') ||
-      relevantMemories.length > 0 ||
-      (studentProfile.knowledge_level && studentProfile.knowledge_level.toLowerCase() !== 'intermediate')
-    );
+    const personalizationFilter = filterProfileRelevance(studentProfile, intent, userQuery, relevantMemories);
 
-    // ── STAGE 1.3: Pathway A — Direct Answer (Zero Downstream LLM Latency)
-    // Only short-circuit if NOT a curriculum query, NOT asking about student profile,
-    // NOT a response disclaiming access, NOT requiring personalized language adaptation,
-    // and NOT requesting a specialized pedagogical mode (Deep Learning, Guide, Homework, Exam Prep)
+    // Pedagogical Mode & Direct Answer Routing (Requirements 7, 13, 14, 15)
+    // Router performs classification only. One authoritative generator (Downstream Gemini) produces the final user-ready response.
     const isDefaultGuidedMode = !mode || validatedMode === 'learning' || mode === 'Guided Learning' || mode === 'Standard';
-    if (action === 'direct_answer' && isDefaultGuidedMode && !hasImages && routingDecision?.direct_response_text && !isProfileOrIdentityQuery && !(disclaimsKnowledge && studentProfile) && !hasPersonalizationAdaptation) {
-      console.log('[Router AI] Pathway A: Direct Answer served with 0 downstream LLM latency');
-      aiGateway.recordChatInteraction({
-        requestId,
-        userId: studentId,
-        userQuery,
-        feature: 'Router Direct Answer',
-        model: 'gemini-3.1-flash-lite',
-        messages,
-        routerResult: routingDecision,
-        routerUsage: routingDecision?._usage,
-        totalLatencyMs: Date.now() - startTime,
-        status: 'SUCCESS',
-        responseText: routingDecision.direct_response_text,
-        answerSource: 'MODEL_KNOWLEDGE',
-        geminiCalled: false,
-      });
-      return res.json({
-        content: routingDecision.direct_response_text,
-        sources: [],
-        pipeline: 'DIRECT_ANSWER',
-        routing: routingDecision,
-        curriculum_intent: curriculumIntent,
-        answer_source: 'MODEL_KNOWLEDGE',
-        gemini_called: false,
-        memories_applied: [],
-        new_memory_saved: newMemorySaved ? newMemorySaved.content : null,
-      });
-    }
 
     // ── STAGE 2: Pathway B — RAG Search ───────────────────
     const useRag = !isWebSearch && enableRag && (action === 'rag_search' || (!hasImages && !routingDecision));
@@ -1523,124 +1524,93 @@ app.post('/api/chat', async (req, res) => {
       return res.json(zeroChunkResponse);
     }
 
-    // ── STAGE 3: System Instruction ───────────────────────
-    const systemMsg = messages.find(m => m.role === 'system');
-    let systemInstruction = systemMsg ? systemMsg.content : undefined;
+    // ── STAGE 3: Authoritative System Instruction (Requirements 1, 5, 16, 25) ──
+    let systemInstruction = `You are Jeeni, an expert educational AI companion and teacher.
+Your primary mission is to provide clear, high-quality, and deeply insightful academic guidance.
+
+CORE OPERATIONAL RULES:
+1. TASK-FIRST DIRECTNESS:
+   Address the student's CURRENT question immediately in your very first sentence.
+   Never stall, waffle, or give empty conversational filler.
+
+2. GREETING POLICY: ${greetingPolicy === 'ALLOW_GREETING' ? 'Friendly greeting permitted. Welcome the student warmly to Jeeni and offer your assistance.' : 'STRICT NO GREETING. Under NO circumstances start with a greeting (e.g., "Hello", "Hi", "Hey", "Good morning"), pleasantry ("Great question!", "It\'s wonderful to explore..."), or profile announcement ("Since you are a Class 10 student...", "Your subjects are..."). Jump directly into answering the question on line 1.'}
+
+3. INVISIBLE PERSONALIZATION:
+   The student's grade level and learning preferences must ONLY silently calibrate your explanation depth, vocabulary, and analogies.
+   NEVER explicitly announce the student's name, grade, class, or syllabus in your response unless they explicitly ask about their identity or profile.
+
+4. EXPLANATION QUALITY:
+   - Provide intuitive explanations, real-world analogies, and step-by-step clarity.
+   - Use clean, structured GitHub-flavored Markdown with bold headers, concise bullet points, and syntax-highlighted code blocks with language identifiers.
+   - For code questions, provide working code snippets and explain line-by-line logic.
+   - For math and science, show step-by-step derivations and unit consistency.`;
 
     if (useVision) {
-      systemInstruction = `You are Jeeni, an advanced AI teacher with full vision capabilities powered by Gemini Vision.
-
-CRITICAL RULE: An image has been uploaded by the student. You MUST analyze the actual visual content of the image before responding.
-
-Your Vision Analysis Protocol:
-1. LOOK at the image carefully — identify every element, diagram, text, equation, chart, table, or drawing.
-2. IDENTIFY the subject: Physics / Chemistry / Biology / Mathematics / Geography / History / Computer Science / etc.
-3. DESCRIBE what you see in the image clearly and completely.
-4. EXPLAIN the educational concept shown, as a knowledgeable teacher would.
-5. If there is text or equations in the image, read and explain them.
-6. If there is a diagram, label and explain each component.
-7. If there is a graph or chart, interpret the data and trend.
-8. If there is handwritten content, read and explain it.
-9. If there is a screenshot of a question, solve it step by step.
-10. NEVER say you cannot see the image — you have full vision capability.
-11. NEVER give a generic study advice response — always respond to the actual image content.
-12. Structure your response with: Image Description → Subject Identified → Detailed Explanation → Key Concepts → Practice Question.
-
-Format your response in beautiful markdown with headers, bullet points, and emojis.`;
+      systemInstruction += `\n\n--- VISION ANALYSIS PROTOCOL ---
+1. Examine all visual elements in the attached image carefully.
+2. Identify the subject and concepts shown.
+3. Explain step-by-step what is depicted, reading equations, diagrams, or questions carefully.
+4. Structure: Description → Core Explanation → Key Concepts.`;
     } else if (isWebSearch) {
-      systemInstruction = `You are Jeeni Web Search Engine — powered by live Google Search Grounding.
-Your role is to provide up-to-date, real-time factual information retrieved from the web.
-- Summarize the top findings clearly with key dates, facts, and explanations.
-- Use structured markdown with headings, bullet points, and emojis.
-- Reference authoritative sources accurately.`;
+      systemInstruction += `\n\n--- WEB SEARCH GROUNDING PROTOCOL ---
+You are Jeeni Web Search Engine — powered by live Google Search Grounding.
+Provide up-to-date, real-time factual information retrieved from the web with accurate citations.`;
     } else if (ragContext) {
-      systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + ragContext;
-    } else {
-      systemInstruction = systemInstruction || 'You are Jeeni, an educational AI companion.';
+      systemInstruction += ragContext;
     }
 
     // Specialized Pedagogical Mode System Instructions (Web Search, Deep Learning, Guide, Learning, Homework, Exam Prep)
-    if (validatedMode === 'deep_learning' || mode === 'Deep Research') {
-      systemInstruction += '\n\n--- PEDAGOGICAL MODE: DEEP LEARNING ---\n' +
-        'Emphasize deep conceptual understanding and mastery from first principles. Structure your response with:\n' +
-        '1. Intuitive explanation and core mental model.\n' +
+    if (validatedMode === 'deep_learning' || mode === 'Deep Research' || mode === 'Deep Learning') {
+      systemInstruction += '\n\n--- PEDAGOGICAL MODE: DEEP RESEARCH & DEEP LEARNING ---\n' +
+        'Emphasize deep conceptual understanding and mastery from first principles:\n' +
+        '1. Intuitive core mental model.\n' +
         '2. Layered conceptual breakdown from fundamentals to advanced nuances.\n' +
         '3. Vivid real-world analogies and concrete examples.\n' +
         '4. Addressing common student misconceptions and subtleties.\n' +
         '5. Knowledge checks and thought-provoking follow-up questions to test deep comprehension.';
-    } else if (validatedMode === 'guide') {
+    } else if (validatedMode === 'guide' || mode === 'Guide') {
       systemInstruction += '\n\n--- PEDAGOGICAL MODE: GUIDE (SOCRATIC STEP-BY-STEP HELP) ---\n' +
-        'Act as a supportive, step-by-step Socratic guide. Do NOT dump long explanations or give direct answers immediately.\n' +
+        'Act as a supportive, step-by-step Socratic guide. Do NOT dump long explanations or give direct answers immediately:\n' +
         '1. First establish what the student already understands or where they feel stuck.\n' +
         '2. Explain only one small concept or single logical step at a time.\n' +
         '3. Ask a targeted, friendly question to check their understanding.\n' +
         '4. Invite the student to reply before moving to the next step.';
-    } else if (validatedMode === 'learning') {
+    } else if (validatedMode === 'learning' || mode === 'Guided Learning' || mode === 'Learning') {
       systemInstruction += '\n\n--- PEDAGOGICAL MODE: LEARNING ---\n' +
-        'Provide clear, structured, and interactive learning. Use intuitive explanations, practical examples, visual/mental models, and mini knowledge checks with progressive difficulty. Seamlessly integrate the student\'s known grade level, board, and curriculum.';
-    } else if (validatedMode === 'homework') {
+        'Provide clear, structured, and interactive learning. Use intuitive explanations, practical examples, visual/mental models, and mini knowledge checks with progressive difficulty.';
+    } else if (validatedMode === 'homework' || mode === 'Homework' || mode === 'Homework Helper') {
       systemInstruction += '\n\n--- PEDAGOGICAL MODE: HOMEWORK HELPER ---\n' +
-        'Act as an educational homework mentor. Maintain educational integrity by NOT blindly providing answers without explanation.\n' +
+        'Act as an educational homework mentor. Maintain educational integrity by NOT blindly providing answers without explanation:\n' +
         '1. Clarify and break down what the problem is asking.\n' +
         '2. Identify given information and the underlying concept or formula.\n' +
         '3. Guide the solution step by step, explaining WHY each step is taken.\n' +
         '4. Provide hints and let the student attempt key steps wherever possible.';
-    } else if (validatedMode === 'exam_prep') {
+    } else if (validatedMode === 'exam_prep' || mode === 'Exam Prep' || mode === 'Exam Preparation') {
       systemInstruction += '\n\n--- PEDAGOGICAL MODE: EXAM PREPARATION ---\n' +
-        'Act as a dedicated exam revision coach.\n' +
+        'Act as a dedicated exam revision coach:\n' +
         '1. Break down the topic by high-yield syllabus concepts and exam weighting.\n' +
         '2. Highlight common exam traps, typical question formats, and marking scheme tips.\n' +
         '3. Provide practice questions, rapid-fire quiz checks, and flashcard-style summaries for swift revision.';
     }
 
-    // ── STAGE 3.5: Adaptive Personalization & Relevant Memory (Phase 5, 6, 7) ──
-    if (studentProfile && studentProfile.personalization_enabled !== false) {
-      const pLines = [];
-      pLines.push(`- Student Name / Nickname: ${studentProfile.display_name || 'Student'}`);
-      pLines.push(`- Target Student Context: Class ${studentProfile.class || '10'} (${studentProfile.board || 'CBSE'}, ${studentProfile.syllabus || 'NCERT'})`);
-      if (studentProfile.medium) {
-        pLines.push(`- Medium of Instruction: ${studentProfile.medium}`);
-      }
-      if (studentProfile.subjects && studentProfile.subjects.length > 0) {
-        pLines.push(`- Enrolled Subjects: ${studentProfile.subjects.join(', ')}`);
-      }
-      if (studentProfile.exam_prep_goal) {
-        pLines.push(`- Target Exam Goal: ${studentProfile.exam_prep_goal}`);
-      }
-      if (studentProfile.knowledge_level) {
-        pLines.push(`- Student Knowledge Level: ${studentProfile.knowledge_level}`);
-        if (studentProfile.knowledge_level.toLowerCase() === 'beginner') {
-          pLines.push(`- Instruction: Start with intuitive definitions, real-world analogies, and step-by-step breakdowns before formal terms.`);
-        } else if (studentProfile.knowledge_level.toLowerCase() === 'advanced') {
-          pLines.push(`- Instruction: Skip introductory trivialities; provide deep conceptual rigor, advanced edge cases, and competitive-exam relevance.`);
-        }
-      }
-      if (studentProfile.preferred_examples) {
-        pLines.push(`- Preferred Examples: ${studentProfile.preferred_examples}`);
-      }
-      if (studentProfile.revision_preference) {
-        pLines.push(`- Revision Style: ${studentProfile.revision_preference}`);
-      }
-      pLines.push(`- Instruction on Student Profile: If the student asks what class they are in, who they are, what you know about them, or why data was collected, answer warmly and directly using these verified profile details. Explain that this data is used solely to personalize explanations and textbook curriculum.`);
-      if (studentProfile.preferred_language && studentProfile.preferred_language.toLowerCase() !== 'english') {
-        pLines.push(`- Preferred Teaching Language: Explain predominantly in ${studentProfile.preferred_language} (or natural Manglish if Malayalam), but strictly keep technical scientific terms, formulas, code, and textbook keywords in standard English.`);
-      }
-      if (studentProfile.explanation_style) {
-        pLines.push(`- Teaching Style Preference: ${studentProfile.explanation_style}`);
-      }
-      if (studentProfile.learning_goal) {
-        pLines.push(`- Academic Goal: ${studentProfile.learning_goal}`);
-      }
-      if (studentProfile.response_format) {
-        pLines.push(`- Preferred Format: ${studentProfile.response_format}`);
-      }
-      if (relevantMemories.length > 0) {
-        pLines.push(`- Active Learning Memories (Dynamically Selected for this topic):\n` + relevantMemories.map(m => `  * ${m.content}`).join('\n'));
-      }
+    // Dynamic Context: Profile Relevance Filter (Invisible Personalization / Identity)
+    if (personalizationFilter?.systemPromptSnippet) {
+      systemInstruction += '\n\n' + personalizationFilter.systemPromptSnippet;
+      console.log(`[Adaptive Learning] Injected filtered personalization (Identity: ${personalizationFilter.isIdentityQuery}, Fields: [${personalizationFilter.personalizationFieldsUsed.join(', ')}])`);
+    }
 
-      const adaptiveBlock = `\n\n--- STUDENT ADAPTIVE PROFILE & LEARNING MEMORY ---\n${pLines.join('\n')}\n--- END ADAPTIVE PROFILE ---\nTailor your teaching tone, depth, and examples accordingly while strictly adhering to factual textbook and safety rules.`;
-      systemInstruction = (systemInstruction || 'You are Jeeni, an educational AI companion.') + adaptiveBlock;
-      console.log(`[Adaptive Learning] Injected profile (Class ${studentProfile.class} ${studentProfile.board}) + ${relevantMemories.length} relevant memory item(s)`);
+    // Dynamic Context: Interactive Widgets (if not vision)
+    if (!useVision) {
+      systemInstruction += `\n\nInteractive Learning Widgets:
+When a student asks about any of the following topics, include the corresponding widget tag on its own line at the end of your response:
+- Circle area, circumference, geometry of circles → [interactive:circle_area]
+- Newton's second law, F=ma, force mass acceleration → [interactive:newton_second_law]
+- Linear equations, graphs, slope, y-intercept, algebra → [interactive:graph_plotter]
+- Trigonometry, sine, cosine, tangent, unit circle, angles → [interactive:unit_circle]
+- Atoms, protons, neutrons, electrons, atomic structure, chemistry → [interactive:atom_builder]
+- Heart, cardiac cycle, heartbeat, biology, circulatory system → [interactive:heart_pump]
+- Earth rotation, seasons, axial tilt, geography, day and night → [interactive:earth_rotation]
+Rules: Place tag on its own line at the end. Never explain the tag itself.`;
     }
 
     // ── STAGE 4: Build Gemini-format contents ─────────────
@@ -1767,9 +1737,28 @@ Your role is to provide up-to-date, real-time factual information retrieved from
       ragUsed: Boolean(ragContext),
       isWebSearch: isWebSearch,
       attachments: req.body?.attachments || (hasImages ? [{ name: 'image.png' }] : []),
-      mode: mode,
+      mode: validatedMode,
       hasMemories: relevantMemories.length > 0,
     });
+    responseMeta.requestId = requestId;
+    responseMeta.conversationId = req.body?.conversation_id || null;
+    responseMeta.messageId = req.body?.message_id || null;
+    responseMeta.intent = intent;
+    responseMeta.mode = validatedMode;
+    responseMeta.responsePath = isWebSearch ? 'WEB_SEARCH' : (useVision ? 'VISION' : (ragContext ? 'RAG_CURRICULUM' : 'DIRECT_KNOWLEDGE'));
+    responseMeta.personalizationUsed = personalizationFilter?.personalizationUsed || false;
+    responseMeta.personalizationFieldsUsed = personalizationFilter?.personalizationFieldsUsed || [];
+    responseMeta.ragUsed = Boolean(ragContext);
+    responseMeta.ragChunkCount = chunks ? chunks.length : 0;
+    responseMeta.webUsed = isWebSearch;
+    responseMeta.attachmentUsed = Boolean(hasImages || (req.body?.attachments && req.body.attachments.length > 0));
+    responseMeta.attachmentType = hasImages ? 'image' : (req.body?.attachments?.length > 0 ? 'document' : 'none');
+    responseMeta.conversationContextUsed = messages.filter(m => m.role !== 'system').length > 1;
+    responseMeta.llmCallCount = routingDecision ? 2 : 1;
+    responseMeta.finalGenerator = geminiModel;
+    responseMeta.fallbackUsed = false;
+    responseMeta.fallbackReason = null;
+    responseMeta.greetingPolicy = greetingPolicy;
     responseMeta.processingState = 'complete';
 
     res.json({
