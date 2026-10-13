@@ -234,7 +234,10 @@ class _ChatBubbleState extends State<ChatBubble>
           return _attachmentBadge(att);
         },
       );
-      onTapFullscreen = () => _openFullscreenImage(localPath: att.localPath);
+      onTapFullscreen = () => _openFullscreenImage(
+        localPath: att.localPath,
+        bytes: hasBase64 ? base64Decode(att.base64Data!) : null,
+      );
     } else if (hasBase64) {
       try {
         final b64Bytes = base64Decode(att.base64Data!);
@@ -337,7 +340,7 @@ class _ChatBubbleState extends State<ChatBubble>
                 child: InteractiveViewer(
                   maxScale: 5.0,
                   minScale: 0.8,
-                  child: localPath != null && File(localPath).existsSync()
+                  child: (!kIsWeb && localPath != null && File(localPath).existsSync())
                       ? Image.file(
                           File(localPath),
                           fit: BoxFit.contain,

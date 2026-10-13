@@ -6,9 +6,19 @@ import '../models/chat_message.dart';
 import '../models/student_profile.dart';
 
 class AIService {
-  /// The URL of your Jeeni backend server.
-  /// All OpenAI calls are made server-side — no API key in the app.
-  static const _serverUrl = 'http://213.133.97.141:3000';
+  /// The default URL of your Jeeni backend server.
+  static const _defaultServerUrl = 'http://213.133.97.141:3000';
+
+  /// Resolves the backend URL dynamically on Web to prevent CORS or Mixed Content issues.
+  static String get serverUrl {
+    if (kIsWeb) {
+      final origin = Uri.base.origin;
+      if (origin.isNotEmpty && origin.startsWith('http') && !origin.contains('localhost')) {
+        return origin;
+      }
+    }
+    return _defaultServerUrl;
+  }
 
   /// Intercepts specific local system-related questions without calling the API
   static String? getLocalSystemResponse(String query) {
@@ -40,7 +50,7 @@ class AIService {
   static Future<bool> syncStudentProfile(String studentId, StudentProfile profile) async {
     try {
       final res = await http.post(
-        Uri.parse('$_serverUrl/api/profile'),
+        Uri.parse('$serverUrl/api/profile'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'student_id': studentId,
@@ -58,7 +68,7 @@ class AIService {
   static Future<bool> syncMemory(String studentId, {required String content, String category = 'Learning Preference'}) async {
     try {
       final res = await http.post(
-        Uri.parse('$_serverUrl/api/memories'),
+        Uri.parse('$serverUrl/api/memories'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'student_id': studentId,
@@ -78,7 +88,7 @@ class AIService {
   static Future<bool> deleteBackendMemory(String studentId, String memoryId) async {
     try {
       final res = await http.delete(
-        Uri.parse('$_serverUrl/api/memories/$memoryId?student_id=$studentId'),
+        Uri.parse('$serverUrl/api/memories/$memoryId?student_id=$studentId'),
       ).timeout(const Duration(seconds: 15));
       return res.statusCode == 200;
     } catch (e) {
@@ -90,7 +100,7 @@ class AIService {
   static Future<bool> clearBackendMemories(String studentId) async {
     try {
       final res = await http.delete(
-        Uri.parse('$_serverUrl/api/memories?student_id=$studentId'),
+        Uri.parse('$serverUrl/api/memories?student_id=$studentId'),
       ).timeout(const Duration(seconds: 15));
       return res.statusCode == 200;
     } catch (e) {
@@ -102,7 +112,7 @@ class AIService {
   static Future<bool> toggleBackendPersonalization(String studentId, bool enabled) async {
     try {
       final res = await http.patch(
-        Uri.parse('$_serverUrl/api/profile/personalization'),
+        Uri.parse('$serverUrl/api/profile/personalization'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'student_id': studentId,
@@ -364,7 +374,7 @@ Rules:
 
       final response = await http
           .post(
-            Uri.parse('$_serverUrl/api/chat'),
+            Uri.parse('$serverUrl/api/chat'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'model': model,

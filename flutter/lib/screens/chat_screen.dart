@@ -18,7 +18,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import '../response_visualization/models/response_mode.dart';
 import '../response_visualization/services/adaptive_response_classifier.dart';
-import '../response_visualization/widgets/adaptive_response_view.dart';
 import '../thinking_orbs/services/orb_state_resolver.dart';
 import '../thinking_orbs/widgets/thinking_orbs_response_view.dart';
 
@@ -231,7 +230,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       try {
         final bytes = await xfile.readAsBytes();
         sizeBytes = bytes.length;
-        if (isImage && bytes.isNotEmpty && bytes.length <= 450 * 1024) {
+        if (isImage && bytes.isNotEmpty && bytes.length <= 750 * 1024) {
           b64 = base64Encode(bytes);
         }
       } catch (_) {}
@@ -634,20 +633,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       itemBuilder: (ctx, i) {
         if (i == _messages.length && _isTyping) {
           if (_activeAnimationConfig != null) {
-            if (kIsWeb) {
-              // WEB APPLICATION: Preserve existing adaptive response visualization untouched
-              return AdaptiveResponseView(
-                config: _activeAnimationConfig!,
-                onStop: _stopGeneration,
-              );
-            } else {
-              // ANDROID APK / MOBILE: Dedicated Thinking Orbs visualization
-              return ThinkingOrbsResponseView(
-                state: OrbStateResolver.resolveFromConfig(_activeAnimationConfig),
-                config: _activeAnimationConfig,
-                onStop: _stopGeneration,
-              );
-            }
+            return ThinkingOrbsResponseView(
+              state: OrbStateResolver.resolveFromConfig(_activeAnimationConfig),
+              config: _activeAnimationConfig,
+              onStop: _stopGeneration,
+              showStatusText: true,
+            );
           }
           return const TypingIndicator();
         }
