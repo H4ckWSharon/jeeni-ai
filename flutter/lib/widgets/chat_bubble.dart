@@ -9,7 +9,6 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
-import '../learning_engine/services/widget_registry.dart';
 
 /// Strips internal Jeeni tags from message text before clipboard/display use
 String _cleanText(String raw) {
@@ -400,59 +399,10 @@ class _ChatBubbleState extends State<ChatBubble>
       }
     }
 
-    final regExp = RegExp(r'\[interactive:([a-zA-Z0-9_-]+)\]');
-    int lastMatchEnd = 0;
-    final matches = regExp.allMatches(text);
-
-    for (final match in matches) {
-      // 1. Add preceding text segment if any
-      if (match.start > lastMatchEnd) {
-        final textSegment = text.substring(lastMatchEnd, match.start).trim();
-        if (textSegment.isNotEmpty) {
-          children.add(_buildMarkdownBlock(textSegment, context));
-        }
-      }
-
-      // 2. Add interactive widget
-      final widgetId = match.group(1);
-      if (widgetId != null) {
-        if (WidgetRegistry.hasWidget(widgetId)) {
-          final interactiveWidget = WidgetRegistry.buildWidget(widgetId, context);
-          children.add(interactiveWidget);
-        } else {
-          children.add(
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Interactive widget "$widgetId" not registered.',
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      }
-
-      lastMatchEnd = match.end;
-    }
-
-    // 3. Add remaining text segment if any
-    if (lastMatchEnd < text.length) {
-      final textSegment = text.substring(lastMatchEnd).trim();
-      if (textSegment.isNotEmpty) {
-        children.add(_buildMarkdownBlock(textSegment, context));
-      }
+    // Turn off all interactive widgets — render clean Markdown text only
+    text = text.replaceAll(RegExp(r'\[interactive:[a-zA-Z0-9_-]+\]'), '').trim();
+    if (text.isNotEmpty) {
+      children.add(_buildMarkdownBlock(text, context));
     }
 
     // 4. Append RAG Sources indicator if sources were present

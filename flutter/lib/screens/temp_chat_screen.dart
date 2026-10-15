@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import '../models/chat_message.dart';
 import '../models/jeeni_mode.dart';
 import '../widgets/chat_bubble.dart';
-import '../widgets/typing_indicator.dart';
 import '../widgets/chat_input_bar.dart';
 import '../services/ai_service.dart';
 import 'auth/login_screen.dart';
@@ -17,6 +16,7 @@ import 'auth/auth_gate.dart';
 import '../response_visualization/models/response_mode.dart';
 import '../response_visualization/services/adaptive_response_classifier.dart';
 import 'package:flutter/foundation.dart';
+import '../thinking_orbs/models/orb_state.dart';
 import '../thinking_orbs/services/orb_state_resolver.dart';
 import '../thinking_orbs/widgets/thinking_orbs_response_view.dart';
 
@@ -463,15 +463,14 @@ class _TempChatScreenState extends State<TempChatScreen> with TickerProviderStat
       itemCount: _messages.length + (_isTyping ? 1 : 0),
       itemBuilder: (ctx, i) {
         if (i == _messages.length && _isTyping) {
-          if (_activeAnimationConfig != null) {
-            return ThinkingOrbsResponseView(
-              state: OrbStateResolver.resolveFromConfig(_activeAnimationConfig),
-              config: _activeAnimationConfig,
-              onStop: _stopGeneration,
-              showStatusText: true,
-            );
-          }
-          return const TypingIndicator();
+          final state = _activeAnimationConfig != null
+              ? OrbStateResolver.resolveFromConfig(_activeAnimationConfig)
+              : OrbState.working;
+          return ThinkingOrbsResponseView(
+            state: state,
+            config: _activeAnimationConfig,
+            onStop: _stopGeneration,
+          );
         }
         final message = _messages[i];
         return ChatBubble(

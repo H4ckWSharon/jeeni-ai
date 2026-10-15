@@ -7,7 +7,6 @@ import '../models/chat_message.dart';
 import '../models/student_profile.dart';
 import '../models/jeeni_mode.dart';
 import '../widgets/chat_bubble.dart';
-import '../widgets/typing_indicator.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/empty_chat_state.dart';
 import '../widgets/chat_sidebar.dart';
@@ -18,6 +17,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import '../response_visualization/models/response_mode.dart';
 import '../response_visualization/services/adaptive_response_classifier.dart';
+import '../thinking_orbs/models/orb_state.dart';
 import '../thinking_orbs/services/orb_state_resolver.dart';
 import '../thinking_orbs/widgets/thinking_orbs_response_view.dart';
 
@@ -115,13 +115,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   final _suggestions = <String>[
-    'Explain the concept of Circle Area with an interactive model.\n\n[interactive:circle_area]',
-    'Simulate Force, Mass, and Acceleration using Newton\'s second law.\n\n[interactive:newton_second_law]',
-    'Plot algebraic straight lines using the Linear Equation grapher.\n\n[interactive:graph_plotter]',
-    'Explore Sine and Cosine shadows using the Trigonometry Unit Circle.\n\n[interactive:unit_circle]',
-    'Build stable Helium atoms in the Chemical Atom Builder.\n\n[interactive:atom_builder]',
-    'Simulate heartbeat dynamics and cardiac cycles in the Biology Heart Pump.\n\n[interactive:heart_pump]',
-    'Rotate the Earth and change axial tilts in the Geography orbital simulation.\n\n[interactive:earth_rotation]',
+    'Explain the concept of Circle Area and how it is derived.',
+    'Simulate Force, Mass, and Acceleration using Newton\'s second law.',
+    'Plot algebraic straight lines using the Linear Equation grapher.',
+    'Explore Sine and Cosine shadows using the Trigonometry Unit Circle.',
+    'Explain the atomic structure of Helium and periodic table trends.',
+    'Explain heartbeat dynamics and cardiac cycles in the human heart.',
+    'Why does the Earth have seasons and how does axial tilt work?',
   ];
 
 
@@ -632,15 +632,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       itemCount: _messages.length + (_isTyping ? 1 : 0),
       itemBuilder: (ctx, i) {
         if (i == _messages.length && _isTyping) {
-          if (_activeAnimationConfig != null) {
-            return ThinkingOrbsResponseView(
-              state: OrbStateResolver.resolveFromConfig(_activeAnimationConfig),
-              config: _activeAnimationConfig,
-              onStop: _stopGeneration,
-              showStatusText: true,
-            );
-          }
-          return const TypingIndicator();
+          final state = _activeAnimationConfig != null
+              ? OrbStateResolver.resolveFromConfig(_activeAnimationConfig)
+              : OrbState.working;
+          return ThinkingOrbsResponseView(
+            state: state,
+            config: _activeAnimationConfig,
+            onStop: _stopGeneration,
+          );
         }
         final message = _messages[i];
         return ChatBubble(

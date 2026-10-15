@@ -30,14 +30,34 @@ def progress(transferred, total):
 
 sftp.put('web.tar.gz', '/tmp/web.tar.gz', callback=progress)
 print("Uploaded web.tar.gz!")
+
+# Upload updated server.js
+if os.path.exists('server/server.js'):
+    print("\n2b. Uploading server/server.js...")
+    try:
+        sftp.put('server/server.js', '/root/jeeni-server/server.js')
+        print("Updated /root/jeeni-server/server.js")
+    except Exception as e:
+        print(f"Notice /root/jeeni-server: {e}")
+    try:
+        sftp.put('server/server.js', '/var/www/jeeni/server.js')
+        print("Updated /var/www/jeeni/server.js")
+    except Exception as e:
+        print(f"Notice /var/www/jeeni: {e}")
+
 sftp.close()
 
 print("\n3. Extracting archive on VPS...")
-extract_cmd = f"mkdir -p {remote_path} && tar -xzf /tmp/web.tar.gz -C {remote_path} && rm /tmp/web.tar.gz"
+extract_cmd = (
+    "mkdir -p /var/www/jeeni/public/app /root/jeeni-server/public/app && "
+    "tar -xzf /tmp/web.tar.gz -C /var/www/jeeni/public/app && "
+    "tar -xzf /tmp/web.tar.gz -C /root/jeeni-server/public/app && "
+    "rm -f /tmp/web.tar.gz"
+)
 _, stdout, stderr = ssh.exec_command(extract_cmd)
 exit_status = stdout.channel.recv_exit_status()
 if exit_status == 0:
-    print("Extracted successfully!")
+    print("Extracted successfully to both web paths!")
 else:
     print(f"Extraction failed: {stderr.read().decode()}")
 

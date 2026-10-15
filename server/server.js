@@ -1599,19 +1599,7 @@ Provide up-to-date, real-time factual information retrieved from the web with ac
       console.log(`[Adaptive Learning] Injected filtered personalization (Identity: ${personalizationFilter.isIdentityQuery}, Fields: [${personalizationFilter.personalizationFieldsUsed.join(', ')}])`);
     }
 
-    // Dynamic Context: Interactive Widgets (if not vision)
-    if (!useVision) {
-      systemInstruction += `\n\nInteractive Learning Widgets:
-When a student asks about any of the following topics, include the corresponding widget tag on its own line at the end of your response:
-- Circle area, circumference, geometry of circles → [interactive:circle_area]
-- Newton's second law, F=ma, force mass acceleration → [interactive:newton_second_law]
-- Linear equations, graphs, slope, y-intercept, algebra → [interactive:graph_plotter]
-- Trigonometry, sine, cosine, tangent, unit circle, angles → [interactive:unit_circle]
-- Atoms, protons, neutrons, electrons, atomic structure, chemistry → [interactive:atom_builder]
-- Heart, cardiac cycle, heartbeat, biology, circulatory system → [interactive:heart_pump]
-- Earth rotation, seasons, axial tilt, geography, day and night → [interactive:earth_rotation]
-Rules: Place tag on its own line at the end. Never explain the tag itself.`;
-    }
+    // Dynamic Context: Interactive Widgets have been disabled per user directive
 
     // ── STAGE 4: Build Gemini-format contents ─────────────
     const contents = messages
@@ -1761,8 +1749,10 @@ Rules: Place tag on its own line at the end. Never explain the tag itself.`;
     responseMeta.greetingPolicy = greetingPolicy;
     responseMeta.processingState = 'complete';
 
+    const cleanContent = (response.text || '').replace(/\[interactive:[a-zA-Z0-9_-]+\]/g, '').trim();
+
     res.json({
-      content: response.text,
+      content: cleanContent,
       sources: finalSources,
       pipeline: pipelineLabel,
       grounding: groundingMetadata,

@@ -102,26 +102,19 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
-    // 0.10s delay, then fade logo in
-    await Future.delayed(const Duration(milliseconds: 100));
     _logoController.forward();
-
-    // Text appears 0.20s later
-    await Future.delayed(const Duration(milliseconds: 200));
-    _textController.forward();
-
-    // Sit at splash for 0.30s (ChatGPT-style fast intro)
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 80));
     if (!mounted) return;
-
-    // Exit fade
+    _textController.forward();
+    await Future.delayed(const Duration(milliseconds: 160));
+    if (!mounted) return;
     _exitController.forward();
-    await Future.delayed(const Duration(milliseconds: 250));
+    await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 150),
         pageBuilder: (_, __, ___) => const AuthGate(),
         transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
       ),

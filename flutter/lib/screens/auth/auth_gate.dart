@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import '../chat_screen.dart';
-import '../student_onboarding_screen.dart';
-import '../../services/database_service.dart';
-import '../../models/student_profile.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -19,8 +16,8 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    // Safety fallback: if Firebase stream takes more than 2 seconds, proceed to LoginScreen
-    Future.delayed(const Duration(seconds: 2), () {
+    // Ultra-fast 150ms safeguard: never hang the opening screen on a spinner
+    Future.delayed(const Duration(milliseconds: 150), () {
       if (mounted && !_timedOut) {
         setState(() => _timedOut = true);
       }
@@ -29,53 +26,39 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    // Instant zero-lag check: if cached user is already in memory, render ChatScreen immediately on frame 0
+    final cachedUser = FirebaseAuth.instance.currentUser;
+    if (cachedUser != null) {
+      return const ChatScreen();
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // If stream errored out, fallback to LoginScreen
         if (snapshot.hasError) {
           return const LoginScreen();
         }
 
-        // If authenticated user found
+        // If authenticated user found, enter ChatScreen instantly without blocking on Firestore
         if (snapshot.hasData && snapshot.data != null) {
-          final user = snapshot.data!;
-          return FutureBuilder<StudentProfile?>(
-            future: DatabaseService.getStudentProfile(user.uid).timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => null,
-            ),
-            builder: (context, profileSnap) {
-              if (profileSnap.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  backgroundColor: Color(0xFF0A0E17),
-                  body: Center(
-                    child: CircularProgressIndicator(color: Color(0xFF818CF8), strokeWidth: 2),
-                  ),
-                );
-              }
-
-              final profile = profileSnap.data;
-              if (profile == null || !profile.onboardingCompleted) {
-                return const StudentOnboardingScreen();
-              }
-
-              return const ChatScreen();
-            },
-          );
+          return const ChatScreen();
         }
 
-        // If stream is still waiting AND has not timed out, show splash loader
+        // Only show spinner during the first 150ms stream handshake
         if (snapshot.connectionState == ConnectionState.waiting && !_timedOut) {
           return const Scaffold(
-            backgroundColor: Color(0xFF0A0E17),
+            backgroundColor: Color(0xFF000000),
             body: Center(
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1.5),
+              ),
             ),
           );
         }
 
-        // Otherwise default to LoginScreen
+        // Otherwise default to LoginScreen immediately
         return const LoginScreen();
       },
     );

@@ -187,36 +187,12 @@ Success Metric:
 Your success is measured not by how many answers you provide, but by how much the student genuinely understands, retains, and can independently apply the knowledge.
 """;
 
-    // ── Interactive Widget Instruction ──
-    const interactiveInstruction = """
-
-Interactive Learning Widgets:
-You have access to a set of built-in interactive learning widgets that can be embedded directly in your response. 
-When a student asks about any of the following topics, you MUST include the corresponding widget tag on its own line at the end of your explanation:
-
-Available widgets (use EXACTLY these tags):
-- Circle area, circumference, geometry of circles → [interactive:circle_area]
-- Newton's second law, F=ma, force mass acceleration → [interactive:newton_second_law]
-- Linear equations, graphs, slope, y-intercept, algebra → [interactive:graph_plotter]
-- Trigonometry, sine, cosine, tangent, unit circle, angles → [interactive:unit_circle]
-- Atoms, protons, neutrons, electrons, atomic structure, chemistry → [interactive:atom_builder]
-- Heart, cardiac cycle, heartbeat, biology, circulatory system → [interactive:heart_pump]
-- Earth rotation, seasons, axial tilt, geography, day and night → [interactive:earth_rotation]
-
-Rules:
-1. Place the widget tag on its own line at the end of your response.
-2. Only include a widget tag if the topic genuinely matches.
-3. Never include more than one widget tag per response.
-4. Never explain or mention the tag itself to the student — just include it silently.
-5. Do NOT wrap the tag in backticks or code blocks.
-""";
-
     String systemInstruction = '';
     String model = 'gemini-3.1-flash-lite';
 
     switch (mode) {
       case 'Deep Research':
-        systemInstruction = '$preamble$interactiveInstruction '
+        systemInstruction = '$preamble '
             'You are a highly analytical deep researcher. Provide comprehensive, '
             'fact-based answers with structure and simulated citations with author, '
             'journal, and year. Use a formal, academic tone. Always include a '
@@ -224,14 +200,14 @@ Rules:
         model = 'gemini-3.1-flash-lite';
         break;
       case 'Web Search':
-        systemInstruction = '$preamble$interactiveInstruction '
+        systemInstruction = '$preamble '
             'You are Jeeni Web Search Engine powered by live Google Search Grounding. '
             'Provide accurate, up-to-date, real-time facts and search results retrieved from the web. '
             'Summarize the findings clearly with bullet points, dates, and explanations.';
         model = 'gemini-3.1-flash-lite';
         break;
       case 'Homework':
-        systemInstruction = '$preamble$interactiveInstruction '
+        systemInstruction = '$preamble '
             'You are a patient homework tutor. Your role is to NEVER give the direct '
             'answer. Instead: (1) Ask what the student has tried so far. (2) Give a '
             'relevant hint or principle. (3) Break the problem into smaller steps. '
@@ -254,7 +230,7 @@ Rules:
         break;
       case 'Guided Learning':
       default:
-        systemInstruction = '$preamble$interactiveInstruction '
+        systemInstruction = '$preamble '
             'You are a friendly, step-by-step educational AI. Break down complex topics '
             'into simple, easy-to-understand explanations with emojis. Always end your '
             'response with a quick comprehension check question.';
@@ -397,10 +373,8 @@ Rules:
 
         debugPrint('[Vision] Response received | Pipeline: $pipeline | Length: ${rawText.length} chars');
 
-        // NEVER inject interactive widgets for image analysis responses
-        String resultText = attachments.isEmpty
-            ? _appendInteractiveWidget(rawText, prompt)
-            : rawText;  // Images: return Gemini Vision response as-is
+        // Interactive widgets turned off — return clean plain text response
+        String resultText = rawText.replaceAll(RegExp(r'\[interactive:[a-zA-Z0-9_-]+\]'), '').trim();
 
         if (sources.isNotEmpty) {
           final sourcesJson = jsonEncode(sources);
@@ -424,107 +398,6 @@ Rules:
     }
   }
 
-
-  // ─────────────────────────────────────────────────────────────────
-  // ADAPTIVE INTERACTIVE WIDGET INJECTION
-  // Educational Rules:
-  // 1. Basic "explain X" questions get clean, clear text explanations.
-  // 2. If student asks for visual models, simulations, interactive practice,
-  //    says "I don't understand", or requests deep learning, the matching
-  //    educational simulation widget is dynamically attached.
-  // 3. Covers all major subject domains (Physics, Chem, Bio, Math, Geo).
-  // ─────────────────────────────────────────────────────────────────
-  static String _appendInteractiveWidget(String aiResponse, String userPrompt) {
-    // 1. Skip if AI response already embedded a widget tag
-    if (RegExp(r'\[interactive:[a-zA-Z0-9_-]+\]').hasMatch(aiResponse)) {
-      return aiResponse;
-    }
-
-    // 2. ONLY match against the user's prompt — never against the AI response text.
-    // This prevents hallucinated widget injection.
-    final promptLower = userPrompt.toLowerCase();
-
-    // 3. BLACKLIST: prompts that are about images/diagrams/files — never inject a widget
-    final imageBlacklist = [
-      'this image', 'this photo', 'this picture', 'this diagram', 'this chart',
-      'this screenshot', 'this figure', 'explain this', 'analyze this', 'analyse this',
-      'what is this', 'what does this', 'describe this', 'look at this',
-      'attached image', 'uploaded image', 'the image', 'the photo',
-    ];
-    if (imageBlacklist.any((kw) => promptLower.contains(kw))) {
-      return aiResponse;
-    }
-
-    // 4. Comprehensive Subject Domain Keyword Registry
-    final domainRules = <String, List<String>>{
-      // ⚛️ Chemistry / Atomic Physics Domain
-      'atom_builder': [
-        'atom', 'atomic structure', 'proton', 'neutron', 'electron',
-        'nucleus', 'atomic number', 'atomic mass', 'element', 'isotope',
-        'bohr model', 'electron shell', 'valence', 'subatomic', 'matter',
-        'chemical structure', 'helium atom', 'hydrogen atom',
-      ],
-
-      // ⚡ Physics / Dynamics / Mechanics Domain
-      'newton_second_law': [
-        'newton', 'second law', 'f = ma', 'f=ma', 'force mass acceleration',
-        'net force', 'fma', 'law of motion', 'inertia',
-        'friction', 'gravity', 'velocity', 'momentum', 'kinematics',
-        'physics simulation', 'force calculation',
-      ],
-
-      // 📐 Geometry / Area & Measurement Domain
-      'circle_area': [
-        'area of a circle', 'circle area', 'πr²', 'pi r squared',
-        'circumference of circle', 'radius of circle', 'diameter of circle',
-        'circle geometry', 'disk area', 'circle math',
-      ],
-
-      // 🔵 Trigonometry / Periodic Functions Domain
-      'unit_circle': [
-        'unit circle', 'sine cosine', 'sin cos', 'trigonometry', 'trigonometric',
-        'sin(', 'cos(', 'tan(', 'radian', 'degrees to radians',
-        'pythagorean identity', 'trig ratio', 'angle measure', 'hypotenuse',
-      ],
-
-      // 📊 Algebra / Coordinate Geometry & Functions Domain
-      'graph_plotter': [
-        'linear equation', 'slope intercept', 'y = mx', 'y=mx', 'straight line graph',
-        'plot a graph', 'graph of equation', 'gradient of line', 'y-intercept',
-        'algebraic graph', 'slope of line', 'coordinate geometry', 'function plot',
-      ],
-
-      // ❤️ Biology / Human Physiology Domain
-      'heart_pump': [
-        'heart', 'cardiac', 'heartbeat', 'circulatory system', 'blood pump',
-        'ventricle', 'atrium', 'pulse rate', 'bpm', 'heart rate',
-        'systole', 'diastole', 'cardiovascular', 'human heart', 'blood circulation',
-      ],
-
-      // 🌍 Geography / Astronomy / Planetary Science Domain
-      'earth_rotation': [
-        'earth rotation', 'earth revolve', 'axial tilt', 'seasons',
-        'day and night', 'day night cycle', 'solstice', 'equinox',
-        'earth orbit', 'rotation of earth', 'why do seasons change',
-        'geographic rotation', 'planetary tilt',
-      ],
-    };
-
-    // 5. Match predefined domain rules ONLY — no fallback slug generation
-    for (final entry in domainRules.entries) {
-      final widgetId = entry.key;
-      final keywords = entry.value;
-      final matchesTopic = keywords.any((kw) => promptLower.contains(kw));
-      if (matchesTopic) {
-        return '$aiResponse\n\n[interactive:$widgetId]';
-      }
-    }
-
-    // 6. No match found — return clean response without any widget
-    //    (Removed _deriveTopicSlug fallback: it created fake "Interactive Model: This Image"
-    //     widgets from generic prompts like "explain this image")
-    return aiResponse;
-  }
 
   static String _getMockFallbackResponse(String prompt) {
     // Honest, user-friendly connection error — never hallucinate mock answers
