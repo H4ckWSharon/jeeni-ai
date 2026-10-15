@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'chat_screen.dart';
 import '../services/database_service.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -396,7 +397,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 title: const Text('Open Chat', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).pop(chatId);
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop(chatId);
+                  } else {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                    );
+                  }
                 },
               ),
               ListTile(
@@ -488,7 +495,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (choice == null) return;
       switch (choice) {
         case 'open':
-          if (context.mounted) Navigator.of(context).pop(chatId);
+          if (context.mounted) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop(chatId);
+            } else {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+              );
+            }
+          }
           break;
         case 'pin':
           await DatabaseService.togglePinChat(userId, chatId, !isPinned);
@@ -657,7 +672,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const ChatScreen()),
+                );
+              }
+            },
           ),
           const Spacer(),
           const Text(
@@ -998,7 +1021,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       },
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).pop(chatId);
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(chatId);
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+            );
+          }
         },
         onLongPressStart: (details) {
           if (isDesktop) {

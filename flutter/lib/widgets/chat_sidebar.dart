@@ -72,6 +72,13 @@ class _ChatSidebarState extends State<ChatSidebar> {
     super.dispose();
   }
 
+  void _closeDrawerIfOpen() {
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold != null && scaffold.isDrawerOpen) {
+      scaffold.closeDrawer();
+    }
+  }
+
   String _formatTime(int ms) {
     if (ms == 0) return '';
     final dt = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -933,7 +940,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
                 ],
               ),
               onTap: () {
-                Navigator.of(context).pop();
+                _closeDrawerIfOpen();
                 widget.onChatSelected(chatId);
               },
             ),
@@ -1191,7 +1198,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
             icon: Icons.add_rounded,
             label: 'New Chat',
             onTap: () {
-              Navigator.of(context).pop();
+              _closeDrawerIfOpen();
               widget.onNewChat();
             },
           ),
@@ -1199,7 +1206,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
             icon: Icons.lock_person_outlined,
             label: 'Private Chat',
             onTap: () {
-              Navigator.of(context).pop();
+              _closeDrawerIfOpen();
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TempChatScreen()));
             },
           ),
@@ -1207,7 +1214,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
             icon: Icons.history_rounded,
             label: 'All History',
             onTap: () async {
-              Navigator.of(context).pop();
+              _closeDrawerIfOpen();
               final selectedChatId = await Navigator.of(context).push<String>(
                 MaterialPageRoute(builder: (_) => const HistoryScreen()),
               );
@@ -1220,8 +1227,7 @@ class _ChatSidebarState extends State<ChatSidebar> {
             icon: Icons.settings_outlined,
             label: 'Settings',
             onTap: () {
-              // Close drawer first, then show settings sheet
-              Navigator.of(context).pop();
+              _closeDrawerIfOpen();
               final u = FirebaseAuth.instance.currentUser;
               if (u != null) {
                 Future.microtask(() {
@@ -1307,7 +1313,10 @@ class _ProfileRow extends StatelessWidget {
     final name = email.split('@').first;
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).pop();
+        final scaffold = Scaffold.maybeOf(context);
+        if (scaffold != null && scaffold.isDrawerOpen) {
+          scaffold.closeDrawer();
+        }
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ProfileSettingsScreen(initialTab: 0)),
         );

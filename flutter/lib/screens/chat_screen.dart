@@ -152,18 +152,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _saveQueue = Future.value();
       _messages.clear();
       _activeAnimationConfig = null;
+      _isLoadingChat = false;
     });
     _setupMessagesSubscription();
     if (_scaffoldKey.currentState?.isDrawerOpen == true) {
-      Navigator.of(context).pop();
+      _scaffoldKey.currentState?.closeDrawer();
     }
   }
 
   void _onChatTap(String chatId) {
     _stopGeneration();
-    // Close drawer first if open
+    // Close drawer safely without popping any route
     if (_scaffoldKey.currentState?.isDrawerOpen == true) {
-      Navigator.of(context).pop();
+      _scaffoldKey.currentState?.closeDrawer();
     }
     setState(() {
       _currentChatId = chatId;
@@ -175,6 +176,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _activeAnimationConfig = null;
     });
     _setupMessagesSubscription();
+    // Safety guard: guarantee _isLoadingChat is cleared within 4s even if stream is silent
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted && _isLoadingChat) {
+        setState(() => _isLoadingChat = false);
+      }
+    });
   }
 
   Future<void> _sendMessage(String text, {List<XFile> attachments = const [], JeeniMode? mode}) async {
