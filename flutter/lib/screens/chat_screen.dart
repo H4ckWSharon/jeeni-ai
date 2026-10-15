@@ -806,53 +806,15 @@ class _TopBar extends StatelessWidget {
 
           const Spacer(),
 
-          // Center: JEENI wordmark & Mode indicator
-          GestureDetector(
-            onTap: onModeTap,
-            behavior: HitTestBehavior.opaque,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'JEENI',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white,
-                      letterSpacing: 6,
-                      fontFamily: 'serif',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: selectedMode.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: selectedMode.color.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(selectedMode.emoji, style: const TextStyle(fontSize: 11)),
-                        const SizedBox(width: 4),
-                        Text(
-                          selectedMode.label,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Icon(Icons.arrow_drop_down_rounded, size: 14, color: Colors.white70),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          // Center: Clean JEENI wordmark
+          const Text(
+            'JEENI',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
+              letterSpacing: 6,
+              fontFamily: 'serif',
             ),
           ),
 

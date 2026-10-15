@@ -33,17 +33,29 @@ const {
   RequestIntent,
 } = require('./src/responseModeClassifier');
 
+const compression = require('compression');
+
 const app = express();
+app.use(compression());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Serve Admin Web Portal & Flutter Web App
+// HTML files: no-cache so newly deployed builds are picked up immediately
+// JS, WASM, CSS, Fonts, Images: cached so subsequent page loads are instantaneous (0ms from disk cache)
 app.use('/app', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  if (req.path.endsWith('.html') || req.path === '/' || req.path === '') {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  } else {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+  }
   next();
-}, express.static(path.join(__dirname, 'public/app')));
+}, express.static(path.join(__dirname, 'public/app'), {
+  etag: true,
+  maxAge: '1d'
+}));
 
 // Also serve static assets from public/app at root so any relative asset requests succeed
 app.use(express.static(path.join(__dirname, 'public/app')));
