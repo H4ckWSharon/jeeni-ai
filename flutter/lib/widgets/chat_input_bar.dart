@@ -45,11 +45,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
   bool _showModePopup = false;
   String _modeQuery = '';
   int _highlightedIndex = 0;
-  final FocusNode _focusNode = FocusNode();
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode(onKeyEvent: _handleKeyEvent);
     widget.controller.addListener(_onText);
   }
 
@@ -87,30 +88,49 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (!_showModePopup) return KeyEventResult.ignored;
-
-    final filtered = JeeniMode.filter(_modeQuery);
-    if (filtered.isEmpty) return KeyEventResult.ignored;
-
     if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        setState(() {
-          _highlightedIndex = (_highlightedIndex + 1) % filtered.length;
-        });
-        return KeyEventResult.handled;
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        setState(() {
-          _highlightedIndex = (_highlightedIndex - 1 + filtered.length) % filtered.length;
-        });
-        return KeyEventResult.handled;
-      } else if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.tab) {
-        if (_highlightedIndex >= 0 && _highlightedIndex < filtered.length) {
-          _selectMode(filtered[_highlightedIndex]);
-          return KeyEventResult.handled;
+      if (_showModePopup) {
+        final filtered = JeeniMode.filter(_modeQuery);
+        if (filtered.isNotEmpty) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            setState(() {
+              _highlightedIndex = (_highlightedIndex + 1) % filtered.length;
+            });
+            return KeyEventResult.handled;
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            setState(() {
+              _highlightedIndex = (_highlightedIndex - 1 + filtered.length) % filtered.length;
+            });
+            return KeyEventResult.handled;
+          } else if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.tab) {
+            if (_highlightedIndex >= 0 && _highlightedIndex < filtered.length) {
+              _selectMode(filtered[_highlightedIndex]);
+              return KeyEventResult.handled;
+            }
+          } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+            setState(() => _showModePopup = false);
+            return KeyEventResult.handled;
+          }
         }
-      } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-        setState(() => _showModePopup = false);
-        return KeyEventResult.handled;
+      }
+
+      // Desktop & Web: Enter sends message, Shift+Enter inserts newline
+      final isDesktopOrWeb = kIsWeb ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux;
+
+      if (isDesktopOrWeb && event.logicalKey == LogicalKeyboardKey.enter) {
+        final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+        if (!isShiftPressed) {
+          if (_hasText && !widget.isTyping) {
+            _send();
+            return KeyEventResult.handled;
+          } else if (!_hasText) {
+            // Prevent empty newline on Enter when input is empty
+            return KeyEventResult.handled;
+          }
+        }
       }
     }
     return KeyEventResult.ignored;
@@ -179,6 +199,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
         _showModePopup = false;
         _activeModeOverride = null; // Reset per-message override after send
       });
+      widget.controller.clear();
       widget.onSend(t, attachments: attachmentsCopy, mode: effectiveMode);
     }
   }
@@ -533,11 +554,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final filteredModes = JeeniMode.filter(_modeQuery);
     final effectiveMode = _activeModeOverride ?? widget.selectedMode;
 
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: _handleKeyEvent,
-      child: Container(
-        margin: EdgeInsets.fromLTRB(16, 0, 16, bot > 0 ? 12 : safeBot + 12),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 840),
+        child: Container(
+          margin: EdgeInsets.fromLTRB(16, 0, 16, bot > 0 ? 12 : safeBot + 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -598,8 +619,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
                           padding: const EdgeInsets.only(bottom: 4),
                           child: TextField(
                             controller: widget.controller,
+                            focusNode: _focusNode,
                             maxLines: 5,
                             minLines: 1,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) {
+                              if (_hasText && !widget.isTyping) _send();
+                            },
                             cursorColor: const Color(0xFF10A37F),
                             cursorWidth: 1.5,
                             style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400, height: 1.7),
@@ -650,8 +676,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ═══════════════════════════════════════════════════
@@ -730,23 +757,26 @@ class _VoiceBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        width: 42, height: 42,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isListening ? Colors.red.withValues(alpha: 0.2) : Colors.transparent,
-          border: Border.all(
-            color: isListening ? Colors.red : const Color(0xFF2B2B2B),
-            width: 1.2,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: 42, height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isListening ? Colors.red.withValues(alpha: 0.2) : Colors.transparent,
+            border: Border.all(
+              color: isListening ? Colors.red : const Color(0xFF2B2B2B),
+              width: 1.2,
+            ),
           ),
-        ),
-        child: Icon(
-          isListening ? Icons.stop_rounded : Icons.mic_none_rounded,
-          size: 22,
-          color: isListening ? Colors.red : const Color(0xFFA1A1AA),
+          child: Icon(
+            isListening ? Icons.stop_rounded : Icons.mic_none_rounded,
+            size: 22,
+            color: isListening ? Colors.red : const Color(0xFFA1A1AA),
+          ),
         ),
       ),
     );
@@ -802,31 +832,43 @@ class _SendBtnState extends State<_SendBtn> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.85 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 44, height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: widget.active ? Colors.white : const Color(0xFF222222),
-          ),
-          child: Center(
-            child: widget.loading
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                : Transform.translate(
-                    offset: const Offset(1, 0),
-                    child: Transform.rotate(
-                      angle: -0.5,
-                      child: Icon(Icons.send_rounded, size: 20,
-                        color: widget.active ? Colors.black : const Color(0xFFA1A1AA)),
-                    ),
-                  ),
+    return Tooltip(
+      message: widget.active ? 'Send message (Enter)' : 'Type a message to send',
+      waitDuration: const Duration(milliseconds: 600),
+      child: MouseRegion(
+        cursor: widget.active ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        child: GestureDetector(
+          onTapDown: (_) { if (widget.active) setState(() => _pressed = true); },
+          onTapUp: (_) {
+            if (widget.active) {
+              setState(() => _pressed = false);
+              widget.onTap();
+            }
+          },
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
+            scale: _pressed ? 0.85 : 1.0,
+            duration: const Duration(milliseconds: 100),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.active ? Colors.white : const Color(0xFF222222),
+              ),
+              child: Center(
+                child: widget.loading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                    : Transform.translate(
+                        offset: const Offset(1, 0),
+                        child: Transform.rotate(
+                          angle: -0.5,
+                          child: Icon(Icons.send_rounded, size: 20,
+                            color: widget.active ? Colors.black : const Color(0xFFA1A1AA)),
+                        ),
+                      ),
+              ),
+            ),
           ),
         ),
       ),
@@ -852,21 +894,24 @@ class _CtrlBtnState extends State<_CtrlBtn> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.9 : 1.0,
-        duration: const Duration(milliseconds: 80),
-        child: Container(
-          width: 42, height: 42,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.transparent,
-            border: Border.all(color: const Color(0xFF2B2B2B), width: 1.2),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedScale(
+          scale: _pressed ? 0.9 : 1.0,
+          duration: const Duration(milliseconds: 80),
+          child: Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.transparent,
+              border: Border.all(color: const Color(0xFF2B2B2B), width: 1.2),
+            ),
+            child: Icon(widget.icon, size: 22, color: const Color(0xFFA1A1AA)),
           ),
-          child: Icon(widget.icon, size: 22, color: const Color(0xFFA1A1AA)),
         ),
       ),
     );
@@ -891,10 +936,12 @@ class _ModePillState extends State<_ModePill> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
-      onTapCancel: () => setState(() => _pressed = false),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
+        onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 80),
@@ -918,6 +965,7 @@ class _ModePillState extends State<_ModePill> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -49,6 +49,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   AdaptiveAnimationConfig? _activeAnimationConfig;
   int _currentRequestId = 0;
+  bool _isSidebarOpen = true;
 
   void _stopGeneration() {
     if (!_isTyping) return;
@@ -453,62 +454,111 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 900;
     final hasMessages = _messages.isNotEmpty || _isTyping;
 
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFF0D0D0D),
-      drawer: Drawer(
-        width: 270,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: ChatSidebar(
-          activeChatId: _currentChatId,
-          onNewChat: _newChat,
-          onChatSelected: (chatId) => _onChatTap(chatId),
-          onSettingsTap: () => Navigator.of(context).pop(),
-        ),
-      ),
+      drawer: isDesktop
+          ? null
+          : Drawer(
+              width: 280,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: ChatSidebar(
+                activeChatId: _currentChatId,
+                onNewChat: _newChat,
+                onChatSelected: (chatId) => _onChatTap(chatId),
+                onSettingsTap: () async {
+                  if (_scaffoldKey.currentState?.isDrawerOpen == true) {
+                    Navigator.of(context).pop();
+                  }
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                  );
+                  _loadStudentProfile();
+                },
+              ),
+            ),
       body: Container(
         decoration: const BoxDecoration(color: Colors.black),
-        child: Column(
+        child: Row(
           children: [
-            // ── Top Nav ──
-            _TopBar(
-              onMenu: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
-              onNewChat: _newChat,
-              onProfileTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
-                );
-                _loadStudentProfile();
-              },
-            ),
+            // ── Desktop Docked Sidebar ──
+            if (isDesktop && _isSidebarOpen) ...[
+              SizedBox(
+                width: 270,
+                child: ChatSidebar(
+                  activeChatId: _currentChatId,
+                  onNewChat: _newChat,
+                  onChatSelected: (chatId) => _onChatTap(chatId),
+                  onSettingsTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                    );
+                    _loadStudentProfile();
+                  },
+                ),
+              ),
+              const VerticalDivider(width: 1, thickness: 1, color: Color(0xFF222222)),
+            ],
 
-            // ── Content ──
+            // ── Main Chat Area ──
             Expanded(
-              child: _isLoadingChat
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 1.5,
-                      ),
-                    )
-                  : hasMessages
-                      ? _buildMessages()
-                      : EmptyChatState(suggestions: _suggestions, onSuggestionTap: _sendMessage),
-            ),
+              child: Column(
+                children: [
+                  // ── Responsive Top Nav ──
+                  _TopBar(
+                    isDesktop: isDesktop,
+                    isSidebarOpen: _isSidebarOpen,
+                    selectedMode: _selectedMode,
+                    onToggleSidebar: () {
+                      if (isDesktop) {
+                        setState(() => _isSidebarOpen = !_isSidebarOpen);
+                      } else {
+                        _scaffoldKey.currentState?.openDrawer();
+                      }
+                    },
+                    onNewChat: _newChat,
+                    onModeTap: _showModelSelector,
+                    onProfileTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                      );
+                      _loadStudentProfile();
+                    },
+                  ),
 
-            // ── Input Panel ──
-            ChatInputBar(
-              controller: _inputController, 
-              onSend: _sendMessage, 
-              isTyping: _isTyping,
-              selectedMode: _selectedMode,
-              onModeChanged: (m) => setState(() => _selectedMode = m),
-              onModelTap: _showModelSelector,
+                  // ── Content ──
+                  Expanded(
+                    child: _isLoadingChat
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 1.5,
+                            ),
+                          )
+                        : hasMessages
+                            ? _buildMessages()
+                            : EmptyChatState(
+                                suggestions: _suggestions,
+                                onSuggestionTap: _sendMessage,
+                              ),
+                  ),
+
+                  // ── Input Panel ──
+                  ChatInputBar(
+                    controller: _inputController,
+                    onSend: _sendMessage,
+                    isTyping: _isTyping,
+                    selectedMode: _selectedMode,
+                    onModeChanged: (m) => setState(() => _selectedMode = m),
+                    onModelTap: _showModelSelector,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -626,67 +676,174 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMessages() {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _messages.length + (_isTyping ? 1 : 0),
-      itemBuilder: (ctx, i) {
-        if (i == _messages.length && _isTyping) {
-          final state = _activeAnimationConfig != null
-              ? OrbStateResolver.resolveFromConfig(_activeAnimationConfig)
-              : OrbState.working;
-          return ThinkingOrbsResponseView(
-            state: state,
-            config: _activeAnimationConfig,
-            onStop: _stopGeneration,
-          );
-        }
-        final message = _messages[i];
-        return ChatBubble(
-          message: message,
-          onEdit: message.isUser ? (newText) => _editMessage(i, newText) : null,
-          onRegenerate: message.isUser ? null : () => _regenerateMessage(i),
-        );
-      },
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 840),
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          itemCount: _messages.length + (_isTyping ? 1 : 0),
+          itemBuilder: (ctx, i) {
+            if (i == _messages.length && _isTyping) {
+              final state = _activeAnimationConfig != null
+                  ? OrbStateResolver.resolveFromConfig(_activeAnimationConfig)
+                  : OrbState.working;
+              return ThinkingOrbsResponseView(
+                state: state,
+                config: _activeAnimationConfig,
+                onStop: _stopGeneration,
+              );
+            }
+            final message = _messages[i];
+            return ChatBubble(
+              message: message,
+              onEdit: message.isUser ? (newText) => _editMessage(i, newText) : null,
+              onRegenerate: message.isUser ? null : () => _regenerateMessage(i),
+            );
+          },
+        ),
+      ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════
-// TOP BAR — Exact match to reference image
+// TOP BAR — Responsive Top Navigation
 // ═══════════════════════════════════════════════════
 
 class _TopBar extends StatelessWidget {
-  final VoidCallback onMenu;
+  final bool isDesktop;
+  final bool isSidebarOpen;
+  final JeeniMode selectedMode;
+  final VoidCallback onToggleSidebar;
   final VoidCallback onNewChat;
+  final VoidCallback onModeTap;
   final VoidCallback? onProfileTap;
-  const _TopBar({required this.onMenu, required this.onNewChat, this.onProfileTap});
+
+  const _TopBar({
+    required this.isDesktop,
+    required this.isSidebarOpen,
+    required this.selectedMode,
+    required this.onToggleSidebar,
+    required this.onNewChat,
+    required this.onModeTap,
+    this.onProfileTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Container(
-      height: 60 + top,
-      padding: EdgeInsets.fromLTRB(16, top, 16, 0),
-      color: const Color(0xFF0D0D0D),
+      height: 56 + (isDesktop ? 0 : top),
+      padding: EdgeInsets.fromLTRB(16, isDesktop ? 0 : top, 16, 0),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0D0D0D),
+        border: Border(bottom: BorderSide(color: Color(0xFF1E1E1E), width: 0.8)),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ── Hamburger (history menu) ──
+          // Sidebar Toggle button
+          Tooltip(
+            message: isDesktop ? (isSidebarOpen ? 'Close sidebar' : 'Open sidebar') : 'Chat history',
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: onToggleSidebar,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                  child: Icon(
+                    isDesktop
+                        ? (isSidebarOpen ? Icons.menu_open_rounded : Icons.menu_rounded)
+                        : Icons.menu_rounded,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // New Chat Button
+          Tooltip(
+            message: 'New chat',
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: onNewChat,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          // Center: JEENI wordmark & Mode indicator
           GestureDetector(
-            onTap: onMenu,
+            onTap: onModeTap,
             behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              width: 36, height: 36,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 22, height: 1.5, color: Colors.white.withValues(alpha: 0.8)),
-                  const SizedBox(height: 5),
-                  Container(width: 18, height: 1.5, color: Colors.white.withValues(alpha: 0.8)),
-                  const SizedBox(height: 5),
-                  Container(width: 22, height: 1.5, color: Colors.white.withValues(alpha: 0.8)),
+                  const Text(
+                    'JEENI',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      letterSpacing: 6,
+                      fontFamily: 'serif',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: selectedMode.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: selectedMode.color.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(selectedMode.emoji, style: const TextStyle(fontSize: 11)),
+                        const SizedBox(width: 4),
+                        Text(
+                          selectedMode.label,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.arrow_drop_down_rounded, size: 14, color: Colors.white70),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -694,30 +851,25 @@ class _TopBar extends StatelessWidget {
 
           const Spacer(),
 
-          // ── "JEENI" title ──
-          const Text('JEENI', style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w400,
-            color: Colors.white,
-            letterSpacing: 8,
-            fontFamily: 'serif',
-          )),
-
-          const Spacer(),
-
-          // ── Profile / Settings Action ──
-          GestureDetector(
-            onTap: onProfileTap,
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF1E1B4B),
-                border: Border.all(color: const Color(0xFF818CF8).withValues(alpha: 0.5)),
+          // Profile / Settings Action
+          Tooltip(
+            message: 'Student Profile & Settings',
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: onProfileTap,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF1E1B4B),
+                    border: Border.all(color: const Color(0xFF818CF8).withValues(alpha: 0.5)),
+                  ),
+                  child: const Icon(Icons.school_outlined, color: Color(0xFF818CF8), size: 17),
+                ),
               ),
-              child: const Icon(Icons.school_outlined, color: Color(0xFF818CF8), size: 18),
             ),
           ),
         ],

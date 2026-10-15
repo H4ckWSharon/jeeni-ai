@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -137,34 +136,100 @@ class _EmptyChatStateState extends State<EmptyChatState>
                   ),
                 ),
 
-                // ── Timed Suggestion Chips (Web / Desktop only) ──
-                if (kIsWeb && MediaQuery.of(context).size.width > 600) ...[
-                  const SizedBox(height: 28),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: timedSuggestions.map((s) => GestureDetector(
-                      onTap: () => widget.onSuggestionTap(s),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        child: Text(
-                          s,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
+                const SizedBox(height: 28),
+
+                // ── Responsive Suggestion Cards ──
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth >= 540;
+                      if (isWide) {
+                        return Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: timedSuggestions.map((s) {
+                            final cardWidth = (constraints.maxWidth - 12) / 2 - 1;
+                            return MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () => widget.onSuggestionTap(s),
+                                child: Container(
+                                  width: cardWidth,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF141414),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: const Color(0xFF262626)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          s,
+                                          style: const TextStyle(
+                                            color: Color(0xFFD4D4D8),
+                                            fontSize: 13,
+                                            height: 1.4,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.arrow_upward_rounded,
+                                        size: 16,
+                                        color: Color(0xFF71717A),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }
+
+                      // Mobile Layout: compact vertical cards (top 3)
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: timedSuggestions.take(3).map((s) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: GestureDetector(
+                            onTap: () => widget.onSuggestionTap(s),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF141414),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF262626)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      s,
+                                      style: const TextStyle(
+                                        color: Color(0xFFD4D4D8),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_upward_rounded,
+                                    size: 14,
+                                    color: Color(0xFF71717A),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    )).toList(),
+                        )).toList(),
+                      );
+                    },
                   ),
-                ],
+                ),
               ],
             ),
           ),
