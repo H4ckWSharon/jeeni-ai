@@ -52,17 +52,17 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 5),
     )..repeat();
 
-    // ── Logo entrance: scale + fade in over 300ms ──
+    // ── Logo entrance: scale + fade in over 500ms ──
     _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
     );
-    _logoScale = Tween<double>(begin: 0.6, end: 1.0).animate(
+    _logoScale = Tween<double>(begin: 0.65, end: 1.0).animate(
       CurvedAnimation(parent: _logoController, curve: Curves.easeOutCubic),
     );
     _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _logoController,
-          curve: const Interval(0.0, 0.5, curve: Curves.easeOut)),
+          curve: const Interval(0.0, 0.7, curve: Curves.easeOut)),
     );
 
     // ── Breathing pulse glow ──
@@ -80,12 +80,12 @@ class _SplashScreenState extends State<SplashScreen>
     // ── Text slide up ──
     _textController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 400),
     );
     _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _textController, curve: Curves.easeOut),
     );
-    _textSlide = Tween<double>(begin: 20.0, end: 0.0).animate(
+    _textSlide = Tween<double>(begin: 18.0, end: 0.0).animate(
       CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
     );
 
@@ -103,18 +103,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _runSequence() async {
     _logoController.forward();
-    await Future.delayed(const Duration(milliseconds: 80));
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     _textController.forward();
-    await Future.delayed(const Duration(milliseconds: 160));
+    await Future.delayed(const Duration(milliseconds: 1300));
     if (!mounted) return;
     _exitController.forward();
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 250));
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 150),
+        transitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (_, __, ___) => const AuthGate(),
         transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
       ),
