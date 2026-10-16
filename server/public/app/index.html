@@ -51,6 +51,13 @@
   </script>
 </head>
 <body style="background-color: #000000; margin: 0; padding: 0;">
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var r of regs) { r.unregister(); }
+      });
+    }
+  </script>
+  <script src="flutter_bootstrap.js?v=hero_v1" async></script>
 </body>
 </html>
