@@ -54,12 +54,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Spacer(flex: 2),
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
 
                 // Logo
                 Container(
@@ -104,7 +106,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
 
-                const Spacer(flex: 3),
+                const SizedBox(height: 40),
 
                 // Buttons
                 GoogleAuthButton(
@@ -180,6 +182,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }
