@@ -125,7 +125,7 @@ class _SignupScreenState extends State<SignupScreen> {
               // ── Background image ──
               Positioned.fill(
                 child: Opacity(
-                  opacity: isDesktop ? 0.35 : 0.85,
+                  opacity: isDesktop ? 0.35 : 1.0,
                   child: Image.asset(
                     'assets/images/login_bg.png',
                     fit: BoxFit.cover,
@@ -200,7 +200,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             )
                           : Column(
                               children: [
-                                SizedBox(height: (screenHeight * 0.15).clamp(20.0, 120.0)),
+                                SizedBox(height: (screenHeight * 0.28).clamp(160.0, 240.0)),
                                 _buildSignupForm(isDesktop),
                               ],
                             ),

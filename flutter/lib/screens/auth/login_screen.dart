@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Background image ──
               Positioned.fill(
                 child: Opacity(
-                  opacity: isDesktop ? 0.35 : 0.85,
+                  opacity: isDesktop ? 0.35 : 1.0,
                   child: Image.asset(
                     'assets/images/login_bg.png',
                     fit: BoxFit.cover,
@@ -191,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                           : Column(
                               children: [
-                                SizedBox(height: (screenHeight * 0.22).clamp(40.0, 160.0)),
+                                SizedBox(height: (screenHeight * 0.40).clamp(260.0, 360.0)),
                                 _buildForm(isDesktop),
                               ],
                             ),
@@ -211,21 +211,6 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Brand logo
-        Center(
-          child: Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.06),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-            ),
-            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
-          ),
-        ),
-        const SizedBox(height: 16),
-
         // Title
         const Text(
           'Welcome to JEENI',
