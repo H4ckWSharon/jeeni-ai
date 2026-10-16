@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <base href="/app/">
+  <base href="/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -39,143 +39,18 @@
     flt-glass-pane, flutter-view {
       background-color: #000000 !important;
     }
-
-    #jeeni-loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 999999;
-      pointer-events: none;
-      transition: opacity 0.35s ease-out;
-    }
-
-    .orbit-container {
-      position: relative;
-      width: 260px;
-      height: 260px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .orbit-halo {
-      position: absolute;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 70%);
-      animation: pulse-halo 2.2s ease-in-out infinite alternate;
-    }
-
-    .orbit-ring-outer {
-      position: absolute;
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      border: 1px solid transparent;
-      border-top-color: rgba(255, 255, 255, 0.28);
-      border-right-color: rgba(255, 255, 255, 0.12);
-      animation: spin-cw 7s linear infinite;
-    }
-
-    .orbit-ring-inner {
-      position: absolute;
-      width: 175px;
-      height: 175px;
-      border-radius: 50%;
-      border: 0.8px solid transparent;
-      border-bottom-color: rgba(255, 255, 255, 0.22);
-      border-left-color: rgba(255, 255, 255, 0.08);
-      animation: spin-ccw 4.8s linear infinite;
-    }
-
-    .logo-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .jeeni-title {
-      font-size: 30px;
-      font-weight: 300;
-      letter-spacing: 10px;
-      color: #ffffff;
-      text-transform: uppercase;
-      font-family: Georgia, 'Times New Roman', Times, serif;
-      margin-left: 10px;
-    }
-
-    .jeeni-subtitle {
-      font-size: 9px;
-      font-weight: 400;
-      letter-spacing: 4px;
-      color: rgba(255, 255, 255, 0.38);
-      margin-top: 8px;
-      margin-left: 4px;
-      text-transform: uppercase;
-    }
-
-    @keyframes spin-cw {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes spin-ccw {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(-360deg); }
-    }
-
-    @keyframes pulse-halo {
-      from { transform: scale(0.92); opacity: 0.5; }
-      to { transform: scale(1.10); opacity: 0.95; }
-    }
   </style>
-</head>
-<body style="background-color: #000000;">
-  <div id="jeeni-loader">
-    <div class="orbit-container">
-      <div class="orbit-halo"></div>
-      <div class="orbit-ring-outer"></div>
-      <div class="orbit-ring-inner"></div>
-      <div class="logo-content">
-        <div class="jeeni-title">JEENI</div>
-        <div class="jeeni-subtitle">YOUR AI COMPANION</div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // Fade out loader as soon as Flutter renders first frame
-    window.addEventListener('flutter-first-frame', function() {
-      var loader = document.getElementById('jeeni-loader');
-      if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(function() {
-          if (loader.parentNode) loader.parentNode.removeChild(loader);
-        }, 400);
-      }
-    });
-
-    // Safety fallback: if flutter-first-frame event is not caught, hide loader after 5s
-    setTimeout(function() {
-      var loader = document.getElementById('jeeni-loader');
-      if (loader && loader.style.opacity !== '0') {
-        loader.style.opacity = '0';
-        setTimeout(function() {
-          if (loader.parentNode) loader.parentNode.removeChild(loader);
-        }, 400);
-      }
-    }, 5000);
+    if (window.location.pathname.startsWith('/app/')) {
+      var base = document.querySelector('base');
+      if (base) base.href = '/app/';
+    } else {
+      var base = document.querySelector('base');
+      if (base) base.href = '/';
+    }
   </script>
+</head>
+<body style="background-color: #000000; margin: 0; padding: 0;">
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
