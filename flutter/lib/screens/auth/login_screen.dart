@@ -107,95 +107,181 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.black,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isDesktop = constraints.maxWidth >= 650;
-          final screenHeight = constraints.maxHeight;
+          final isDesktop = constraints.maxWidth >= 900;
+          final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
 
           return Stack(
             fit: StackFit.expand,
             children: [
-              // ── Background image ──
-              Positioned.fill(
-                child: Opacity(
-                  opacity: isDesktop ? 0.35 : 1.0,
-                  child: Image.asset(
-                    'assets/images/login_bg.png',
-                    fit: BoxFit.cover,
-                    alignment: isDesktop ? Alignment.centerRight : Alignment.topCenter,
-                  ),
-                ),
-              ),
-
-              // ── Gradient overlay ──
+              // ── Subtle Ambient Background Glow ──
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: isDesktop
-                        ? RadialGradient(
-                            center: Alignment.center,
-                            radius: 1.25,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.70),
-                              Colors.black.withValues(alpha: 0.95),
-                            ],
-                          )
-                        : const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Color(0xCC000000),
-                              Colors.black,
-                            ],
-                            stops: [0.0, 0.45, 0.75],
-                          ),
+                    gradient: RadialGradient(
+                      center: isDesktop ? const Alignment(-0.4, -0.2) : const Alignment(0.0, -0.6),
+                      radius: 1.2,
+                      colors: [
+                        const Color(0xFF1E293B).withValues(alpha: 0.35),
+                        Colors.black,
+                      ],
+                    ),
                   ),
                 ),
               ),
 
-              // ── Centered, Constrained Form Content ──
+              // ── Responsive Content ──
               SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 32.0 : 24.0,
-                      vertical: isDesktop ? 40.0 : 20.0,
+                      horizontal: isDesktop ? 48.0 : (isTablet ? 32.0 : 20.0),
+                      vertical: isDesktop ? 32.0 : 20.0,
                     ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
-                      child: isDesktop
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 38),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF111116).withValues(alpha: 0.78),
-                                    borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.12),
-                                      width: 1.0,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.7),
-                                        blurRadius: 40,
-                                        spreadRadius: 8,
-                                        offset: const Offset(0, 12),
-                                      ),
-                                    ],
-                                  ),
-                                  child: _buildForm(isDesktop),
-                                ),
-                              ),
-                            )
-                          : Column(
+                    child: isDesktop
+                        // ── DESKTOP: 2-Column Split Layout ──
+                        ? ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1040),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                SizedBox(height: (screenHeight * 0.40).clamp(260.0, 360.0)),
-                                _buildForm(isDesktop),
+                                // Left Column: Illuminated Genie Hero
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 48.0),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Image.asset(
+                                          'assets/images/genie_hero.png',
+                                          height: (constraints.maxHeight * 0.45).clamp(240.0, 340.0),
+                                          fit: BoxFit.contain,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        const Text(
+                                          'JEENI',
+                                          style: TextStyle(
+                                            fontSize: 38,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                            letterSpacing: 6.0,
+                                            fontFamily: 'serif',
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          'Your AI companion for limitless possibilities.',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.white.withValues(alpha: 0.65),
+                                            letterSpacing: 0.3,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Right Column: Sleek Auth Card
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 420),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 36),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF111116).withValues(alpha: 0.85),
+                                          borderRadius: BorderRadius.circular(24),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(alpha: 0.12),
+                                            width: 1.0,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.7),
+                                              blurRadius: 40,
+                                              spreadRadius: 8,
+                                              offset: const Offset(0, 12),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Text(
+                                              'Welcome Back',
+                                              style: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                                letterSpacing: 0.4,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              'Log in to continue your journey',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.white.withValues(alpha: 0.55),
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 24),
+                                            _buildFormFields(),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
-                    ),
+                          )
+                        // ── MOBILE & TABLET: Clean Vertical Stack ──
+                        : ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: 10),
+                                Center(
+                                  child: Image.asset(
+                                    'assets/images/genie_hero.png',
+                                    height: (constraints.maxHeight * 0.28).clamp(150.0, 220.0),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Welcome to JEENI',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Your AI companion for limitless possibilities.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                _buildFormFields(),
+                              ],
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -206,32 +292,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildForm(bool isDesktop) {
+  Widget _buildFormFields() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Title
-        const Text(
-          'Welcome to JEENI',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            letterSpacing: 0.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Your AI companion for limitless possibilities.',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.55),
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 28),
 
         // Error message if any
         if (_errorMsg != null) ...[
