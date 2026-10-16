@@ -113,20 +113,9 @@ class _LoginScreenState extends State<LoginScreen> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // ── Subtle Ambient Background Glow ──
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: isDesktop ? const Alignment(-0.4, -0.2) : const Alignment(0.0, -0.6),
-                      radius: 1.2,
-                      colors: [
-                        const Color(0xFF1E293B).withValues(alpha: 0.35),
-                        Colors.black,
-                      ],
-                    ),
-                  ),
-                ),
+              // ── Pure Black Background ──
+              const Positioned.fill(
+                child: ColoredBox(color: Colors.black),
               ),
 
               // ── Responsive Content ──
@@ -152,10 +141,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Image.asset(
-                                          'assets/images/genie_hero.png',
-                                          height: (constraints.maxHeight * 0.45).clamp(240.0, 340.0),
-                                          fit: BoxFit.contain,
+                                        ShaderMask(
+                                          shaderCallback: (bounds) {
+                                            return const RadialGradient(
+                                              center: Alignment.center,
+                                              radius: 0.95,
+                                              colors: [Colors.white, Colors.transparent],
+                                              stops: [0.65, 1.0],
+                                            ).createShader(bounds);
+                                          },
+                                          blendMode: BlendMode.dstIn,
+                                          child: Image.asset(
+                                            'assets/images/genie_hero.png',
+                                            height: (constraints.maxHeight * 0.45).clamp(240.0, 340.0),
+                                            fit: BoxFit.contain,
+                                          ),
                                         ),
                                         const SizedBox(height: 20),
                                         const Text(
@@ -251,10 +251,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 const SizedBox(height: 10),
                                 Center(
-                                  child: Image.asset(
-                                    'assets/images/genie_hero.png',
-                                    height: (constraints.maxHeight * 0.28).clamp(150.0, 220.0),
-                                    fit: BoxFit.contain,
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) {
+                                      return const RadialGradient(
+                                        center: Alignment.center,
+                                        radius: 0.95,
+                                        colors: [Colors.white, Colors.transparent],
+                                        stops: [0.65, 1.0],
+                                      ).createShader(bounds);
+                                    },
+                                    blendMode: BlendMode.dstIn,
+                                    child: Image.asset(
+                                      'assets/images/genie_hero.png',
+                                      height: (constraints.maxHeight * 0.28).clamp(150.0, 220.0),
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
