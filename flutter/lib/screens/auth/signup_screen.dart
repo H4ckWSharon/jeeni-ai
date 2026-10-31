@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../services/auth_service.dart';
 import 'login_screen.dart';
+import 'verify_email_screen.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_gate.dart';
@@ -28,7 +29,11 @@ class _SignupScreenState extends State<SignupScreen> {
       _errorMsg = null;
     });
 
-    if (_nameCtrl.text.isEmpty || _emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) {
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final password = _passCtrl.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
       setState(() {
         _isLoading = false;
         _errorMsg = 'Please fill in all fields';
@@ -36,22 +41,40 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      setState(() {
+        _isLoading = false;
+        _errorMsg = 'Please enter a valid email address (e.g. name@domain.com)';
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      setState(() {
+        _isLoading = false;
+        _errorMsg = 'Password must be at least 6 characters long';
+      });
+      return;
+    }
+
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text.trim(),
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
       );
       
-      // Update display name
-      final user = FirebaseAuth.instance.currentUser;
+      // Update display name and send verification email
+      final user = credential.user;
       if (user != null) {
-        await user.updateDisplayName(_nameCtrl.text.trim());
+        await user.updateDisplayName(name);
+        await user.sendEmailVerification();
       }
 
       if (!mounted) return;
       
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AuthGate()),
+        MaterialPageRoute(builder: (_) => const VerifyEmailScreen()),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {

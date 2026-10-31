@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../services/auth_service.dart';
 import 'signup_screen.dart';
+import 'verify_email_screen.dart';
 import '../temp_chat_screen.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,7 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMsg = null;
     });
 
-    if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) {
+    final email = _emailCtrl.text.trim();
+    final password = _passCtrl.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
       setState(() {
         _isLoading = false;
         _errorMsg = 'Invalid email or password';
@@ -36,11 +40,30 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      setState(() {
+        _isLoading = false;
+        _errorMsg = 'Please enter a valid email address';
+      });
+      return;
+    }
+
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text.trim(),
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
+
+      final user = credential.user;
+      if (user != null && !user.emailVerified) {
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const VerifyEmailScreen()),
+          (route) => false,
+        );
+        return;
+      }
 
       if (!mounted) return;
 

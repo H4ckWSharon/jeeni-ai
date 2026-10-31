@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'verify_email_screen.dart';
 import '../chat_screen.dart';
 
 class AuthGate extends StatefulWidget {
@@ -12,6 +13,11 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _timedOut = false;
+
+  bool _isUserAllowed(User user) {
+    final isGoogle = user.providerData.any((p) => p.providerId == 'google.com');
+    return user.emailVerified || isGoogle;
+  }
 
   @override
   void initState() {
@@ -26,10 +32,12 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    // Instant zero-lag check: if cached user is already in memory, render ChatScreen immediately on frame 0
+    // Instant zero-lag check: if cached user is already in memory, verify email status
     final cachedUser = FirebaseAuth.instance.currentUser;
     if (cachedUser != null) {
-      return const ChatScreen();
+      return _isUserAllowed(cachedUser)
+          ? const ChatScreen()
+          : const VerifyEmailScreen();
     }
 
     return StreamBuilder<User?>(
@@ -39,9 +47,12 @@ class _AuthGateState extends State<AuthGate> {
           return const LoginScreen();
         }
 
-        // If authenticated user found, enter ChatScreen instantly without blocking on Firestore
+        // If authenticated user found, check if email is verified
         if (snapshot.hasData && snapshot.data != null) {
-          return const ChatScreen();
+          final user = snapshot.data!;
+          return _isUserAllowed(user)
+              ? const ChatScreen()
+              : const VerifyEmailScreen();
         }
 
         // Only show spinner during the first 150ms stream handshake
