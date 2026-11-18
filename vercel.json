@@ -57,7 +57,7 @@
       ]
     },
     {
-      "source": "/(index\\.html|privacy\\.html|terms\\.html|app/index\\.html|app/flutter_bootstrap\\.js|app/main\\.dart\\.js)",
+      "source": "/(index\\.html|privacy\\.html|terms\\.html|manifest\\.json|favicon\\.png|app/index\\.html|app/manifest\\.json|app/favicon\\.png|app/flutter_bootstrap\\.js|app/main\\.dart\\.js)",
       "headers": [
         {
           "key": "Cache-Control",
