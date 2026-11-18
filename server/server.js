@@ -57,17 +57,34 @@ app.use('/app', (req, res, next) => {
   maxAge: '1d'
 }));
 
-// Also serve static assets from public/app at root so any relative asset requests succeed
-app.use(express.static(path.join(__dirname, 'public/app')));
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve primary public site (index.html, privacy.html, terms.html, site/) first
+app.use(express.static(path.join(__dirname, 'public'), {
+  extensions: ['html'],
+}));
+
+// Fallback static assets from public/app (avoid overriding public/index.html)
+app.use(express.static(path.join(__dirname, 'public/app'), {
+  index: false,
+}));
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Redirect root to /app/
+app.get('/privacy', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+});
+
+// Serve landing website at root
 app.get('/', (req, res) => {
-  res.redirect('/app/');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Redirect /app to /app/

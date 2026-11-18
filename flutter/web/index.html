@@ -41,7 +41,7 @@
     }
   </style>
   <script>
-    if (window.location.pathname.startsWith('/app/')) {
+    if (window.location.pathname === '/app' || window.location.pathname.startsWith('/app/')) {
       var base = document.querySelector('base');
       if (base) base.href = '/app/';
     } else {

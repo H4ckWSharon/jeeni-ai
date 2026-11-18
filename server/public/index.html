@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEENI AI — Your Personal AI Teacher &amp; Interactive Learning Companion</title>
+  <meta name="description" content="Meet JEENI AI, your personal AI companion for interactive visual learning. Explore Physics &amp; Math simulators, 6 smart study modes, real-time web grounding, voice narration, and Socratic homework help on Web and Android.">
+  <meta name="keywords" content="JEENI AI, Jeeni, Jeeni AI web, AI tutor, personal AI teacher, interactive visual learning, exam prep AI, homework helper AI">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
+
+  <link rel="canonical" href="https://jeeni-ai.com/">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/site/assets/icon-192.png">
+  <link rel="apple-touch-icon" href="/site/assets/icon-192.png">
+
+  <!-- Open Graph / Social Previews -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="JEENI AI">
+  <meta property="og:url" content="https://jeeni-ai.com/">
+  <meta property="og:title" content="JEENI AI — Your Personal AI Teacher &amp; Interactive Learning Companion">
+  <meta property="og:description" content="Master any subject visually with interactive Physics &amp; Math simulations, a live 3D Thinking Orb, 6 dedicated AI modes, and voice explanations. Try Jeeni Web free.">
+  <meta property="og:image" content="https://jeeni-ai.com/site/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter / X Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="JEENI AI — Interactive Visual AI Companion">
+  <meta name="twitter:description" content="Learn any topic 3x faster with interactive simulators, 6 AI modes, and voice narration on Web and Android.">
+  <meta name="twitter:image" content="https://jeeni-ai.com/site/assets/og-image.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/site/styles.css?v=1">
+
+  <!-- Structured Data for Google Search (Organization, WebSite, SoftwareApplication, FAQPage) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://jeeni-ai.com/#website",
+        "url": "https://jeeni-ai.com/",
+        "name": "JEENI AI",
+        "alternateName": ["Jeeni", "Jeeni AI Learning Companion"]
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://jeeni-ai.com/#organization",
+        "name": "JEENI AI",
+        "url": "https://jeeni-ai.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://jeeni-ai.com/site/assets/icon-512.png"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "JEENI AI",
+        "operatingSystem": "Web, Android",
+        "applicationCategory": "EducationalApplication",
+        "url": "https://jeeni-ai.com/app/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Personal AI teacher featuring interactive visual Physics and Math simulators, 6 specialized study modes, smart student memory, voice narration, and private incognito sessions."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is JEENI AI?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "JEENI AI is an interactive AI learning companion built for students and curious minds. Instead of giving walls of plain text, Jeeni combines step-by-step tutoring, 6 study modes, voice narration, and live visual Geometry, Physics, and Chemistry simulations."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is JEENI AI free to start?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! You can launch Jeeni Web directly at jeeni-ai.com/app/ or install the Android app free to start learning right away."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How can I use JEENI AI on Web and Android?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Click Try Jeeni Web to run Jeeni instantly inside any desktop or mobile browser at jeeni-ai.com/app/, or download the native Android APK right from this page."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is JEENI different from standard AI chatbots?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Standard chatbots only stream paragraphs. JEENI adapts to your exact goal across 6 modes (Learning, Deep Learning, Guide, Web Search, Homework, Exam Prep), generates interactive sliders and physics simulations, tracks your board/syllabus preferences, and offers Socratic guidance so you genuinely master every topic."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does JEENI support private or incognito chats?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Jeeni includes a dedicated Incognito / Temporary Chat mode that lets you explore questions privately without saving conversation history to your profile."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+  <div class="ambient-grid" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TOP NAVIGATION BAR
+       ═══════════════════════════════════════════════════ -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="brand-link" aria-label="JEENI AI Home">
+        <img src="/site/assets/logo.png" alt="JEENI AI Magic Lamp Logo" class="brand-logo" width="34" height="34">
+        <span class="brand-wordmark">JEENI</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary Navigation">
+        <a href="#modes">AI Modes</a>
+        <a href="#interactive-lab">Visual Lab</a>
+        <a href="#features">Features</a>
+        <a href="#compare">Compare</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button type="button" class="btn btn-sm btn-secondary" data-open-apk-modal>
+          Android APK
+        </button>
+        <a href="/app/" class="btn btn-sm btn-primary">
+          Try Jeeni Web
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle Menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="7" x2="21" y2="7"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="17" x2="21" y2="17"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="mobile-drawer" id="mobile-drawer">
+      <a href="#modes">AI Modes</a>
+      <a href="#interactive-lab">Visual Lab</a>
+      <a href="#features">Features</a>
+      <a href="#compare">Why Jeeni</a>
+      <a href="#faq">FAQ</a>
+      <div class="mobile-drawer-ctas">
+        <a href="/app/" class="btn btn-lg btn-primary">Try Jeeni Web →</a>
+        <button type="button" class="btn btn-lg btn-secondary" data-open-apk-modal>Download Android APK</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ═══════════════════════════════════════════════════
+         HERO SECTION (Orbital Rings + Genie + 3D Thinking Orb)
+         ═══════════════════════════════════════════════════ -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="pill-badge">
+            <span class="pill-dot" aria-hidden="true"></span>
+            Free to Start &nbsp;·&nbsp; Web &amp; Android
+          </div>
+
+          <h1 class="hero-title">
+            Master Any Subject with Your <span class="serif-accent">Living AI Companion.</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            Go far beyond walls of text. <strong>JEENI AI</strong> pairs a personalized Socratic teacher with live interactive Physics &amp; Math simulators, 6 purpose-built study modes, voice explanations, and adaptive student memory.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="/app/" class="btn btn-lg btn-primary">
+              Try Jeeni Web
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+            <button type="button" class="btn btn-lg btn-secondary" data-open-apk-modal>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Android App
+            </button>
+          </div>
+
+          <div class="hero-trust-row">
+            <span class="trust-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+              Interactive Simulations
+            </span>
+            <span class="trust-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+              6 AI Study Modes
+            </span>
+            <span class="trust-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+              Private Incognito Chat
+            </span>
+            <span class="trust-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+              Instant Browser Access
+            </span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="orbital-stage">
+            <div class="orbital-halo" aria-hidden="true"></div>
+
+            <!-- Segmented orbital rings adapted from Jeeni's SplashScreen -->
+            <svg class="orbit-ring orbit-ring-outer" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="180 420" />
+            </svg>
+            <svg class="orbit-ring orbit-ring-mid" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(34,211,238,0.35)" stroke-width="0.8" stroke-linecap="round" stroke-dasharray="120 480" />
+            </svg>
+            <svg class="orbit-ring orbit-ring-inner" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.6" stroke-linecap="round" stroke-dasharray="280 300" />
+            </svg>
+
+            <img
+              src="/site/assets/genie_hero.png"
+              alt="JEENI AI Glowing Genie Companion"
+              class="genie-showcase-img"
+              width="340"
+              height="256"
+            >
+          </div>
+
+          <div class="hero-wordmark-badge">
+            <div class="jeeni-name">JEENI</div>
+            <div class="jeeni-tag">Your AI Companion</div>
+          </div>
+
+          <button type="button" class="orb-live-chip" id="hero-orb-btn" title="Click to preview Thinking Orb states">
+            <canvas id="hero-orb-canvas" data-size="36" aria-hidden="true"></canvas>
+            <div class="orb-chip-text">
+              <div class="orb-chip-label" id="hero-orb-label">Orb State: Learning Interactive</div>
+              <div class="orb-chip-hint">Click orb to cycle live AI states</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 2: INTERACTIVE 6-MODE EXPLORER
+         ═══════════════════════════════════════════════════ -->
+    <section class="section" id="modes">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-eyebrow">Purpose-Built Intelligence</span>
+          <h2 class="section-title">One Companion. Six Specialized Study Modes.</h2>
+          <p class="section-desc">
+            Switch Jeeni’s reasoning engine with one click—from guided Socratic hints that build mastery to cited live web search and high-yield exam sprints.
+          </p>
+        </div>
+
+        <div class="modes-grid reveal">
+          <div class="modes-list" role="tablist" aria-label="Jeeni AI Study Modes">
+            <button type="button" class="mode-tab active" role="tab" aria-selected="true" data-mode="learning" style="--mode-color: #6366f1">
+              <div class="mode-icon-box">📚</div>
+              <div>
+                <div class="mode-tab-title">Learning Mode</div>
+                <div class="mode-tab-desc">Learn concepts interactively with live visual intuition</div>
+              </div>
+            </button>
+
+            <button type="button" class="mode-tab" role="tab" aria-selected="false" data-mode="deep_learning" style="--mode-color: #a855f7">
+              <div class="mode-icon-box">🧠</div>
+              <div>
+                <div class="mode-tab-title">Deep Learning</div>
+                <div class="mode-tab-desc">First-principles derivations, proofs &amp; deep synthesis</div>
+              </div>
+            </button>
+
+            <button type="button" class="mode-tab" role="tab" aria-selected="false" data-mode="guide" style="--mode-color: #10b981">
+              <div class="mode-icon-box">🧭</div>
+              <div>
+                <div class="mode-tab-title">Guide Mode</div>
+                <div class="mode-tab-desc">Step-by-step Socratic scaffolding without giving shortcuts</div>
+              </div>
+            </button>
+
+            <button type="button" class="mode-tab" role="tab" aria-selected="false" data-mode="web_search" style="--mode-color: #0ea5e9">
+              <div class="mode-icon-box">🔎</div>
+              <div>
+                <div class="mode-tab-title">Web Search</div>
+                <div class="mode-tab-desc">Real-time web grounding with live verifiable sources</div>
+              </div>
+            </button>
+
+            <button type="button" class="mode-tab" role="tab" aria-selected="false" data-mode="homework" style="--mode-color: #f97316">
+              <div class="mode-icon-box">📝</div>
+              <div>
+                <div class="mode-tab-title">Homework Helper</div>
+                <div class="mode-tab-desc">Snap worksheet photos or paste problems for clear steps</div>
+              </div>
+            </button>
+
+            <button type="button" class="mode-tab" role="tab" aria-selected="false" data-mode="exam_prep" style="--mode-color: #f59e0b">
+              <div class="mode-icon-box">🎯</div>
+              <div>
+                <div class="mode-tab-title">Exam Prep</div>
+                <div class="mode-tab-desc">Practice quizzes, trap-spotting &amp; active recall flashcards</div>
+              </div>
+            </button>
+          </div>
+
+          <div class="mode-preview-card" role="tabpanel">
+            <div class="preview-topbar">
+              <div class="preview-topbar-left">
+                <span class="mode-pill-tag" id="preview-mode-pill">Learning Mode</span>
+              </div>
+              <span style="font-size: 12px; color: var(--text-muted);">Live Preview</span>
+            </div>
+
+            <div class="preview-body">
+              <div class="sim-user-bubble" id="preview-user-prompt">
+                Teach me how Area of a Circle works with an interactive intuition.
+              </div>
+
+              <div class="sim-ai-block">
+                <div class="sim-ai-header">
+                  <canvas id="mode-orb-canvas" data-size="28" aria-hidden="true"></canvas>
+                  <span class="sim-ai-state" id="preview-orb-state">Generating interactive visual simulation...</span>
+                </div>
+
+                <div class="sim-ai-response">
+                  <div id="preview-ai-response"></div>
+                  <div class="sim-ai-highlights" id="preview-ai-chips"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-footer">
+              <span class="preview-footer-note">Powered by Jeeni’s Adaptive Intelligence Engine</span>
+              <a href="/app/" class="btn btn-sm btn-primary" id="preview-cta-link">Try Learning Mode in Web App →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 3: LIVE INTERACTIVE VISUAL LEARNING LAB
+         ═══════════════════════════════════════════════════ -->
+    <section class="section" id="interactive-lab">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-eyebrow">Interactive Concept Engine</span>
+          <h2 class="section-title">Don’t Just Read Formulas. Play With Them.</h2>
+          <p class="section-desc">
+            Try real miniature simulations adapted directly from Jeeni’s built-in Geometry, Physics, Trigonometry, Chemistry, and Biology learning engine.
+          </p>
+        </div>
+
+        <div class="lab-card reveal">
+          <div class="lab-tabs">
+            <button type="button" class="lab-tab-btn active" data-lab="circle">📐 Geometry: Area of a Circle</button>
+            <button type="button" class="lab-tab-btn" data-lab="physics">🚀 Physics: Newton’s 2nd Law</button>
+            <button type="button" class="lab-tab-btn" data-lab="quiz">🎓 Instant Mastery Quiz</button>
+          </div>
+
+          <!-- Lab 1: Circle Area -->
+          <div class="lab-panel active" id="lab-circle">
+            <div class="canvas-frame">
+              <canvas id="circle-canvas" width="460" height="310" aria-label="Interactive Circle Area Simulation"></canvas>
+            </div>
+            <div class="lab-controls">
+              <h3>Explore <code>A = π · r²</code> Live</h3>
+              <p>Drag the radius slider and watch how area scales quadratically—doubling the radius multiplies area by 4×.</p>
+
+              <div class="control-group">
+                <div class="control-header">
+                  <span>Radius (r)</span>
+                  <span class="control-value" id="radius-val-label">r = 5.0 u</span>
+                </div>
+                <input type="range" id="radius-slider" min="1.5" max="9.5" step="0.5" value="5" aria-label="Circle radius">
+              </div>
+
+              <div class="toggle-row">
+                <label class="toggle-pill"><input type="checkbox" id="toggle-grid" checked> Unit Grid</label>
+                <label class="toggle-pill"><input type="checkbox" id="toggle-circ" checked> Circumference Glow</label>
+              </div>
+
+              <div class="readout-grid">
+                <div class="readout-box">
+                  <div class="readout-label">Area (πr²)</div>
+                  <div class="readout-val" id="area-readout">78.54 u²</div>
+                </div>
+                <div class="readout-box">
+                  <div class="readout-label">Circumference (2πr)</div>
+                  <div class="readout-val" id="circ-readout">31.42 u</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lab 2: Newton's 2nd Law -->
+          <div class="lab-panel" id="lab-physics">
+            <div class="canvas-frame">
+              <canvas id="physics-canvas" width="460" height="260" aria-label="Newton's Second Law Force and Mass Simulation"></canvas>
+            </div>
+            <div class="lab-controls">
+              <h3>Test Force &amp; Acceleration (<code>F = m · a</code>)</h3>
+              <p>Adjust thrust force and object mass, then launch the physics simulation to see acceleration respond live.</p>
+
+              <div class="control-group">
+                <div class="control-header">
+                  <span>Applied Force (F)</span>
+                  <span class="control-value" id="force-val-label">40 N</span>
+                </div>
+                <input type="range" id="force-slider" min="10" max="100" step="5" value="40" aria-label="Applied Force">
+              </div>
+
+              <div class="control-group">
+                <div class="control-header">
+                  <span>Block Mass (m)</span>
+                  <span class="control-value" id="mass-val-label">5 kg</span>
+                </div>
+                <input type="range" id="mass-slider" min="2" max="20" step="1" value="5" aria-label="Block Mass">
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-sm btn-primary" id="play-physics-btn">Run Simulation</button>
+                <button type="button" class="btn btn-sm btn-secondary" id="reset-physics-btn">Reset</button>
+              </div>
+
+              <div class="readout-grid">
+                <div class="readout-box">
+                  <div class="readout-label">Acceleration (a = F/m)</div>
+                  <div class="readout-val" id="accel-readout">8.00 m/s²</div>
+                </div>
+                <div class="readout-box">
+                  <div class="readout-label">Velocity (v = at)</div>
+                  <div class="readout-val" id="vel-readout">0.00 m/s</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lab 3: Instant Mastery Quiz -->
+          <div class="lab-panel" id="lab-quiz">
+            <div class="quiz-box">
+              <span class="pill-badge" style="align-self: flex-start;">Jeeni Level 5 Checkpoint</span>
+              <h3 style="font-size: 19px; line-height: 1.45;">
+                If a circle has a <strong>diameter of 10 cm</strong>, what are its radius and area? (Take π ≈ 3.14)
+              </h3>
+              <button type="button" class="quiz-option" data-correct="false">A) Radius is 10 cm, Area is 314 cm²</button>
+              <button type="button" class="quiz-option" data-correct="true">B) Radius is 5 cm, Area is 78.5 cm²</button>
+              <button type="button" class="quiz-option" data-correct="false">C) Radius is 5 cm, Area is 31.4 cm²</button>
+              <button type="button" class="quiz-option" data-correct="false">D) Radius is 20 cm, Area is 1,256 cm²</button>
+              <div class="quiz-feedback" id="quiz-feedback"></div>
+            </div>
+
+            <div class="lab-controls">
+              <h3>5-Level Concept Mastery</h3>
+              <p>Inside the full Jeeni app, every core topic unfolds across interactive intuition, guided sliders, flashcards, voice narration, and self-test quizzes across Math, Physics, Chemistry, Biology, Geography, and Coding.</p>
+              <a href="/app/" class="btn btn-lg btn-primary" style="align-self: flex-start;">Open Full Concept Engine →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 4: BENTO CAPABILITIES GRID
+         ═══════════════════════════════════════════════════ -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-eyebrow">Built for Real Students</span>
+          <h2 class="section-title">Everything Needed to Learn Faster—Zero Clutter.</h2>
+          <p class="section-desc">
+            Crafted around Jeeni’s monochrome luxury interface so your focus stays on understanding—not wrestling confusing tools.
+          </p>
+        </div>
+
+        <div class="bento-grid">
+          <article class="bento-card reveal">
+            <div class="bento-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <h3>Live 3D Thinking Orb</h3>
+            <p>Watch Jeeni think across 9 animated states—searching, solving equations, listening, and composing structured answers in real time.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </div>
+            <h3>Voice Input &amp; Read-Aloud TTS</h3>
+            <p>Ask questions by voice and listen to clear, calm narration of complex derivations while reviewing visual diagrams.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h3>Subjects, Projects &amp; History</h3>
+            <p>Keep Programming, Cyber Security, Physics, Math, Chemistry, and Biology chats neatly organized with project filters and favorites.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3>Incognito Private Study</h3>
+            <p>Switch into Temporary Private Mode anytime for clean off-the-record sessions that leave zero trace in your saved history.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <h3>Syllabus &amp; Student Memory</h3>
+            <p>Tell Jeeni your class, education board, and goals once—every future explanation adapts automatically to your curriculum level.</p>
+          </article>
+
+          <article class="bento-card reveal">
+            <div class="bento-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <h3>Snap Notes, Photos &amp; Docs</h3>
+            <p>Upload textbook pages, handwritten problems, or PDF notes directly into chat to get clear, visual step-by-step guidance.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 5: COMPARISON (GENERIC AI VS JEENI AI)
+         ═══════════════════════════════════════════════════ -->
+    <section class="section" id="compare">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-eyebrow">Why JEENI Wins</span>
+          <h2 class="section-title">Built for Understanding, Not Just Prompting.</h2>
+          <p class="section-desc">
+            See how a dedicated interactive AI companion compares to standard generic chat tools.
+          </p>
+        </div>
+
+        <div class="compare-grid reveal">
+          <div class="compare-card">
+            <div class="compare-header">
+              <h3>Generic AI Chatbots</h3>
+              <span style="font-size: 12px; color: var(--text-muted);">One-Size Text Box</span>
+            </div>
+            <ul class="compare-list">
+              <li><span aria-hidden="true">✕</span> Endless walls of plain markdown text without visual intuition</li>
+              <li><span aria-hidden="true">✕</span> Dumps final answers instantly so you don’t learn the steps</li>
+              <li><span aria-hidden="true">✕</span> No interactive physics sliders, geometry canvases, or graphs</li>
+              <li><span aria-hidden="true">✕</span> Forgets your grade, board, and subject pace across topics</li>
+              <li><span aria-hidden="true">✕</span> Hard to filter conversations by Math, Physics, or Coding</li>
+            </ul>
+          </div>
+
+          <div class="compare-card jeeni">
+            <div class="compare-header">
+              <h3>JEENI AI</h3>
+              <span class="pill-badge" style="color: var(--cyan); border-color: rgba(34,211,238,0.4);">Your AI Companion</span>
+            </div>
+            <ul class="compare-list">
+              <li><span style="color: var(--emerald);" aria-hidden="true">✓</span> Launches live interactive Physics, Geometry, Bio &amp; Chem widgets</li>
+              <li><span style="color: var(--emerald);" aria-hidden="true">✓</span> 6 intentional study modes including Socratic Guide &amp; Exam Prep</li>
+              <li><span style="color: var(--emerald);" aria-hidden="true">✓</span> Built-in quizzes, active recall flashcards &amp; natural voice TTS</li>
+              <li><span style="color: var(--emerald);" aria-hidden="true">✓</span> Curriculum-aware memory tuned to your board &amp; learning goals</li>
+              <li><span style="color: var(--emerald);" aria-hidden="true">✓</span> Seamless experience synced between Jeeni Web &amp; Android APK</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 6: FAQ ACCORDION
+         ═══════════════════════════════════════════════════ -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-eyebrow">Questions &amp; Answers</span>
+          <h2 class="section-title">Frequently Asked Questions</h2>
+        </div>
+
+        <div class="faq-list reveal">
+          <div class="faq-item open">
+            <button type="button" class="faq-question" aria-expanded="true">
+              <span>What is JEENI AI and who is it built for?</span>
+              <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer" style="max-height: 200px;">
+              <div class="faq-answer-inner">
+                JEENI AI is your personal AI teacher and interactive learning companion designed for school and college students, self-learners, and developers. It combines clear explanations with real interactive STEM simulations, Socratic guidance, voice narration, and structured study modes.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false">
+              <span>Can I try JEENI AI right now in my browser?</span>
+              <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes! Click <strong>Try Jeeni Web</strong> anywhere on this site to open the full Jeeni Web App at <code>jeeni-ai.com/app/</code>—it works responsively across laptop, desktop, tablet, and phone browsers with zero installation required.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false">
+              <span>Is JEENI AI free to start?</span>
+              <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, Jeeni AI is free to start on both Web and Android. Just create a verified account with your email or continue with Google in seconds.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false">
+              <span>How do I install the Android App?</span>
+              <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Click <strong>Download Android App</strong> above to download the official <code>jeeni-app.apk</code> installer directly, tap the downloaded file on your Android phone, and follow the quick install prompt.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false">
+              <span>What makes the 6 AI Study Modes special?</span>
+              <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Instead of giving the same style reply to every prompt, Jeeni lets you switch seamlessly between <strong>Learning</strong> (visual widgets), <strong>Deep Learning</strong> (first-principles derivations), <strong>Guide</strong> (Socratic step-by-step hints), <strong>Web Search</strong> (live cited web answers), <strong>Homework</strong> (worksheet problem walkthroughs), and <strong>Exam Prep</strong> (quizzes &amp; revision drills).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 7: CLOSING CTA
+         ═══════════════════════════════════════════════════ -->
+    <section class="section" style="padding-bottom: 108px;">
+      <div class="container">
+        <div class="cta-banner reveal">
+          <h2>Ready to Turn Every Question Into Clarity?</h2>
+          <p>Launch Jeeni Web right in your browser or install the Android app—free to start in seconds.</p>
+          <div class="cta-actions">
+            <a href="/app/" class="btn btn-lg btn-primary">Try Jeeni Web →</a>
+            <button type="button" class="btn btn-lg btn-secondary" data-open-apk-modal>Download Android APK</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="brand-link">
+            <img src="/site/assets/logo.png" alt="JEENI AI Logo" class="brand-logo" width="32" height="32">
+            <span class="brand-wordmark">JEENI</span>
+          </a>
+          <p>Your personal AI teacher &amp; interactive visual learning companion for Web and Android.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="/app/">Launch Jeeni Web</a></li>
+            <li><a href="#interactive-lab">Interactive Lab</a></li>
+            <li><a href="#modes">AI Study Modes</a></li>
+            <li><a href="#features">Features</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platforms</h4>
+          <ul>
+            <li><a href="/app/">Web Browser App</a></li>
+            <li><a href="#" data-open-apk-modal>Android APK Download</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company &amp; Legal</h4>
+          <ul>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 JEENI AI (jeeni-ai.com). All rights reserved.</span>
+        <span>Built for curious minds everywhere.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════
+       ANDROID APK DOWNLOAD MODAL
+       ═══════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="apk-modal" role="dialog" aria-modal="true" aria-labelledby="apk-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="brand-link">
+          <img src="/site/assets/logo.png" alt="" class="brand-logo" width="28" height="28">
+          <h3 id="apk-modal-title" style="font-size: 18px; font-weight: 600;">Download JEENI for Android</h3>
+        </div>
+        <button type="button" class="modal-close" id="apk-modal-close" aria-label="Close download modal">×</button>
+      </div>
+      <p style="font-size: 14px; color: var(--text-secondary);">
+        Install the native Android APK (approx. 72.5 MB) to enjoy Jeeni AI with offline-friendly UI and full mobile voice features.
+      </p>
+      <ol class="modal-steps">
+        <li>Click <strong>Download jeeni-app.apk</strong> below to start downloading directly to your phone.</li>
+        <li>Open the downloaded <code>.apk</code> file from your Chrome Downloads or Notification bar.</li>
+        <li>If prompted, tap <strong>Allow from this source</strong> and click <strong>Install</strong>.</li>
+      </ol>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="http://213.133.97.141:3000/jeeni-app.apk" download="jeeni-app.apk" class="btn btn-lg btn-primary" rel="noopener">
+          Download jeeni-app.apk
+        </a>
+        <a href="/app/" class="btn btn-lg btn-secondary">
+          Prefer zero install? Try Jeeni Web →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/site/app.js?v=1"></script>
+</body>
+</html>
