@@ -57,7 +57,7 @@
       ]
     },
     {
-      "source": "/(index\\.html|privacy\\.html|terms\\.html|manifest\\.json|favicon\\.png|app/index\\.html|app/manifest\\.json|app/favicon\\.png|app/flutter_bootstrap\\.js|app/main\\.dart\\.js)",
+      "source": "/(index\\.html|privacy\\.html|terms\\.html|manifest\\.json|favicon\\.ico|favicon\\.png|favicon-48x48\\.png|apple-touch-icon\\.png|app/index\\.html|app/manifest\\.json|app/favicon\\.ico|app/favicon\\.png|app/favicon-48x48\\.png|app/apple-touch-icon\\.png|app/flutter_bootstrap\\.js|app/main\\.dart\\.js)",
       "headers": [
         {
           "key": "Cache-Control",
